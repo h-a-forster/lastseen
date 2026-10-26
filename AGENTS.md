@@ -9,8 +9,8 @@ Read [docs/HACKATHON.md](docs/HACKATHON.md) (rules and judging) and [docs/TEAM.m
 - Stay off the anti-project list in docs/HACKATHON.md (medical advice, basic RAG, simple image analysers, and so on).
 - Only use code, data and assets we have the rights to. Never commit `.env` or print API keys.
 
-## Judging (equally weighted)
-Impact · Creative use of Meta tooling · Technical depth · Demo (live plus a 3-minute video).
+## Judging
+Impact 30% · Creative use of Meta tooling 25% · Demo 25% (live plus a 3-minute video) · Technical depth 20%.
 When choosing what to build next, ask which of these it moves. Features that don't show in the demo are low priority.
 
 ## Rules for agents
