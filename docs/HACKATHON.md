@@ -24,11 +24,11 @@ Full participant guide (login): https://cerebralvalley.ai/e/meta-ai-developer-ha
 
 ## Judging
 1. Pass/fail: fits a problem statement and really uses Meta models.
-2. Scored 0-10, **equally weighted**:
-   - **Impact**: real-world potential; who benefits; could people actually use it?
-   - **Use of Meta AI tooling**: creative, beyond a basic integration, surprising capabilities.
-   - **Technical depth and execution**: sound, refined engineering.
-   - **Demo**: works live; the video is genuinely cool to watch.
+2. Scored 0-10 per criterion, weighted:
+   - **Impact (30%)**: real-world potential; who benefits; could people actually use it?
+   - **Use of Meta AI tooling (25%)**: creative, beyond a basic integration, surprising capabilities.
+   - **Technical depth and execution (20%)**: sound, refined engineering.
+   - **Demo (25%)**: works live; the video is genuinely cool to watch.
 3. Top 5 per track: final judges watch the videos live and rank them.
 
 ## Prizes
