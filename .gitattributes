@@ -1,0 +1,6 @@
+# Normalise line endings so Windows and Mac teammates don't fight in diffs
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.mp4 binary
