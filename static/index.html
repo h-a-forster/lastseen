@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hackathon Starter</title>
+  <!-- Tailwind play CDN: fine for a hackathon, swap for a build step if you outgrow it -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+  <header class="border-b bg-white">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="font-semibold text-lg">Project name</h1>
+      <span id="model" class="text-xs text-slate-500 font-mono"></span>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-6 flex flex-col gap-3" id="log">
+    <p class="text-slate-500 text-sm">One-line pitch of what this does goes here.</p>
+  </main>
+
+  <form id="form" class="sticky bottom-0 bg-white border-t">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex gap-2">
+      <input id="input" autocomplete="off" placeholder="Ask something..."
+             class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button class="rounded-lg bg-indigo-600 text-white px-4 py-2 font-medium hover:bg-indigo-700 disabled:opacity-50">Send</button>
+    </div>
+  </form>
+
+  <script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const button = form.querySelector("button");
+    const messages = [];
+
+    fetch("/api/health").then(r => r.json()).then(h => {
+      document.getElementById("model").textContent = h.model;
+    });
+
+    function bubble(role, text) {
+      const div = document.createElement("div");
+      div.className = role === "user"
+        ? "self-end max-w-[80%] rounded-2xl bg-indigo-600 text-white px-4 py-2 whitespace-pre-wrap"
+        : "self-start max-w-[80%] rounded-2xl bg-white border px-4 py-2 whitespace-pre-wrap";
+      div.textContent = text;
+      log.appendChild(div);
+      div.scrollIntoView({ block: "end" });
+      return div;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      button.disabled = true;
+
+      messages.push({ role: "user", content: text });
+      bubble("user", text);
+      const out = bubble("assistant", "");
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let reply = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          reply += decoder.decode(value, { stream: true });
+          out.textContent = reply;
+          out.scrollIntoView({ block: "end" });
+        }
+        messages.push({ role: "assistant", content: reply });
+      } catch (err) {
+        out.textContent = "[network error] " + err;
+      } finally {
+        button.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
