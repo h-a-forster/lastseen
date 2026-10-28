@@ -32,12 +32,13 @@ class SparkAdvisor:
         self.name = f"{inner.name}+spark"
         self.readings: list = []  # every HypothesisSet received, for the log and the UI
         self.failures: list[str] = []
+        self._notes: list[dict] = []
 
     def reset(self, search_map: SearchMap, fleet: FleetSpec, detection: DetectionModel, stats: dict, seed: int) -> None:
         self.map = search_map
         self.base_poa = base_map(search_map, stats)
         self.reports: list[Report] = []
-        self.readings, self.failures = [], []
+        self.readings, self.failures, self._notes = [], [], []
         self.inner.reset(search_map, fleet, detection, stats, seed)
 
     def observe(self, event: Observation) -> None:
@@ -48,12 +49,23 @@ class SparkAdvisor:
                 reading = interpret(self.map, self.reports, self.base_poa)
             except ModelCallError as e:
                 self.failures.append(f"{event.t_s:.0f} s: {e}")
+                self._notes.append({"kind": "spark_failed", "text": "Spark unavailable; searching on statistics alone"})
                 return
             self.readings.append(reading)
+            self._notes.append({"kind": "hypotheses", "rest_weight": round(reading.rest_weight, 2),
+                                "hypotheses": [{"name": h.name, "weight": round(h.weight, 2), "reason": h.reason}
+                                               for h in reading.hypotheses],
+                                "dropped": list(reading.dropped), "cached": reading.cached})
             self.inner.observe(reading.to_event())
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         return self.inner.plan(t_s, drone, fleet)
+
+    def drain_notes(self) -> list[dict]:
+        """Notes for the event log: Spark's readings, then whatever the inner planner explains."""
+        notes, self._notes = self._notes, []
+        inner = getattr(self.inner, "drain_notes", None)
+        return notes + (inner() if inner else [])
 
     def probability_map(self):
         return self.inner.probability_map()

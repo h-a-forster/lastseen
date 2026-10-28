@@ -3,87 +3,64 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hackathon Starter</title>
-  <!-- Tailwind play CDN: fine for a hackathon, swap for a build step if you outgrow it -->
+  <title>LastSeen</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    canvas { image-rendering: pixelated; }
+    input[type=range] { accent-color: #f59e0b; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
-  <header class="border-b bg-white">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-      <h1 class="font-semibold text-lg">Project name</h1>
-      <span id="model" class="text-xs text-slate-500 font-mono"></span>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800">
+    <div class="max-w-[1500px] mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div>
+        <h1 class="font-semibold text-lg tracking-tight">LastSeen</h1>
+        <p class="text-xs text-slate-400">Where should the drones fly next? The same search, flown by different planners.</p>
+      </div>
+      <div class="flex items-center gap-2 ml-auto text-sm">
+        <label for="run" class="text-slate-400">Scenario</label>
+        <select id="run" class="bg-slate-900 border border-slate-700 rounded px-2 py-1"></select>
+        <form id="new-race" class="flex items-center gap-2">
+          <input id="seed" type="number" min="0" max="999999" placeholder="seed" aria-label="Scenario seed"
+                 class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1" />
+          <button class="rounded bg-slate-800 hover:bg-slate-700 px-3 py-1">Record race</button>
+        </form>
+      </div>
     </div>
   </header>
 
-  <main class="flex-1 w-full max-w-3xl mx-auto px-4 py-6 flex flex-col gap-3" id="log">
-    <p class="text-slate-500 text-sm">One-line pitch of what this does goes here.</p>
+  <main class="max-w-[1500px] mx-auto px-4 py-4 grid gap-4 lg:grid-cols-[1fr_360px]">
+    <section>
+      <div id="lanes" class="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"></div>
+
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+        <button id="play" class="w-20 rounded bg-amber-500 text-slate-950 font-medium px-3 py-1.5">Play</button>
+        <span id="clock" class="font-mono tabular-nums w-28">0:00</span>
+        <input id="time" type="range" min="0" max="14400" step="5" value="0" class="flex-1 min-w-[200px]"
+               aria-label="Search time" />
+        <select id="speed" class="bg-slate-900 border border-slate-700 rounded px-2 py-1" aria-label="Playback speed">
+          <option value="60">60×</option>
+          <option value="120" selected>120×</option>
+          <option value="300">300×</option>
+          <option value="900">900×</option>
+        </select>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-300">
+        <label><input id="show-heat" type="checkbox" checked /> Planner's probability map</label>
+        <label><input id="show-searched" type="checkbox" checked /> Photographed ground</label>
+        <label><input id="show-truth" type="checkbox" /> Reveal where the person really was</label>
+      </div>
+      <div id="legend" class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400"></div>
+    </section>
+
+    <aside class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 lg:max-h-[calc(100vh-110px)] overflow-y-auto">
+      <h2 class="text-sm font-semibold text-slate-300 mb-2">What the team knows</h2>
+      <ol id="feed" class="space-y-3 text-sm"></ol>
+    </aside>
   </main>
 
-  <form id="form" class="sticky bottom-0 bg-white border-t">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex gap-2">
-      <input id="input" autocomplete="off" placeholder="Ask something..."
-             class="flex-1 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-      <button class="rounded-lg bg-indigo-600 text-white px-4 py-2 font-medium hover:bg-indigo-700 disabled:opacity-50">Send</button>
-    </div>
-  </form>
+  <div id="status" class="fixed bottom-3 left-1/2 -translate-x-1/2 hidden rounded bg-slate-800 px-4 py-2 text-sm"></div>
 
-  <script>
-    const log = document.getElementById("log");
-    const form = document.getElementById("form");
-    const input = document.getElementById("input");
-    const button = form.querySelector("button");
-    const messages = [];
-
-    fetch("/api/health").then(r => r.json()).then(h => {
-      document.getElementById("model").textContent = h.model;
-    });
-
-    function bubble(role, text) {
-      const div = document.createElement("div");
-      div.className = role === "user"
-        ? "self-end max-w-[80%] rounded-2xl bg-indigo-600 text-white px-4 py-2 whitespace-pre-wrap"
-        : "self-start max-w-[80%] rounded-2xl bg-white border px-4 py-2 whitespace-pre-wrap";
-      div.textContent = text;
-      log.appendChild(div);
-      div.scrollIntoView({ block: "end" });
-      return div;
-    }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = "";
-      button.disabled = true;
-
-      messages.push({ role: "user", content: text });
-      bubble("user", text);
-      const out = bubble("assistant", "");
-
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages }),
-        });
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let reply = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          reply += decoder.decode(value, { stream: true });
-          out.textContent = reply;
-          out.scrollIntoView({ block: "end" });
-        }
-        messages.push({ role: "assistant", content: reply });
-      } catch (err) {
-        out.textContent = "[network error] " + err;
-      } finally {
-        button.disabled = false;
-        input.focus();
-      }
-    });
-  </script>
+  <script src="/replay.js"></script>
 </body>
 </html>

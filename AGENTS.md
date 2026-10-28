@@ -44,4 +44,5 @@ When choosing what to build next, ask which of these it moves. Features that don
 - Demo path: brief, then probability map, then a drone race against a lawnmower sweep on real terrain, then candidates on real photos, then a human confirms, then found.
 - Core maths lives in `app/sar/` (see its module docstrings). Run `uv run python -m app.sar.bench` and `uv run pytest`.
 - Planners plug into the arena through `app/sar/interface.py` and never see the truth (`Scenario`). Baselines live in `app/sar/planners/`; the team's planner in `app/planner/`.
+- The page at `/` replays recorded races: `uv run python -m app.sar.replay --seed 27` writes `data/runs/` (Spark from the cache only unless `--live`); `POST /api/runs` records one and never spends. Planners may offer `drain_notes()` to explain themselves in the log.
 - Witness reports come from `app/sar/cues.py` (fixed reliability, frozen before any model read them). Spark turns them into weighted map layers in `app/agent/`; check its reading with `uv run python -m app.agent.reading_check`.

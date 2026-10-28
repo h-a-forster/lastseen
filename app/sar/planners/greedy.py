@@ -34,6 +34,7 @@ class ProbabilityGreedy:
         self._applied = np.ones(search_map.grid.shape)  # the hypotheses' likelihood currently folded into the map
         self._claimed: dict[int, tuple[slice, slice]] = {}
         self._t_s = 0.0
+        self._notes: list[dict] = []
 
     def observe(self, event: Observation) -> None:
         self._advance(event.t_s)
@@ -72,10 +73,16 @@ class ProbabilityGreedy:
                     best, best_route, chosen = gain / seconds, route, block
         if best_route:
             self._claimed[drone.id] = chosen
+            self._notes.append({"kind": "sortie", "drone": drone.id,
+                                "text": f"Drone {drone.id + 1}: block with {best * 60:.1%} chance of finding per minute of flight"})
         return at_altitude(best_route, self.fleet.alt_m)
 
     def probability_map(self):
         return self.belief.poa
+
+    def drain_notes(self) -> list[dict]:
+        notes, self._notes = self._notes, []
+        return notes
 
     def _advance(self, t_s: float) -> None:
         while self._t_s + PREDICT_EVERY_S <= t_s:

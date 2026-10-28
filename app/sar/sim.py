@@ -16,6 +16,7 @@ import numpy as np
 from app.sar.detection import DetectionModel
 from app.sar.cues import Report
 from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
+from app.sar.recorder import Recorder
 from app.sar.routing import path_length, safe_path
 from app.sar.scenario import Scenario
 from app.sar.stats import lost_person_stats
@@ -58,8 +59,9 @@ class RunResult:
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
                  detection: DetectionModel = DetectionModel(), seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
-                 reports: list[Report] | tuple[Report, ...] = ()):
+                 reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None):
         self.scenario, self.planner, self.fleet, self.detection = scenario, planner, fleet, detection
+        self.rec = recorder  # None in benchmarks: recording costs time
         self.pending_reports = sorted(reports, key=lambda r: r.t_s)
         self.map = scenario.map
         self.detect_rng = np.random.default_rng(seed)
@@ -73,7 +75,10 @@ class Sim:
         t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max = 0.0, None, 0, 0.0, 0, 0.0, 0.0
         while t < self.max_s and found_s is None:
             while self.pending_reports and self.pending_reports[0].t_s <= t:
-                self.planner.observe(self.pending_reports.pop(0))
+                report = self.pending_reports.pop(0)
+                if self.rec:
+                    self.rec.add("report", t, text=report.text)
+                self.planner.observe(report)
             for d in self.drones:
                 if self._at_base(d) and not d.route and t >= d.ready_at_s:
                     plan_ms_max = max(plan_ms_max, self._launch(d, t))
@@ -84,10 +89,14 @@ class Sim:
                 if not d.returning and d.battery_s < self._time_home(d) + 2 * self.dt_s:
                     self._send_home(d)
                     forced += 1
+                    if self.rec:
+                        self.rec.add("forced_return", t, drone=d.id)
                 for photo_at in self._move(d):
                     photos += 1
                     if self._look(d, t, *photo_at):
                         found_s = t
+                        if self.rec:
+                            self.rec.add("found", t, drone=d.id, y_m=round(d.y, 1), x_m=round(d.x, 1))
                         break
                 if self.map.no_fly[self.map.grid.cell_of(d.y, d.x)]:
                     no_fly_s += self.dt_s
@@ -97,6 +106,8 @@ class Sim:
                     d.battery_s, d.ready_at_s = self.fleet.endurance_s, t + self.fleet.swap_s
                 if found_s is not None:
                     break
+            if self.rec:
+                self.rec.tick(t, self.drones, self.planner)
             t += self.dt_s
         return RunResult(self.planner.name, self.scenario.name, found_s, photos, flight_s, forced, no_fly_s,
                          plan_ms_max, self.detection.calibrated)
@@ -176,6 +187,8 @@ class Sim:
         cells = self.map.grid.footprint(y, x, *((along, across) if east_west else (across, along)))
         pod = np.where(d.seen[cells], 0.0, self._pod(d.alt_m)[cells])
         d.seen[cells] = True
+        if self.rec:
+            self.rec.add("photo", t, drone=d.id, cells=[cells[0].start, cells[0].stop, cells[1].start, cells[1].stop])
         subject = self.scenario.subject_at(t)
         if subject is not None:
             r, c = subject
