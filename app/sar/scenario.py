@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from app.sar.grid import Grid, Terrain
+from app.sar.routing import distance_field
 from app.sar.walker import RECORD_S, truth_track
 
 # Relative ease of walking through each terrain class (0 = impassable). Used by the motion model and the truth walker.
@@ -60,8 +61,8 @@ def synthetic(seed: int, size: int = 120, cell_m: float = 25.0, category: str = 
     terrain = _terrain(rng, size)
     trails = _trails(rng, size, n=3)
     terrain[trails] = Terrain.OPEN
-    no_fly = _power_line(rng, size, width=2)
     ipp = (size // 2 + int(rng.integers(-size // 8, size // 8)), size // 2 + int(rng.integers(-size // 8, size // 8)))
+    no_fly = _restricted_zone(rng, grid, ipp)
     search_map = SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category)
     return Scenario(f"synthetic-{seed}", search_map, truth_track(search_map, category, rng, TRACK_HOURS))
 
@@ -99,8 +100,15 @@ def _trails(rng: np.random.Generator, size: int, n: int) -> np.ndarray:
     return trails
 
 
-def _power_line(rng: np.random.Generator, size: int, width: int) -> np.ndarray:
-    no_fly = np.zeros((size, size), bool)
-    col = int(rng.integers(size // 5, 4 * size // 5))
-    no_fly[:, col : col + width] = True
-    return no_fly
+def _restricted_zone(rng: np.random.Generator, grid: Grid, ipp: tuple[int, int]) -> np.ndarray:
+    """A round no-fly zone of 200-400 m radius (say, a heliport or a nesting site), clear of the IPP and base, and
+    never cutting off part of the area that drones then couldn't reach."""
+    radius = rng.uniform(200, 400) / grid.cell_m
+    r, c = np.indices(grid.shape)
+    while True:
+        centre = rng.uniform(0, grid.rows), rng.uniform(0, grid.cols)
+        if np.hypot(centre[0] - ipp[0], centre[1] - ipp[1]) <= radius + 4:
+            continue
+        no_fly = np.hypot(r + 0.5 - centre[0], c + 0.5 - centre[1]) <= radius
+        if np.isfinite(distance_field(grid, no_fly, ipp)[~no_fly]).all():
+            return no_fly

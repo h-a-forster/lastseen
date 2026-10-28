@@ -2,27 +2,29 @@
 
 import math
 from collections import deque
+from collections.abc import Callable
 
 import numpy as np
 
 from app.sar.grid import Grid
+from app.sar.routing import path_length  # noqa: F401  (re-exported for planners)
 
 Point = tuple[float, float]
 
 
 def lanes(grid: Grid, no_fly: np.ndarray, rows: slice, cols: slice, lane_m: float) -> list[tuple[Point, Point]]:
-    """Back-and-forth lanes (north-south) covering a block of cells, split around no-fly cells. Each lane is (start, end)."""
+    """Back-and-forth lanes (north-south) covering a block of cells, split around no-fly cells. Each lane is (start, end),
+    from the centre of its first free cell to the centre of its last, so no waypoint sits in a no-fly cell."""
     x0, x1 = cols.start * grid.cell_m, cols.stop * grid.cell_m
     out: list[tuple[Point, Point]] = []
     n = max(1, math.ceil((x1 - x0) / lane_m))
     for i in range(n):
         x = x0 + (i + 0.5) * (x1 - x0) / n
         col = min(int(x // grid.cell_m), grid.cols - 1)
-        segments = _free_runs(~no_fly[rows, col], rows.start)
+        segments = [(((a + 0.5) * grid.cell_m, x), ((b - 0.5) * grid.cell_m, x)) for a, b in _free_runs(~no_fly[rows, col], rows.start)]
         if i % 2:
-            segments = [(b, a) for a, b in reversed(segments)]
-        for a, b in segments:
-            out.append(((a * grid.cell_m, x), (b * grid.cell_m, x)))
+            segments = [(end, start) for start, end in reversed(segments)]
+        out.extend(segments)
     return out
 
 
@@ -38,10 +40,6 @@ def _free_runs(free: np.ndarray, offset: int) -> list[tuple[int, int]]:
     if start is not None:
         runs.append((offset + start, offset + len(free)))
     return runs
-
-
-def path_length(points: list[Point]) -> float:
-    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:]))
 
 
 def flatten(lane_list: list[tuple[Point, Point]]) -> list[Point]:
@@ -61,15 +59,15 @@ def densify(points: list[Point], step_m: float) -> list[Point]:
     return out
 
 
-def take_sortie(path: deque[Point], base: Point, speed_mps: float, endurance_s: float) -> list[Point]:
-    """Pop the longest prefix of `path` a drone can fly from base and back on one battery (5% margin)."""
-    budget_m = 0.95 * endurance_s * speed_mps
+def take_sortie(path: deque[Point], home_m: Callable[[Point], float], budget_m: float) -> list[Point]:
+    """Pop the longest prefix of `path` a drone can fly out to, along and back from within `budget_m` of flight.
+    `home_m(p)` is the flying distance between base and p (around no-fly areas)."""
     route: list[Point] = []
     flown = 0.0
     while path:
-        here, nxt = route[-1] if route else base, path[0]
-        leg = math.hypot(nxt[0] - here[0], nxt[1] - here[1])
-        if flown + leg + math.hypot(nxt[0] - base[0], nxt[1] - base[1]) > budget_m:
+        nxt = path[0]
+        leg = math.dist(route[-1], nxt) if route else home_m(nxt)
+        if flown + leg + home_m(nxt) > budget_m:
             break
         flown += leg
         route.append(path.popleft())

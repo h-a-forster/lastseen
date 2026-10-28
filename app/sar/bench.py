@@ -34,14 +34,15 @@ class SeedResult:
     runs: dict[str, RunResult]
 
 
-def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str) -> SeedResult:
-    scenario = synthetic(seed, category=category)
+def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int) -> SeedResult:
+    scenario = synthetic(seed, size=size, category=category)
     runs = {name: Sim(scenario, PLANNERS[name](), fleet, seed=seed, max_s=max_s).run() for name in planner_names}
     return SeedResult(seed, scenario.subject_at(0) is not None, runs)
 
 
-def run(seeds: list[int], planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, workers: int) -> list[SeedResult]:
-    job = partial(run_seed, planner_names=planner_names, fleet=fleet, max_s=max_s, category=category)
+def run(seeds: list[int], planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
+        workers: int) -> list[SeedResult]:
+    job = partial(run_seed, planner_names=planner_names, fleet=fleet, max_s=max_s, category=category, size=size)
     if workers <= 1:
         return [job(s) for s in seeds]
     with ProcessPoolExecutor(workers) as pool:
@@ -96,6 +97,7 @@ def main() -> None:
     parser.add_argument("--drones", type=int, default=3)
     parser.add_argument("--hours", type=float, default=4.0)
     parser.add_argument("--category", default="dementia")
+    parser.add_argument("--size", type=int, default=120, help="map side in 25 m cells (120 = 3 km; hikers need ~320)")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--json", help="also write the summary and per-seed times here")
     args = parser.parse_args()
@@ -103,10 +105,10 @@ def main() -> None:
     seeds = list(SEED_SETS[args.set][: args.seeds])
     max_s = args.hours * 3600
     started = time.perf_counter()
-    results = run(seeds, names, FleetSpec(drones=args.drones), max_s, args.category, args.workers)
+    results = run(seeds, names, FleetSpec(drones=args.drones), max_s, args.category, args.size, args.workers)
     summary = summarise(results, names, args.reference, max_s)
     print_table(summary, args.reference)
-    print(f"{args.set} set, {len(seeds)} scenarios, {args.category}, in {time.perf_counter() - started:.0f} s")
+    print(f"{args.set} set, {len(seeds)} scenarios, {args.category}, {args.size * 25 / 1000:g} km map, in {time.perf_counter() - started:.0f} s")
     if args.json:
         summary["args"] = vars(args)
         summary["per_seed"] = [{"seed": r.seed, "found_s": {k: v.found_s for k, v in r.runs.items()}} for r in results]

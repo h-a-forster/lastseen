@@ -15,10 +15,12 @@ import numpy as np
 
 from app.sar.detection import DetectionModel
 from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
+from app.sar.routing import path_length, safe_path
 from app.sar.scenario import Scenario
 from app.sar.stats import lost_person_stats
 
 IDLE_RETRY_S = 60.0
+DETOUR_MARGIN_S = 120.0  # below this much spare battery, the time home is measured along the detour
 
 
 @dataclass
@@ -102,7 +104,7 @@ class Sim:
         elapsed_ms = (time.perf_counter() - started) * 1000
         self._check(route)
         if route:
-            d.route, d.returning = route, False
+            d.route, d.returning = self._safe((d.y, d.x), route), False
             d.seen = np.zeros(self.map.grid.shape, bool)
         else:
             d.ready_at_s = t + IDLE_RETRY_S
@@ -113,17 +115,31 @@ class Sim:
         for y, x, alt in route:
             if not (0 <= y <= height and 0 <= x <= width):
                 raise ValueError(f"{self.planner.name}: waypoint ({y:.0f}, {x:.0f}) is outside the search area")
+            if self.map.no_fly[self.map.grid.cell_of(y, x)]:
+                raise ValueError(f"{self.planner.name}: waypoint ({y:.0f}, {x:.0f}) is in a no-fly area")
             if not MIN_ALT_M <= alt <= MAX_ALT_M:
                 raise ValueError(f"{self.planner.name}: altitude {alt} m is outside {MIN_ALT_M}-{MAX_ALT_M} m")
 
     def _send_home(self, d: Drone) -> None:
-        d.route, d.returning = [(*self.base_m, d.alt_m)], True
+        d.route, d.returning = self._safe((d.y, d.x), [(*self.base_m, d.alt_m)]), True
+
+    def _safe(self, start: tuple[float, float], route: list[Waypoint]) -> list[Waypoint]:
+        """The autopilot's version of a route: legs that would cross a no-fly area become detours around it, flown
+        at the altitude of the leg they replace."""
+        out, here = [], start
+        for y, x, alt in route:
+            out.extend((py, px, alt) for py, px in safe_path([here, (y, x)], self.map.no_fly, self.map.grid)[1:])
+            here = (y, x)
+        return out
 
     def _at_base(self, d: Drone) -> bool:
         return math.hypot(d.y - self.base_m[0], d.x - self.base_m[1]) < 1.0
 
     def _time_home(self, d: Drone) -> float:
-        return math.hypot(d.y - self.base_m[0], d.x - self.base_m[1]) / self.fleet.speed_mps
+        straight = math.hypot(d.y - self.base_m[0], d.x - self.base_m[1]) / self.fleet.speed_mps
+        if d.battery_s > straight + DETOUR_MARGIN_S:
+            return straight  # far from the limit; skip the costlier detour check
+        return path_length(safe_path([(d.y, d.x), self.base_m], self.map.no_fly, self.map.grid)) / self.fleet.speed_mps
 
     def _move(self, d: Drone) -> list[tuple[float, float, bool]]:
         """Advance along the route for one step; return where photos were taken (none on the way home), each with
