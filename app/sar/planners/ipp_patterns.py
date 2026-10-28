@@ -2,7 +2,7 @@
 
 They use no probability map, only the fact that people are usually found near where they were last seen, and they
 are strong: in the SAREnv benchmark (Bristol, 2025) they found as many subjects as probability-greedy search.
-Each builds fixed paths once; drones then fly them in battery-sized pieces.
+Each builds fixed paths once; drones fly them in battery-sized pieces and start another pass when one ends.
 """
 
 import math
@@ -26,10 +26,11 @@ class _PathPlanner:
         centre = grid.centre_m(*search_map.ipp)
         reach = max(math.hypot(y - centre[0], x - centre[1]) for y in (0, height) for x in (0, width))
         lane_m = fleet.footprint_m[0] * (1 - fleet.overlap)
-        self._paths = [
-            deque(p for p in densify(path, STEP_M) if 0 <= p[0] <= height and 0 <= p[1] <= width)
+        self._full = [
+            [p for p in densify(path, STEP_M) if 0 <= p[0] <= height and 0 <= p[1] <= width]
             for path in self.paths(centre, lane_m, reach, fleet.drones)
         ]
+        self._paths = [deque(path) for path in self._full]
 
     def paths(self, centre: Point, lane_m: float, reach_m: float, drones: int) -> list[list[Point]]:
         raise NotImplementedError
@@ -38,7 +39,10 @@ class _PathPlanner:
         pass
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
-        path = self._paths[drone.id % len(self._paths)]
+        i = drone.id % len(self._paths)
+        if not self._paths[i]:
+            self._paths[i].extend(self._full[i])
+        path = self._paths[i]
         route = take_sortie(path, (drone.y_m, drone.x_m), self.fleet.speed_mps, self.fleet.endurance_s)
         return at_altitude(route, self.fleet.alt_m)
 

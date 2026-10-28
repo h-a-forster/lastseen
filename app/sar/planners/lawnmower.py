@@ -1,6 +1,6 @@
 """Baseline: split the area into one strip per drone and sweep each strip in parallel lanes, battery by battery.
 
-This is the standard parallel-track pattern; it ignores the probability map entirely.
+This is the standard parallel-track pattern; it ignores the probability map entirely. When a strip is done, it starts again.
 """
 
 from app.sar.detection import DetectionModel
@@ -16,16 +16,19 @@ class Lawnmower:
         self.fleet = fleet
         grid = search_map.grid
         lane_m = fleet.footprint_m[0] * (1 - fleet.overlap)
-        self._todo = [
+        self._strips = [
             lanes(grid, search_map.no_fly, slice(0, grid.rows), slice(grid.cols * i // fleet.drones, grid.cols * (i + 1) // fleet.drones), lane_m)
             for i in range(fleet.drones)
         ]
+        self._todo = [list(strip) for strip in self._strips]
 
     def observe(self, event: Look) -> None:
         pass
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         todo = self._todo[drone.id]
+        if not todo:
+            todo.extend(self._strips[drone.id])
         base = (drone.y_m, drone.x_m)
         route: list[Point] = []
         while todo:
