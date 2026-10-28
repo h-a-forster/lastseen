@@ -43,6 +43,7 @@ class Scenario:
     name: str
     map: SearchMap
     track: np.ndarray  # hidden truth: (records, 2) subject position in metres, every RECORD_S from the search start
+    start_heading: float  # hidden truth: direction they set off in (radians; dy = sin, dx = cos)
 
     def subject_at(self, t_s: float) -> tuple[int, int] | None:
         """The subject's cell at search time `t_s`, or None while they are outside the mapped area."""
@@ -64,7 +65,7 @@ def synthetic(seed: int, size: int = 120, cell_m: float = 25.0, category: str = 
     ipp = (size // 2 + int(rng.integers(-size // 8, size // 8)), size // 2 + int(rng.integers(-size // 8, size // 8)))
     no_fly = _restricted_zone(rng, grid, ipp)
     search_map = SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category)
-    return Scenario(f"synthetic-{seed}", search_map, truth_track(search_map, category, rng, TRACK_HOURS))
+    return Scenario(f"synthetic-{seed}", search_map, *truth_track(search_map, category, rng, TRACK_HOURS))
 
 
 def _terrain(rng: np.random.Generator, size: int) -> np.ndarray:

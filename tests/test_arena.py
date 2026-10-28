@@ -57,3 +57,12 @@ def test_detours_go_around_no_fly_and_cost_the_extra_distance():
     assert all(is_clear(p, q, no_fly, grid) for p, q in zip(path, path[1:]))
     assert path_length(path) > 1.5 * path_length([a, b])
     assert distance_field(grid, no_fly, (10, 2))[10, 17] == pytest.approx(path_length(path), rel=0.15)
+
+
+def test_reports_are_fixed_by_the_seed_and_mistaken_witnesses_happen_at_the_set_rate():
+    from app.sar.cues import RELIABILITY, reports_for
+
+    first = reports_for(synthetic(5, category="dementia"), 5)
+    assert first == reports_for(synthetic(5, category="dementia"), 5)
+    headings = [c.true for s in range(200) for c in reports_for(synthetic(s, category="dementia"), s)[1] if c.kind == "heading"]
+    assert abs(np.mean(headings) - RELIABILITY["heading"]) < 0.1

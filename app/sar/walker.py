@@ -101,11 +101,12 @@ def walk(search_map: SearchMap, category: str, rng: np.random.Generator, n: int,
     return Walk(start_heading, np.array(records))
 
 
-def truth_track(search_map: SearchMap, category: str, rng: np.random.Generator, hours: float) -> np.ndarray:
-    """One subject's positions (records, 2) from the moment the search starts, one per RECORD_S."""
+def truth_track(search_map: SearchMap, category: str, rng: np.random.Generator, hours: float) -> tuple[np.ndarray, float]:
+    """One subject: positions (records, 2) from the moment the search starts, one per RECORD_S, and the heading
+    (radians) they set off in, which a witness may have seen."""
     delay_s = rng.uniform(*PARAMS[category].report_delay_h) * 3600
     w = walk(search_map, category, rng, 1, delay_s + hours * 3600)
-    return w.positions[int(delay_s // RECORD_S):, 0]
+    return w.positions[int(delay_s // RECORD_S):, 0], float(w.start_heading[0])
 
 
 def _cells(grid: Grid, pos: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
