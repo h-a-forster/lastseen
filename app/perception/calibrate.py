@@ -53,6 +53,22 @@ def false_alarms_per_tile(records: list[dict]) -> float:
     return alarms / len(records)
 
 
+def empty_ground(records: list[dict]) -> dict:
+    """Alarms on tiles with nobody in them: the cost a reviewer pays on the ground a search mostly photographs.
+    The simulator uses scale 1 (the detector run on full-resolution tiles, as it would be on a drone photo)."""
+    by_scale = {}
+    for scale in sorted({r["scale"] for r in records}):
+        empty = [r for r in records if r["scale"] == scale and not r["touching"]]
+        alarms = sum(1 for r in empty for c in r["candidates"] if c["spark"] and c["spark"]["person"])
+        proposals = sum(len(r["candidates"]) for r in empty)
+        by_scale[str(scale)] = {"tiles": len(empty), "sam_proposals": proposals, "alarms": alarms,
+                                "ci95": list(wilson(alarms, len(empty)))}
+    full = by_scale.get("1", {"tiles": 0, "alarms": 0})
+    rate = full["alarms"] / full["tiles"] if full["tiles"] else 0.0
+    return {"alarms_per_tile": round(rate, 5), "by_scale": by_scale,
+            "note": "alarms = SAM proposals Spark accepted as a person, on tiles where no labelled person appears"}
+
+
 def main() -> None:
     records = load()
     bins = recall_by_size(records)
@@ -63,6 +79,7 @@ def main() -> None:
         "nominal_person_m": NOMINAL_PERSON_M,
         "recall_by_size_px": bins,
         "false_alarms_per_tile": round(false_alarms_per_tile(records), 3),
+        "empty_ground": empty_ground(records),
         "terrain_factor": TERRAIN_FACTOR,
         "gsd_cm": list(GSD_CM),
         "pod_by_terrain": pod_curve(bins),
@@ -74,7 +91,10 @@ def main() -> None:
         print(f"  {b['px'][0]:>3}-{b['px'][1]:<4g} px  {b['found']}/{b['people']}  {b['recall']:.0%}")
     for g, p in zip(GSD_CM, table["pod_by_terrain"]["OPEN"]):
         print(f"  {g:g} cm/px ({NOMINAL_PERSON_M * 100 / g:.0f} px person): POD open {p:.2f}, forest {p * 0.4:.2f}")
-    print(f"  false alarms per tile {table['false_alarms_per_tile']}")
+    print(f"  false alarms per tile {table['false_alarms_per_tile']} (all tiles, incl. unlabelled people)")
+    for scale, e in table["empty_ground"]["by_scale"].items():
+        print(f"  empty ground, scale {scale}: {e['alarms']} alarms on {e['tiles']} tiles "
+              f"(95% up to {e['ci95'][1]:.3f} per tile), {e['sam_proposals']} SAM proposals")
 
 
 if __name__ == "__main__":

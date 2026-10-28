@@ -1,5 +1,5 @@
 {
- "source": "HERIDAL test split, 101 photos (CC BY 3.0 repack, doi:10.5281/zenodo.5662350); 173 tiles of 1000 px at 1x, 2x and 3x shrink; 263 people",
+ "source": "HERIDAL test split, 101 photos (CC BY 3.0 repack, doi:10.5281/zenodo.5662350); 573 tiles of 1000 px at 1x, 2x and 3x shrink; 263 people",
  "pipeline": "SAM 3.1 'person' proposals, each checked by Muse Spark on a 3x close-up",
  "nominal_person_m": 1.2,
  "recall_by_size_px": [
@@ -95,7 +95,40 @@
    ]
   }
  ],
- "false_alarms_per_tile": 0.092,
+ "false_alarms_per_tile": 0.035,
+ "empty_ground": {
+  "alarms_per_tile": 0.00937,
+  "by_scale": {
+   "1": {
+    "tiles": 320,
+    "sam_proposals": 3,
+    "alarms": 3,
+    "ci95": [
+     0.003193310923661572,
+     0.02719685513283024
+    ]
+   },
+   "2": {
+    "tiles": 120,
+    "sam_proposals": 1,
+    "alarms": 1,
+    "ci95": [
+     0.001472517830674952,
+     0.045697415374322405
+    ]
+   },
+   "3": {
+    "tiles": 13,
+    "sam_proposals": 0,
+    "alarms": 0,
+    "ci95": [
+     0.0,
+     0.22810184305529166
+    ]
+   }
+  },
+  "note": "alarms = SAM proposals Spark accepted as a person, on tiles where no labelled person appears"
+ },
  "terrain_factor": {
   "OPEN": 1.0,
   "SCRUB": 1.0,

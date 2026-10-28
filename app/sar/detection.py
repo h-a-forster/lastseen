@@ -32,6 +32,7 @@ class DetectionModel:
     gsd_cm: tuple[float, ...] = _PLACEHOLDER_GSD
     pod_by_terrain: dict[Terrain, tuple[float, ...]] = field(default_factory=lambda: dict(_PLACEHOLDER_POD))
     calibrated: bool = False
+    alarms_per_tile: float = 0.0  # candidates a reviewer must reject, per detector tile of empty ground
 
     @classmethod
     def load(cls, path: Path = TABLE) -> "DetectionModel":
@@ -39,7 +40,13 @@ class DetectionModel:
         if not path.exists():
             return cls()
         table = json.loads(path.read_text(encoding="utf-8"))
-        return cls(tuple(table["gsd_cm"]), {t: tuple(table["pod_by_terrain"][t.name]) for t in Terrain}, calibrated=True)
+        alarms = table.get("empty_ground", {}).get("alarms_per_tile", 0.0)
+        return cls(tuple(table["gsd_cm"]), {t: tuple(table["pod_by_terrain"][t.name]) for t in Terrain}, True, alarms)
+
+    def terrain_factor(self, gsd_cm: float, terrain: Terrain) -> float:
+        """This terrain's POD relative to open ground at the same resolution (1 = as easy as open ground)."""
+        open_pod = np.interp(gsd_cm, self.gsd_cm, self.pod_by_terrain[Terrain.OPEN])
+        return float(np.interp(gsd_cm, self.gsd_cm, self.pod_by_terrain[terrain]) / open_pod) if open_pod > 0 else 0.0
 
     def pod(self, gsd_cm: float, terrain: np.ndarray) -> np.ndarray:
         """POD for each cell of `terrain` seen in one photo taken at `gsd_cm`."""

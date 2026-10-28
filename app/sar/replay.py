@@ -4,6 +4,9 @@ The replay page plays the file back. Spark readings come from the cache only (no
     uv run python -m app.sar.replay --seed 17 --planners lawnmower,greedy,greedy+spark
     uv run python -m app.sar.replay --seed 3 --live --usd-cap 0.05
 
+Races run in imagery mode when gate 1's results are here: every photo that has the person in it is decided by a real
+SAM 3.1 + Muse Spark answer on a real drone photo of a person that size, and the page shows that photo.
+
 One scenario is an illustration, not evidence: the benchmark (`app.sar.bench`) is where claims come from.
 """
 
@@ -14,6 +17,8 @@ import os
 import re
 from pathlib import Path
 
+from app.perception import pool as photo_pool
+from app.perception.heridal import CREDIT
 from app.sar.bench import make_planner
 from app.sar.cues import Cue, reports_for
 from app.sar.interface import FleetSpec
@@ -31,17 +36,20 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     scenario = synthetic(seed, size=size, category=category)
     reports, cues = reports_for(scenario, seed)
     fleet = FleetSpec(drones=drones)
+    photos = photo_pool.shared()
     lanes = {}
     for name in planner_names:
         recorder = Recorder()
         result = Sim(scenario, make_planner(name), fleet, seed=seed, max_s=hours * 3600, reports=reports,
-                     recorder=recorder).run()
+                     recorder=recorder, photos=photos).run()
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {
         "id": run_id(seed, category, planner_names),
         "seed": seed,
         "category": category,
         "hours": hours,
+        "imagery": photos is not None,
+        "photo_credit": CREDIT if photos is not None else None,
         "fleet": {"drones": drones, "speed_mps": fleet.speed_mps, "alt_m": fleet.alt_m,
                   "footprint_m": fleet.footprint_m, "endurance_s": fleet.endurance_s},
         "map": map_json(scenario),

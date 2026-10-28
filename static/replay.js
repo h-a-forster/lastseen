@@ -67,8 +67,11 @@ function prepareLane(name, lane, map) {
     frames: byType("drones"),
     maps: byType("map").map((m) => ({ t_s: m.t_s, image: heatImage(m) })),
     notes: byType("note"),
+    sightings: byType("sighting"),
     searched,
     photoIndex: 0,
+    alarmCount: 0,
+    shownPhoto: false,
   };
 }
 
@@ -149,11 +152,14 @@ function updateSearched(lane, t) {
   if (lane.photoIndex > 0 && lane.photos[lane.photoIndex - 1].t_s > t) {
     ctx.clearRect(0, 0, lane.searched.width, lane.searched.height);
     lane.photoIndex = 0;
+    lane.alarmCount = 0;
   }
   ctx.fillStyle = "rgb(125, 211, 252)";
   while (lane.photoIndex < lane.photos.length && lane.photos[lane.photoIndex].t_s <= t) {
-    const [r0, r1, c0, c1] = lane.photos[lane.photoIndex++].cells;
+    const photo = lane.photos[lane.photoIndex++];
+    const [r0, r1, c0, c1] = photo.cells;
     ctx.fillRect(c0, r0, c1 - c0, r1 - r0);
+    lane.alarmCount += photo.alarms || 0;
   }
 }
 
@@ -222,6 +228,7 @@ function buildLaneDom() {
       <p class="text-xs text-slate-400 px-1 mb-2">${(PLANNERS[lane.name] || ["", ""])[1]}</p>
       <canvas data-lane="${i}" class="w-full rounded"></canvas>
       <p data-note class="text-xs text-slate-400 px-1 mt-2 min-h-[2.5em]"></p>
+      <div data-photo class="px-1"></div>
     </article>`).join("");
   document.querySelectorAll("#lanes article").forEach((el, i) => {
     const lane = state.lanes[i];
@@ -231,7 +238,11 @@ function buildLaneDom() {
     lane.ctx = lane.canvas.getContext("2d");
     lane.statusEl = el.querySelector("[data-status]");
     lane.noteEl = el.querySelector("[data-note]");
+    lane.photoEl = el.querySelector("[data-photo]");
   });
+  $("imagery").innerHTML = state.run.imagery
+    ? "Every photo that has the missing person in it is decided by a real SAM 3.1 + Muse Spark answer on a real drone photo of a person that size. Flagged = alarms a reviewer checks instead of every photo."
+    : "Detections are sampled from the measured table (no photo pool on this server).";
   $("legend").innerHTML = [
     ...TERRAIN.map(([name, rgb]) => swatch(`rgb(${rgb})`, name)),
     swatch(`rgb(${TRAIL})`, "Trail"),
@@ -244,10 +255,15 @@ function buildLaneDom() {
 function updateLaneText(lane, t) {
   const found = lane.found && t >= lane.found.t_s;
   const ended = !lane.found && t >= lane.endT;
-  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photos`;
+  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photos · ${lane.alarmCount} flagged`;
   lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
   const sortie = lastAt(lane.notes.filter((n) => n.kind === "sortie"), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
+  const hit = found && lane.sightings.find((s) => s.found);
+  if (Boolean(hit) !== lane.shownPhoto) {
+    lane.shownPhoto = Boolean(hit);
+    lane.photoEl.innerHTML = hit ? `${photoHtml(hit)}<p class="text-xs text-slate-400 mt-1">${sightingText(hit)} · ${lane.photoIndex} photos taken, ${lane.alarmCount} flagged for review</p>` : "";
+  }
 }
 
 function feedItems() {
@@ -258,6 +274,12 @@ function feedItems() {
       if (note.kind === "spark_failed") items.push({ t_s: note.t_s, html: `<p class="text-amber-300">${note.text}</p>` });
     }
     if (lane.found) items.push({ t_s: lane.found.t_s, html: `<p class="text-green-400 font-medium">${label(lane.name)}: person found</p>` });
+    if ($("show-truth").checked) {
+      for (const s of lane.sightings.filter((s) => !s.found)) {
+        items.push({ t_s: s.t_s, html: `<p class="text-xs uppercase tracking-wide text-rose-300">${label(lane.name)}: drone ${s.drone + 1} photographed her, no alarm</p>
+          <p class="text-xs text-slate-300">${sightingText(s)}</p>${s.canopy ? "" : photoHtml(s)}` });
+      }
+    }
   }
   return items.sort((a, b) => b.t_s - a.t_s);
 }
@@ -293,6 +315,28 @@ function hypothesesHtml(note) {
     ${note.hypotheses.map((h) => bar(h.name, h.weight, h.reason)).join("")}
     ${bar("None of these (keep the statistical map)", note.rest_weight, "")}
     ${note.dropped.length ? `<p class="text-xs text-slate-500 mt-1.5">Discarded: ${note.dropped.map(escapeHtml).join("; ")}</p>` : ""}`;
+}
+
+function sightingText(s) {
+  if (s.found) return `SAM 3.1 flagged her (${Math.round(s.sam * 100)}%), Muse Spark: "${escapeHtml(s.spark)}"`;
+  if (s.canopy) return "Under tree cover: hidden from the camera (forest detection is an assumed 40% of open ground).";
+  if (s.sam == null) return `SAM 3.1 proposed nothing on a person ${s.size_px} px across.`;
+  return `SAM 3.1 flagged her (${Math.round(s.sam * 100)}%), but Muse Spark said "${escapeHtml(s.spark || "not a person")}".`;
+}
+
+function photoHtml(s) {
+  // A window of the real 1000 px tile around the person, with the person's labelled box.
+  const W = 300, H = 200;
+  const [x1, y1, x2, y2] = s.box;
+  const span = Math.max(200, 5 * s.size_px);
+  const k = W / span;
+  const left = (x1 + x2) / 2 - span / 2, top = (y1 + y2) / 2 - H / k / 2;
+  const colour = s.found ? "border-green-400" : "border-rose-400";
+  return `<div class="relative mt-1.5 rounded overflow-hidden bg-slate-800" style="width:${W}px;height:${H}px;max-width:100%">
+      <div class="absolute inset-0" style="background:url(/api/tiles/${s.tile}.jpg) no-repeat;background-size:${1000 * k}px;background-position:${-left * k}px ${-top * k}px"></div>
+      <div class="absolute border-2 ${colour}" style="left:${(x1 - left) * k - 3}px;top:${(y1 - top) * k - 3}px;width:${(x2 - x1) * k + 6}px;height:${(y2 - y1) * k + 6}px"></div>
+    </div>
+    <p class="text-[10px] text-slate-500 mt-0.5">Real drone photo: ${escapeHtml(state.run.photo_credit || "")}</p>`;
 }
 
 // ---------- playback ----------

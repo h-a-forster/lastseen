@@ -3,6 +3,8 @@ alarm by the rules in `gate.py`."""
 
 from pathlib import Path
 
+import numpy as np
+
 from app.perception.gate import Tile, score, tiles_at
 from app.perception.heridal import Photo
 
@@ -39,3 +41,18 @@ def test_measured_table_loads_and_detection_falls_with_altitude():
     low, high = model.pod(1.5, open_ground)[0, 0], model.pod(5.0, open_ground)[0, 0]
     assert 0.8 < low <= 1.0 and high < low
     assert model.pod(1.5, np.full((1, 1), Terrain.FOREST))[0, 0] < low
+
+
+def test_photo_pool_draws_a_person_the_size_the_drone_would_see():
+    from app.perception.pool import PhotoPool, person_px
+
+    def record(i, side, found):
+        person = [100, 100, 100 + side / 2, 100 + side]
+        candidates = [{"box": person, "c": 0.9, "spark": {"person": True, "looks_like": "person"}}] if found else []
+        return {"key": f"p{i}@1:0,0", "people": [person], "touching": [person], "candidates": candidates}
+
+    pool = PhotoPool([record(i, 20, False) for i in range(5)] + [record(i + 5, 70, True) for i in range(5)])
+    rng = np.random.default_rng(0)
+    assert all(pool.shot(120 / 70, rng).detected for _ in range(20))
+    assert not any(pool.shot(120 / 20, rng).detected for _ in range(20))
+    assert round(person_px(1.65)) == 73

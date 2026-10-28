@@ -34,6 +34,11 @@ class Camera:
         """Ground sample distance: centimetres of ground per pixel."""
         return 100 * self.footprint_m(alt_m)[0] / self.width_px
 
+    def tiles_per_photo(self, tile_px: int = 1000) -> int:
+        """How many detector tiles one full-resolution photo is cut into (the detector sees ~1000 px squares)."""
+        height_px = self.width_px * math.tan(math.radians(self.vfov_deg) / 2) / math.tan(math.radians(self.hfov_deg) / 2)
+        return math.ceil(self.width_px / tile_px) * math.ceil(height_px / tile_px)
+
 
 @dataclass(frozen=True)
 class Grid:

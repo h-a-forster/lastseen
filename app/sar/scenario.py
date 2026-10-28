@@ -10,7 +10,7 @@ import numpy as np
 
 from app.sar.grid import Grid, Terrain
 from app.sar.routing import distance_field
-from app.sar.walker import RECORD_S, truth_track
+from app.sar.walker import RECORD_S, WalkerParams, truth_track
 
 # Relative ease of walking through each terrain class (0 = impassable). Used by the motion model and the truth walker.
 PASSABILITY = {Terrain.OPEN: 0.8, Terrain.SCRUB: 0.5, Terrain.FOREST: 0.4, Terrain.WATER: 0.05, Terrain.BUILT: 0.6}
@@ -54,9 +54,11 @@ class Scenario:
         return grid.cell_of(y, x)
 
 
-def synthetic(seed: int, size: int = 120, cell_m: float = 25.0, category: str = "hiker") -> Scenario:
+def synthetic(seed: int, size: int = 120, cell_m: float = 25.0, category: str = "hiker",
+              truth: WalkerParams | None = None) -> Scenario:
     """A random wilderness area. The subject is moved by the truth walker (behaviour rules), not drawn from the
-    statistics planners use, so no planner is tested on its own prior."""
+    statistics planners use, so no planner is tested on its own prior. `truth` replaces the walker's parameters while
+    the map still says `category`: people who behave unlike the statistics planners were given (a stress test)."""
     rng = np.random.default_rng(seed)
     grid = Grid(size, size, cell_m)
     terrain = _terrain(rng, size)
@@ -65,7 +67,7 @@ def synthetic(seed: int, size: int = 120, cell_m: float = 25.0, category: str = 
     ipp = (size // 2 + int(rng.integers(-size // 8, size // 8)), size // 2 + int(rng.integers(-size // 8, size // 8)))
     no_fly = _restricted_zone(rng, grid, ipp)
     search_map = SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category)
-    return Scenario(f"synthetic-{seed}", search_map, *truth_track(search_map, category, rng, TRACK_HOURS))
+    return Scenario(f"synthetic-{seed}", search_map, *truth_track(search_map, category, rng, TRACK_HOURS, truth))
 
 
 def _terrain(rng: np.random.Generator, size: int) -> np.ndarray:

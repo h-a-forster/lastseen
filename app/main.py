@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from app import llm  # noqa: E402
+from app.perception import pool as photo_pool  # noqa: E402
 from app.sar import replay  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
 
@@ -77,6 +78,15 @@ def new_race(req: RaceRequest):
     finally:
         _race_lock.release()
     return {"id": path.stem}
+
+
+@app.get("/api/tiles/{tile_id}.jpg")
+def get_tile(tile_id: str):
+    """A real drone-photo tile from gate 1 (HERIDAL, CC BY 3.0), as shown in replays."""
+    path = photo_pool.tile_jpeg(tile_id) if re.fullmatch(r"[0-9a-f]{16}", tile_id) else None
+    if path is None:
+        raise HTTPException(404, "no such tile")
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
 
 
 # Serves static/index.html at "/". Keep this last so /api routes win.

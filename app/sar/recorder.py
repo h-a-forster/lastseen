@@ -2,7 +2,10 @@
 
 Events (all with `t_s`, search time in seconds):
 - `drones`: positions [y_m, x_m, returning] of every drone, every FRAME_S;
-- `photo`: the cells one photo covered, [row0, row1, col0, col1) (row1 and col1 excluded);
+- `photo`: the cells one photo covered, [row0, row1, col0, col1) (row1 and col1 excluded), and `alarms` if the photo
+  raised any false alarms for a reviewer;
+- `sighting` (imagery mode): a photo with the person in it, the real tile and person it was decided by, and what SAM 3.1
+  and Spark said (found, missed, or hidden by canopy);
 - `report`: witness text as the team received it;
 - `note`: a planner explaining itself (e.g. Spark's hypotheses, why a block was chosen), if the planner offers notes;
 - `map`: the planner's probability map, shrunk to MAP_SIDE x MAP_SIDE and scaled to 0-255, every MAP_EVERY_S;

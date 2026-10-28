@@ -130,3 +130,40 @@ def test_planners_cannot_regenerate_the_truth_or_change_the_map():
     snoop = Snoop()
     Sim(scenario, snoop, seed=5, max_s=60).run()
     assert not np.array_equal(synthetic(snoop.seed, category="dementia").track, scenario.track)
+
+
+def test_false_alarms_are_counted_without_moving_any_find():
+    import dataclasses
+
+    from app.sar.detection import DetectionModel
+
+    quiet = dataclasses.replace(DetectionModel.load(), alarms_per_tile=0.0)
+    noisy = dataclasses.replace(quiet, alarms_per_tile=0.05)
+    for seed in (4, 8, 13):
+        scenario = synthetic(seed, category="dementia")
+        for name in ("lawnmower", "greedy"):
+            a = Sim(scenario, BASELINES[name](), detection=quiet, seed=seed, max_s=3 * 3600).run()
+            b = Sim(scenario, BASELINES[name](), detection=noisy, seed=seed, max_s=3 * 3600).run()
+            assert (a.found_s, a.photos) == (b.found_s, b.photos), (seed, name)
+            assert a.alarms == 0 < b.alarms
+
+
+def test_imagery_mode_finds_only_when_the_real_photo_answer_did():
+    from app.perception.pool import Shot
+    from app.sar.detection import DetectionModel
+    from app.sar.grid import Terrain
+
+    class Pool:
+        def __init__(self, detected):
+            self.detected = detected
+
+        def shot(self, gsd_cm, rng):
+            return Shot("0" * 16, (0, 0, 20, 60), 60, self.detected, 0.9, "person")
+
+    table = DetectionModel.load()
+    no_canopy = DetectionModel(table.gsd_cm, {t: table.pod_by_terrain[Terrain.OPEN] for t in Terrain}, True)
+    scenario = synthetic(25, category="dementia")
+    missed = Sim(scenario, BASELINES["lawnmower"](), detection=no_canopy, seed=25, photos=Pool(False)).run()
+    found = Sim(scenario, BASELINES["lawnmower"](), detection=no_canopy, seed=25, photos=Pool(True)).run()
+    assert missed.found_s is None and missed.in_frame > 0
+    assert found.found_s is not None and found.in_frame == 1

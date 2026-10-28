@@ -12,3 +12,4 @@ data/runs/
 # Downloaded datasets (fetched by script; never committed) and perception results
 data/datasets/
 data/perception/
+data/tiles/

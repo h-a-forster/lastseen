@@ -2,8 +2,10 @@
 moves along its precomputed track, and the arena decides what each photo reveals. The planner hears only about photos
 that found nobody.
 
-Fast mode (here) samples each detection from the POD table, so thousands of runs cost no model calls.
-Imagery mode swaps the sampler for real aerial photos run through the perception pipeline.
+Fast mode samples each detection from the POD table, so thousands of runs cost no model calls. Imagery mode
+(`photos=PhotoPool`) decides each photo of the person with a real recorded answer of SAM 3.1 + Muse Spark on a real
+person of the same pixel size (`app.perception.pool`), also free. In both modes each photo of empty ground raises
+false alarms at the measured rate; a reviewer has to reject them, which is what the alarm count measures.
 """
 
 import copy
@@ -14,6 +16,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from app.sar.detection import DetectionModel
+from app.sar.grid import Terrain
 from app.sar.cues import Report
 from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
 from app.sar.recorder import Recorder
@@ -54,6 +57,8 @@ class RunResult:
     no_fly_s: float  # drone-seconds spent over no-fly cells; must be 0
     plan_ms_max: float
     calibrated: bool
+    alarms: int = 0  # false alarms raised on empty ground, each one for a reviewer to reject
+    in_frame: int = 0  # fresh photos that had the person in them (a miss among these is the detector's)
 
 
 def planner_seed(seed: int) -> int:
@@ -64,13 +69,17 @@ def planner_seed(seed: int) -> int:
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
                  detection: DetectionModel | None = None, seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
-                 reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None):
+                 reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None, photos=None):
         detection = detection or DetectionModel.load()
         self.scenario, self.planner, self.fleet, self.detection = scenario, planner, fleet, detection
         self.rec = recorder  # None in benchmarks: recording costs time
+        self.photos = photos  # a PhotoPool for imagery mode; None for fast mode
         self.pending_reports = sorted(reports, key=lambda r: r.t_s)
         self.map = scenario.map
         self.detect_rng = np.random.default_rng([seed, 1])  # its own stream, apart from the scenario's
+        self.alarm_rng = np.random.default_rng([seed, 4])  # and false alarms another, so they never shift detections
+        self.alarms_per_photo = detection.alarms_per_tile * fleet.camera.tiles_per_photo()
+        self.alarms, self.in_frame = 0, 0
         self.max_s, self.dt_s = max_s, dt_s
         self.base_m = self.map.grid.centre_m(*self.map.base)
         self.drones = [Drone(i, *self.base_m, fleet.alt_m, fleet.endurance_s) for i in range(fleet.drones)]
@@ -119,7 +128,7 @@ class Sim:
                 self.rec.tick(t, self.drones, self.planner)
             t += self.dt_s
         return RunResult(self.planner.name, self.scenario.name, found_s, photos, flight_s, forced, no_fly_s,
-                         plan_ms_max, self.detection.calibrated)
+                         plan_ms_max, self.detection.calibrated, self.alarms, self.in_frame)
 
     def _launch(self, d: Drone, t: float) -> float:
         """Ask the planner for a sortie; returns how long it took in ms."""
@@ -198,17 +207,40 @@ class Sim:
         cells = self.map.grid.footprint(y, x, *((along, across) if east_west else (across, along)))
         pod = np.where(d.seen[cells], 0.0, self._pod(d.alt_m)[cells])
         d.seen[cells] = True
+        alarms = int(self.alarm_rng.poisson(self.alarms_per_photo)) if self.alarms_per_photo > 0 else 0
+        self.alarms += alarms
         if self.rec:
-            self.rec.add("photo", t, drone=d.id, cells=[cells[0].start, cells[0].stop, cells[1].start, cells[1].stop])
+            self.rec.add("photo", t, drone=d.id, cells=[cells[0].start, cells[0].stop, cells[1].start, cells[1].stop],
+                         **({"alarms": alarms} if alarms else {}))
         subject = self.scenario.subject_at(t)
         if subject is not None:
             r, c = subject
             if cells[0].start <= r < cells[0].stop and cells[1].start <= c < cells[1].stop:
-                if self.detect_rng.random() < pod[r - cells[0].start, c - cells[1].start]:
+                p = pod[r - cells[0].start, c - cells[1].start]
+                self.in_frame += bool(p > 0)
+                if self._detect(d, t, r, c, p):
                     return True
         pod.flags.writeable = False
         self.planner.observe(Look(t, d.id, y, x, d.alt_m, cells, pod))
         return False
+
+    def _detect(self, d: Drone, t: float, r: int, c: int, pod: float) -> bool:
+        """Whether this photo of the person finds them: a roll against the table (fast mode), or the pipeline's
+        recorded answer on a real person of the same size, with canopy hiding them at the table's forest rate."""
+        if self.photos is None:
+            return self.detect_rng.random() < pod  # rolled even when pod is 0, so the stream matches earlier results
+        if pod <= 0:  # this sortie already photographed this spot: overlap isn't a second look
+            return False
+        gsd = self.fleet.camera.gsd_cm(d.alt_m)
+        shot = self.photos.shot(gsd, self.detect_rng)
+        factor = self.detection.terrain_factor(gsd, Terrain(int(self.map.terrain[r, c])))
+        hidden = factor < 1 and self.detect_rng.random() >= factor
+        found = shot.detected and not hidden
+        if self.rec:
+            self.rec.add("sighting", t, drone=d.id, tile=shot.tile, box=[round(v, 1) for v in shot.box],
+                         size_px=round(shot.size_px), detected=shot.detected, sam=shot.sam, spark=shot.spark,
+                         canopy=hidden, found=found)
+        return found
 
     def _pod(self, alt_m: float) -> np.ndarray:
         if alt_m not in self._pod_at:
