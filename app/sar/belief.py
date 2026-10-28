@@ -1,5 +1,6 @@
 """The probability map (probability of area, POA, per cell) and its two updates: a look that found nobody, and time passing."""
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -43,3 +44,8 @@ class Belief:
         moved = move_fraction * self.poa
         self.row += float(moved.sum() - inflow.sum())
         self.poa = self.poa - moved + inflow
+
+
+def mobility(t_s: float, m0: float = 0.3, tau_s: float = 2 * 3600) -> float:
+    """Fraction of probability mass that moves to a neighbouring cell per minute; decays as the subject tires or shelters."""
+    return m0 * math.exp(-t_s / tau_s)

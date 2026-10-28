@@ -1,6 +1,7 @@
-"""Search planners. Each turns the current map into the next sortie for one drone (see `app.sar.sim.Planner`)."""
+"""Baseline planners the team's planner is judged against. Each implements `app.sar.interface.Planner`."""
 
 from app.sar.planners.greedy import ProbabilityGreedy
+from app.sar.planners.ipp_patterns import Concentric, ExpandingSquare, Sector
 from app.sar.planners.lawnmower import Lawnmower
 
-PLANNERS = {"lawnmower": Lawnmower, "greedy": ProbabilityGreedy}
+BASELINES = {p.name: p for p in (Lawnmower, ExpandingSquare, Concentric, Sector, ProbabilityGreedy)}

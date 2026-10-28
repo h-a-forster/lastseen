@@ -8,14 +8,11 @@ subjects were found. Each ring gets that share of probability, spread over its c
 import numpy as np
 
 from app.sar.grid import Grid
+from app.sar.stats import lost_person_stats
 
-# Straight-line distance from the IPP (km) within which 25/50/75/95% of subjects were found, temperate mountainous
-# terrain. Source: Koester, Lost Person Behavior (2008), ISRID data; miles converted to km.
-RINGS_KM: dict[str, tuple[float, float, float, float]] = {
-    "dementia": (0.3, 0.8, 1.9, 8.3),
-    "child_7_9": (0.8, 1.6, 3.2, 11.3),
-    "hiker": (1.1, 3.1, 5.8, 18.2),
-    "despondent": (0.3, 1.1, 3.2, 21.4),
+# Straight-line distance from the IPP (km) within which 25/50/75/95% of subjects were found (Koester 2008, ISRID).
+RINGS_KM: dict[str, tuple[float, ...]] = {
+    name: tuple(c["rings_km"]) for name, c in lost_person_stats()["categories"].items()
 }
 
 _RING_MASS = (0.25, 0.25, 0.25, 0.20, 0.05)

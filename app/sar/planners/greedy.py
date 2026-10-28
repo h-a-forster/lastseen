@@ -1,28 +1,45 @@
-"""Baseline: probability-greedy. Each sortie sweeps the block with the most probability of success per second of
+"""Reference informed baseline: probability-greedy. It keeps its own map (distance-ring prior, Bayes update after each
+miss, diffusion as time passes), and each sortie sweeps the block with the most probability of success per second of
 flight that fits in one battery, skipping blocks other airborne drones are already sweeping.
 """
 
-from app.sar.planners.patterns import Point, flatten, lanes, path_length
-from app.sar.sim import Drone, View
+from app.sar.belief import Belief, mobility
+from app.sar.detection import DetectionModel
+from app.sar.interface import DroneState, FleetSpec, Look, Waypoint
+from app.sar.planners.patterns import at_altitude, flatten, lanes, path_length
+from app.sar.prior import ring_prior
+from app.sar.scenario import SearchMap
 
 BLOCK_LANES = 4  # block width in lanes; blocks are square
+PREDICT_EVERY_S = 60.0
 
 
 class ProbabilityGreedy:
     name = "greedy"
 
-    def __init__(self) -> None:
+    def reset(self, search_map: SearchMap, fleet: FleetSpec, detection: DetectionModel, stats: dict, seed: int) -> None:
+        self.map, self.fleet = search_map, fleet
+        rings = stats["categories"][search_map.category]["rings_km"]
+        self.belief = Belief(*ring_prior(search_map.grid, search_map.ipp, rings, weight=search_map.passability))
+        self.pod = detection.pod(fleet.gsd_cm, search_map.terrain)
+        self.passability = search_map.passability
         self._claimed: dict[int, tuple[slice, slice]] = {}
+        self._t_s = 0.0
 
-    def plan(self, view: View, drone: Drone) -> list[Point]:
+    def observe(self, event: Look) -> None:
+        self._advance(event.t_s)
+        self.belief.observe_miss(event.cells, event.pod)
+
+    def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
+        self._advance(t_s)
         self._claimed.pop(drone.id, None)
-        grid = view.map.grid
-        lane_m = view.fleet.footprint_m[0] * (1 - view.fleet.overlap)
+        grid = self.map.grid
+        lane_m = self.fleet.footprint_m[0] * (1 - self.fleet.overlap)
         side = max(1, round(BLOCK_LANES * lane_m / grid.cell_m))
-        value = view.belief.poa * view.detection.pod(view.fleet.gsd_cm, view.map.terrain)
+        value = self.belief.poa * self.pod
         for rows, cols in self._claimed.values():
             value[rows, cols] = 0.0
-        base = (drone.y, drone.x)
+        base = (drone.y_m, drone.x_m)
         best, best_route = 0.0, []
         for r0 in range(0, grid.rows, side):
             for c0 in range(0, grid.cols, side):
@@ -30,11 +47,18 @@ class ProbabilityGreedy:
                 gain = float(value[block].sum())
                 if gain <= best * 1e-3:
                     continue
-                route = flatten(lanes(grid, view.map.no_fly, *block, lane_m))
-                seconds = path_length([base, *route, base]) / view.fleet.speed_mps
-                if route and seconds <= 0.95 * view.fleet.endurance_s and gain / seconds > best:
+                route = flatten(lanes(grid, self.map.no_fly, *block, lane_m))
+                seconds = path_length([base, *route, base]) / self.fleet.speed_mps
+                if route and seconds <= 0.95 * self.fleet.endurance_s and gain / seconds > best:
                     best, best_route, chosen = gain / seconds, route, block
         if best_route:
             self._claimed[drone.id] = chosen
-        return best_route
+        return at_altitude(best_route, self.fleet.alt_m)
 
+    def probability_map(self):
+        return self.belief.poa
+
+    def _advance(self, t_s: float) -> None:
+        while self._t_s + PREDICT_EVERY_S <= t_s:
+            self._t_s += PREDICT_EVERY_S
+            self.belief.predict(mobility(self._t_s), self.passability)

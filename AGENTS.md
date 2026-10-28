@@ -41,4 +41,4 @@ When choosing what to build next, ask which of these it moves. Features that don
   - Muse Spark Open is the open-weights verifier.
 - Demo path: brief, then probability map, then a drone race against a lawnmower sweep on real terrain, then candidates on real photos, then a human confirms, then found.
 - Core maths lives in `app/sar/` (see its module docstrings). Run `uv run python -m app.sar.bench` and `uv run pytest`.
-- Planners never see the truth: they get `SearchMap`/`View`, never `Scenario`.
+- Planners plug into the arena through `app/sar/interface.py` and never see the truth (`Scenario`). Baselines live in `app/sar/planners/`; the team's planner in `app/planner/`.

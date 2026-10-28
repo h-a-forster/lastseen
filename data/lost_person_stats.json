@@ -1,0 +1,34 @@
+{
+  "version": "2026-10-28",
+  "note": "Published lost-person statistics, temperate mountainous terrain unless noted. Percentile lists are the 25th, 50th, 75th and 95th percentiles; null = not published. Planners may use these directly; the arena's truth walker follows behaviour rules and is only checked against them.",
+  "percentiles": [25, 50, 75, 95],
+  "sources": {
+    "lpb": "Koester, Lost Person Behavior (2008), ISRID data",
+    "lpb_dementia": "https://www.dbs-sar.com/LPB/Dementia.pdf",
+    "jacobs2016": "https://mra.org/wp-content/uploads/2016/05/TerrainProbabilityModelsReport.pdf",
+    "hashimoto2022": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8990012/",
+    "tobler": "https://en.wikipedia.org/wiki/Tobler%27s_hiking_function"
+  },
+  "categories": {
+    "dementia": {
+      "rings_km": [0.3, 0.8, 1.9, 8.3],
+      "track_offset_m": [4, 15, 71, 307],
+      "dispersion_deg": [11, 23, 66, 70],
+      "mobility_h": [0, 0.25, 3.8, 18],
+      "find_location": {"structure": 0.20, "road": 0.18, "woods": 0.17, "field": 0.14, "linear": 0.09, "drainage": 0.09, "water": 0.07, "brush": 0.06},
+      "alive_when_found": {"under_24h": 0.95, "over_24h": 0.77, "over_48h": 0.60},
+      "sources": ["lpb", "lpb_dementia"]
+    },
+    "hiker": {
+      "rings_km": [1.1, 3.1, 5.8, 18.2],
+      "track_offset_m": [null, 100, null, 424],
+      "dispersion_deg": [2, 23, 64, 132],
+      "feature_multipliers": {"note": "finds per unit area relative to the average, within about 100 m of the feature, uninjured subjects", "trail": 5, "road": 3, "stream": 2, "lake": 2, "stream_and_trail": 7, "low_point": 2, "ridge": 2, "land_cover": 1},
+      "strategy_mix": {"note": "per-step behaviour mix fitted to ISRID hikers", "random_walk": 0.055, "route_travel": 0.377, "direction_travel": 0.559, "stay_put": 0.003, "view_enhancing": 0.006, "backtrack": 0.0},
+      "sources": ["lpb", "jacobs2016", "hashimoto2022"]
+    },
+    "child_7_9": {"rings_km": [0.8, 1.6, 3.2, 11.3], "sources": ["lpb"]},
+    "despondent": {"rings_km": [0.3, 1.1, 3.2, 21.4], "sources": ["lpb"]}
+  },
+  "walking_speed": {"note": "Tobler: km/h = 6 exp(-3.5 |slope + 0.05|); off path x 0.6", "flat_kmh": 5.0, "off_path_factor": 0.6, "sources": ["tobler"]}
+}
