@@ -23,7 +23,7 @@ PREDICT_EVERY_S = 60.0
 class FleetSpec:
     drones: int = 3
     speed_mps: float = 10.0
-    alt_m: float = 80.0
+    alt_m: float = 60.0  # above ground; low enough that a person is 20-65 px for the detector
     endurance_s: float = 25 * 60  # usable flight time per battery, landing reserve already removed
     swap_s: float = 180.0  # battery swap and relaunch at base
     overlap: float = 0.1  # along-track photo overlap

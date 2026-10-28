@@ -11,14 +11,16 @@ import numpy as np
 
 from app.sar.grid import Terrain
 
-# Placeholder POD per terrain at each GSD (cm/px). Replaced by calibration output.
+# Prior estimate of POD per terrain at each GSD (cm/px), before calibration: zero-shot detection results on small
+# aerial people extrapolated by pixels on target (a lying adult is ~85 px long at 2 cm/px, ~34 px at 5 cm/px), with
+# canopy cutting recall to roughly 0.4x. Replaced by the measured table.
 _PLACEHOLDER_GSD = (1.0, 2.0, 3.0, 5.0)
 _PLACEHOLDER_POD = {
-    Terrain.OPEN: (0.90, 0.85, 0.70, 0.45),
-    Terrain.SCRUB: (0.75, 0.65, 0.50, 0.30),
-    Terrain.FOREST: (0.40, 0.30, 0.20, 0.10),
-    Terrain.WATER: (0.85, 0.80, 0.65, 0.40),
-    Terrain.BUILT: (0.60, 0.50, 0.35, 0.20),
+    Terrain.OPEN: (0.85, 0.65, 0.45, 0.25),
+    Terrain.SCRUB: (0.77, 0.57, 0.37, 0.17),
+    Terrain.FOREST: (0.35, 0.25, 0.18, 0.10),
+    Terrain.WATER: (0.85, 0.65, 0.45, 0.25),
+    Terrain.BUILT: (0.70, 0.50, 0.32, 0.15),
 }
 
 
