@@ -10,6 +10,7 @@ Each surviving hypothesis becomes a map layer (`layers.py`). Planners receive th
 themselves how far to trust them.
 """
 
+import math
 import re
 from dataclasses import dataclass
 
@@ -121,7 +122,18 @@ def describe(search_map: SearchMap) -> str:
     share = {t.name.lower(): float((terrain == t).mean()) for t in Terrain if (terrain == t).any()}
     side_km = grid.rows * grid.cell_m / 1000
     return (f"Missing person category: {search_map.category}. Search area: {side_km:g} km square around the house. "
-            f"Ground cover: {', '.join(f'{k} {v:.0%}' for k, v in share.items())}. There are several footpaths, streams and ponds.")
+            f"Ground cover: {', '.join(f'{k} {v:.0%}' for k, v in share.items())}. There are several footpaths, streams and ponds."
+            + _landmarks(search_map))
+
+
+def _landmarks(search_map: SearchMap) -> str:
+    """Named places on a real map, as bearings and distances from the house, so Spark can place what witnesses name."""
+    if not search_map.landmarks:
+        return ""  # synthetic maps: the description stays exactly as before
+    y0, x0 = search_map.grid.centre_m(*search_map.ipp)
+    places = [f"{name}: {math.degrees(math.atan2(x - x0, y0 - y)) % 360:.0f}°, {math.hypot(y - y0, x - x0) / 1000:.1f} km"
+              for name, y, x in search_map.landmarks]
+    return " Named places (compass bearing from the house, distance): " + "; ".join(places) + "."
 
 
 def check(search_map: SearchMap, answer: Answer, text: str, base_poa: np.ndarray, t_s: float) -> HypothesisSet:

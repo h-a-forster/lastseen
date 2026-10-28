@@ -61,6 +61,33 @@
     </aside>
   </main>
 
+  <section id="brief" class="max-w-[1500px] mx-auto px-4 pb-4">
+    <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 class="text-sm font-semibold text-slate-300">Start a search here</h2>
+        <p class="text-xs text-slate-400 max-w-3xl">Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down, Muse Spark turns it into hypotheses about where the person is, using the named places on the map, and each drone gets a first block to fly.</p>
+      </div>
+      <div class="mt-2 grid gap-3 lg:grid-cols-[600px_1fr]">
+        <div>
+          <canvas id="brief-map" class="w-full max-w-[600px] rounded"></canvas>
+          <label class="text-sm text-slate-300"><input id="brief-spark" type="checkbox" checked /> With Spark's reading (untick: statistics only)</label>
+        </div>
+        <div class="space-y-2">
+          <textarea id="brief-text" rows="4" maxlength="2000" aria-label="Brief"
+                    class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <button id="brief-mic" class="rounded bg-slate-800 hover:bg-slate-700 px-3 py-1 text-sm">Speak the brief</button>
+            <button id="brief-read" class="rounded bg-amber-500 text-slate-950 font-medium px-3 py-1 text-sm">Read with Muse Spark</button>
+          </div>
+          <p id="brief-status" class="text-xs text-slate-400"></p>
+          <ol id="brief-hypotheses" class="space-y-2 text-sm"></ol>
+          <div id="brief-sorties" class="flex flex-wrap gap-2"></div>
+          <p id="brief-credit" class="text-xs text-slate-500"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="triage" class="max-w-[1500px] mx-auto px-4 pb-8">
     <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
       <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -82,5 +109,6 @@
 
   <script src="/replay.js"></script>
   <script src="/triage.js"></script>
+  <script src="/brief.js"></script>
 </body>
 </html>

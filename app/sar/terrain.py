@@ -30,6 +30,9 @@ OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.ku
 CREDIT = "Map data © OpenStreetMap contributors (ODbL)"
 M_PER_DEG = 111_195.0  # metres per degree of latitude on a 6,371 km sphere
 PAINT_M = 5.0
+MAX_LANDMARKS = 25
+LANDMARK_SPACING_M = 150.0
+LANDMARK_TOURISM = {"viewpoint", "attraction"}
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,11 @@ class Place:
         half_lon = self.side_m / 2 / (M_PER_DEG * math.cos(math.radians(self.lat)))
         return {"south": self.lat - half_lat, "west": self.lon - half_lon,
                 "north": self.lat + half_lat, "east": self.lon + half_lon}
+
+    def latlon(self, y_m: float, x_m: float) -> tuple[float, float]:
+        """A map position (metres south of the north edge, east of the west edge) in degrees."""
+        b = self.bounds()
+        return b["north"] - y_m / M_PER_DEG, b["west"] + x_m / (M_PER_DEG * math.cos(math.radians(self.lat)))
 
 
 PLACES = {
@@ -73,7 +81,9 @@ def fetch(name: str) -> dict:
     b = PLACES[name].bounds()
     query = (f"[out:json][timeout:90][bbox:{b['south']},{b['west']},{b['north']},{b['east']}];"
              '(nwr[natural~"^(scrub|heath|wetland|wood|water)$"];nwr[landuse];way[waterway~"^(river|riverbank)$"];'
-             "way[building];way[highway];nwr[aeroway];);out geom;")
+             "way[building];way[highway];nwr[aeroway];"
+             'nwr[amenity=place_of_worship];nwr[historic];nwr[tourism~"^(viewpoint|attraction)$"];'
+             'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];);out geom;')
     osm = _overpass(query)
     PLACES_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(osm), encoding="utf-8")
@@ -114,7 +124,7 @@ def search_map(name: str, category: str = "dementia") -> SearchMap:
     grid = Grid(side, side, place.cell_m)
     ipp = grid.cell_of(place.side_m / 2, place.side_m / 2)
     no_fly = np.zeros(grid.shape, bool)  # no airfield or heliport in either preset; drone rules allow the whole area
-    return SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category)
+    return SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category, _landmarks(osm, place))
 
 
 def scenario(seed: int, name: str, category: str = "dementia", truth: WalkerParams | None = None) -> Scenario:
@@ -127,6 +137,57 @@ def scenario(seed: int, name: str, category: str = "dementia", truth: WalkerPara
 def build(seed: int, place: str | None, category: str, size: int = 120, truth: WalkerParams | None = None) -> Scenario:
     """The scenario for a seed: on the named real place, or on a synthetic map of `size` cells when `place` is None."""
     return scenario(seed, place, category, truth) if place else synthetic(seed, size, category=category, truth=truth)
+
+
+def _landmarks(osm: dict, place: Place) -> tuple[tuple[str, float, float], ...]:
+    """Named places a witness might mention (chapels, gates, bridges, villages, the river), as (name, y_m, x_m) at
+    their middle, or for the river its point nearest the last-seen point. Nearest first, at most MAX_LANDMARKS, and none
+    within LANDMARK_SPACING_M of one of the same kind already kept, so the old town's gates and sights don't crowd
+    out the hills."""
+    to_m = _projector(place)
+    centre = place.side_m / 2
+    found: dict[str, tuple[float, float, float, str]] = {}
+    for e in osm["elements"]:
+        tags = e.get("tags", {})
+        kind = _landmark_kind(tags)
+        if not kind or "name" not in tags:
+            continue
+        points = [e] if e["type"] == "node" else e.get("geometry") or []
+        xy = [tuple(v * PAINT_M for v in to_m(p)) for p in points if p]
+        if not xy:
+            continue
+        if kind == "river":
+            x, y = min(xy, key=lambda q: math.hypot(q[0] - centre, q[1] - centre))
+        else:
+            x, y = sum(q[0] for q in xy) / len(xy), sum(q[1] for q in xy) / len(xy)
+        if not (0 <= x < place.side_m and 0 <= y < place.side_m):
+            continue
+        label, distance = f"{tags['name']} ({kind})", math.hypot(x - centre, y - centre)
+        if label not in found or distance < found[label][0]:
+            found[label] = (distance, y, x, kind)
+    kept: list[tuple[str, float, float, str]] = []
+    for label, (_, y, x, kind) in sorted(found.items(), key=lambda kv: kv[1][0]):
+        if len(kept) < MAX_LANDMARKS and all(math.hypot(y - ky, x - kx) >= LANDMARK_SPACING_M
+                                             for _, ky, kx, k in kept if k == kind):
+            kept.append((label, round(y, 1), round(x, 1), kind))
+    return tuple(k[:3] for k in kept)
+
+
+def _landmark_kind(tags: dict) -> str | None:
+    if tags.get("waterway") == "river":
+        return "river"
+    if tags.get("building") in {"chapel", "church"}:
+        return tags["building"]
+    if tags.get("amenity") == "place_of_worship":
+        return "place of worship"
+    if tags.get("bridge") == "yes":
+        return "bridge"
+    if tags.get("tourism") in LANDMARK_TOURISM:
+        return tags["tourism"]
+    for key in ("place", "historic", "natural"):
+        if tags.get(key, "yes") != "yes":
+            return tags[key].replace("_", " ")
+    return None
 
 
 def _projector(place: Place):

@@ -6,6 +6,7 @@ import math
 import numpy as np
 import pytest
 
+from app.agent.interpret import describe
 from app.sar import metrics, terrain
 from app.sar.grid import Terrain
 from app.sar.planners import BASELINES
@@ -184,6 +185,8 @@ def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(
         {"type": "relation", "tags": {"landuse": "forest"}, "members": [
             *({"role": "outer", "geometry": part} for part in outer), {"role": "inner", "geometry": hole}]},
         {"type": "way", "tags": {"highway": "path"}, "geometry": [at(800, 0), at(800, 1000)]},
+        {"type": "node", "tags": {"place": "hamlet", "name": "Hamlet"}, **at(850, 500)},
+        {"type": "node", "tags": {"building": "chapel", "name": "Chapel"}, **at(900, 520)},  # 54 m away, other kind
     ]}
     monkeypatch.setattr(terrain, "PLACES_DIR", tmp_path)
     monkeypatch.setitem(terrain.PLACES, "test", place)
@@ -194,4 +197,8 @@ def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(
     assert m.terrain[6, 6] == Terrain.FOREST and m.terrain[16, 30] == Terrain.FOREST  # either side of the split
     assert m.terrain[11, 20] == Terrain.OPEN  # the clearing
     assert m.terrain[30, 20] == Terrain.OPEN and m.trails[32, 20] and not m.trails[20, 2]
+    assert [name for name, _, _ in m.landmarks] == ["Hamlet (hamlet)", "Chapel (chapel)"]
+    assert "Chapel (chapel): 179°, 0.4 km" in describe(m)  # south, as Spark reads it
+    assert place.latlon(500, 500) == pytest.approx((47.0, 7.0))  # mission files: map centre is the place's point
+    assert "Named places" not in describe(synthetic(1, size=40, category="dementia").map)  # cached readings stay valid
     terrain.search_map.cache_clear()

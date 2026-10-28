@@ -102,17 +102,23 @@ function drawBaseMap(map, s) {
 }
 
 async function loadAerial(run) {
-  // Paint the tiles covering the map's bounds onto a canvas the size of the base map, then redraw.
-  const { north, south, west, east } = run.place.bounds;
+  const canvas = await aerialCanvas(run.place.bounds, state.base.width, state.base.height);
+  if (state.run !== run) return; // another race was opened meanwhile
+  state.aerial = canvas;
+  render();
+}
+
+async function aerialCanvas({ north, south, west, east }, width, height) {
+  // The swisstopo tiles covering these bounds, painted onto a canvas of the given size.
   const n = 2 ** AERIAL_ZOOM;
   const tx = (lon) => ((lon + 180) / 360) * n;
   const ty = (lat) => { const r = (lat * Math.PI) / 180; return ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n; };
   const [x0, x1, y0, y1] = [tx(west), tx(east), ty(north), ty(south)];
   const canvas = document.createElement("canvas");
-  canvas.width = state.base.width;
-  canvas.height = state.base.height;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
-  const kx = canvas.width / (x1 - x0), ky = canvas.height / (y1 - y0);
+  const kx = width / (x1 - x0), ky = height / (y1 - y0);
   const jobs = [];
   for (let x = Math.floor(x0); x < x1; x++) {
     for (let y = Math.floor(y0); y < y1; y++) {
@@ -125,9 +131,7 @@ async function loadAerial(run) {
     }
   }
   await Promise.all(jobs);
-  if (state.run !== run) return; // another race was opened meanwhile
-  state.aerial = canvas;
-  render();
+  return canvas;
 }
 
 function heatImage(snapshot) {

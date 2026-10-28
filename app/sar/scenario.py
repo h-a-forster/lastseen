@@ -28,6 +28,7 @@ class SearchMap:
     ipp: tuple[int, int]
     base: tuple[int, int]
     category: str
+    landmarks: tuple[tuple[str, float, float], ...] = ()  # named places on real maps: (name, y_m, x_m)
 
     @property
     def passability(self) -> np.ndarray:

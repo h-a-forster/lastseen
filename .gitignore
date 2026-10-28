@@ -17,3 +17,5 @@ data/tiles/
 data/places/
 # Photo-check example (python -m app.perception.triage --example), built from the dataset
 data/triage/
+# Example brief read by Spark (python -m app.agent.brief --example)
+data/briefs/
