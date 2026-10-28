@@ -5,3 +5,17 @@ __pycache__/
 tmp/
 node_modules/
 .DS_Store
+# Cached model answers and the spend ledger (raw API responses stay local)
+data/cache/
+# Recorded races for the replay page (regenerate with app.sar.replay)
+data/runs/
+# Downloaded datasets (fetched by script; never committed) and perception results
+data/datasets/
+data/perception/
+data/tiles/
+# OpenStreetMap downloads for real places (ODbL; fetched on first use by app.sar.terrain)
+data/places/
+# Photo-check example (python -m app.perception.triage --example), built from the dataset
+data/triage/
+# Example brief read by Spark (python -m app.agent.brief --example)
+data/briefs/
