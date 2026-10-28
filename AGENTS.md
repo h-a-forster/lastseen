@@ -31,7 +31,14 @@ When choosing what to build next, ask which of these it moves. Features that don
 
 ## Project notes
 <!-- Fill in once the idea is chosen. Agents read this. -->
-- Problem statement: Build for Your World / Push the Frontier
-- User and problem:
+- Problem statement: Push the Frontier.
+- User and problem: volunteer land search-and-rescue teams flying 1-3 drones. Where to fly next, and finding a person a few pixels wide in thousands of photos.
 - Meta models used, and why each:
-- Demo path (the one flow that must work):
+  - SAM 3.1 finds people in aerial tiles and segments terrain.
+  - Muse Spark verifies candidates, reads clues and parses the mission brief.
+  - Muse Wonder evolves the planner's priority function in a sandbox.
+  - Muse Voice Transcribe turns radio reports into map updates.
+  - Muse Spark Open is the open-weights verifier.
+- Demo path: brief, then probability map, then a drone race against a lawnmower sweep on real terrain, then candidates on real photos, then a human confirms, then found.
+- Core maths lives in `app/sar/` (see its module docstrings). Run `uv run python -m app.sar.bench` and `uv run pytest`.
+- Planners never see the truth: they get `SearchMap`/`View`, never `Scenario`.
