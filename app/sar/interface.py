@@ -85,7 +85,6 @@ class Hypotheses:
         return np.where(base > 0, mixture / np.where(base > 0, base, 1.0), 1.0)
 
 
-# Grows as the arena learns more: Candidate, Clue, Zone, Constraint, Role, DroneLost, CommsSync.
 Observation = Look | Report | Hypotheses
 
 

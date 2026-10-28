@@ -7,7 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.143.0",
     "httpx>=0.28",
-    "litellm>=1.104.2",
     "numpy>=2.3",
     "pillow==12.3.0",
     "python-dotenv>=1.2.4",

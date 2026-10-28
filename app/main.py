@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
-from app import llm, meta_api  # noqa: E402
+from app import meta_api  # noqa: E402
 from app.agent import brief  # noqa: E402
 from app.meta_api import ModelCallError, SpendCapReached  # noqa: E402
 from app.perception import pool as photo_pool  # noqa: E402
@@ -31,7 +31,7 @@ app = FastAPI(title="LastSeen")
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "model": llm.current_model()}
+    return {"ok": True}
 
 
 RACE_PLANNERS = {"lawnmower", "spiral", "concentric", "sector", "greedy", "greedy+spark"}
