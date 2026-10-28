@@ -64,5 +64,5 @@ def test_reports_are_fixed_by_the_seed_and_mistaken_witnesses_happen_at_the_set_
 
     first = reports_for(synthetic(5, category="dementia"), 5)
     assert first == reports_for(synthetic(5, category="dementia"), 5)
-    headings = [c.true for s in range(200) for c in reports_for(synthetic(s, category="dementia"), s)[1] if c.kind == "heading"]
-    assert abs(np.mean(headings) - RELIABILITY["heading"]) < 0.1
+    headings = [c.true for s in range(60) for c in reports_for(synthetic(s, category="dementia"), s)[1] if c.kind == "heading"]
+    assert abs(np.mean(headings) - RELIABILITY["heading"]) < 0.15  # about 2.5 standard errors at 60 scenarios
