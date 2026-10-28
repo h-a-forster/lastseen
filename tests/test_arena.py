@@ -1,11 +1,13 @@
 """The arena: correct statistics, the same subject whichever planner flies, legal routes and detours around no-fly areas."""
 
+import json
 import math
 
 import numpy as np
 import pytest
 
-from app.sar import metrics
+from app.sar import metrics, terrain
+from app.sar.grid import Terrain
 from app.sar.planners import BASELINES
 from app.sar.scenario import synthetic
 from app.sar.sim import Sim
@@ -167,3 +169,29 @@ def test_imagery_mode_finds_only_when_the_real_photo_answer_did():
     found = Sim(scenario, BASELINES["lawnmower"](), detection=no_canopy, seed=25, photos=Pool(True)).run()
     assert missed.found_s is None and missed.in_frame > 0
     assert found.found_s is not None and found.in_frame == 1
+
+
+def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(tmp_path, monkeypatch):
+    """A forest whose boundary OSM split into three ways (one drawn backwards), with a clearing cut out of it, in the
+    northern half of a 1 km place; a path crosses the south. No network: the download is already on disk."""
+    place = terrain.Place("test", 47.0, 7.0, side_m=1000.0)
+    b = place.bounds()
+    at = lambda north_m, east_m: {"lat": b["north"] - north_m / terrain.M_PER_DEG,
+                                  "lon": b["west"] + east_m * (b["east"] - b["west"]) / 1000}
+    outer = [[at(100, 100), at(100, 900)], [at(450, 100), at(450, 900), at(100, 900)], [at(450, 100), at(100, 100)]]
+    hole = [at(200, 400), at(200, 600), at(350, 600), at(350, 400), at(200, 400)]
+    osm = {"elements": [
+        {"type": "relation", "tags": {"landuse": "forest"}, "members": [
+            *({"role": "outer", "geometry": part} for part in outer), {"role": "inner", "geometry": hole}]},
+        {"type": "way", "tags": {"highway": "path"}, "geometry": [at(800, 0), at(800, 1000)]},
+    ]}
+    monkeypatch.setattr(terrain, "PLACES_DIR", tmp_path)
+    monkeypatch.setitem(terrain.PLACES, "test", place)
+    (tmp_path / "test.osm.json").write_text(json.dumps(osm), encoding="utf-8")
+    terrain.search_map.cache_clear()
+    m = terrain.search_map("test")
+    assert m.terrain.shape == (40, 40)
+    assert m.terrain[6, 6] == Terrain.FOREST and m.terrain[16, 30] == Terrain.FOREST  # either side of the split
+    assert m.terrain[11, 20] == Terrain.OPEN  # the clearing
+    assert m.terrain[30, 20] == Terrain.OPEN and m.trails[32, 20] and not m.trails[20, 2]
+    terrain.search_map.cache_clear()

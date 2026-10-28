@@ -3,6 +3,7 @@ The replay page plays the file back. Spark readings come from the cache only (no
 
     uv run python -m app.sar.replay --seed 17 --planners lawnmower,greedy,greedy+spark
     uv run python -m app.sar.replay --seed 3 --live --usd-cap 0.05
+    uv run python -m app.sar.replay --seed 19 --place saint-ursanne  # a real valley; the page shows aerial imagery
 
 Races run in imagery mode when gate 1's results are here: every photo that has the person in it is decided by a real
 SAM 3.1 + Muse Spark answer on a real drone photo of a person that size, and the page shows that photo.
@@ -23,7 +24,9 @@ from app.sar.bench import make_planner
 from app.sar.cues import Cue, reports_for
 from app.sar.interface import FleetSpec
 from app.sar.recorder import Recorder
-from app.sar.scenario import Scenario, synthetic
+from app.sar.scenario import Scenario
+from app.sar.terrain import PLACES, build
+from app.sar.terrain import CREDIT as MAP_CREDIT
 from app.sar.sim import Sim
 from app.sar.walker import RECORD_S
 
@@ -32,8 +35,8 @@ MAX_LANES = 3
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
-         drones: int = 3) -> dict:
-    scenario = synthetic(seed, size=size, category=category)
+         drones: int = 3, place: str | None = None) -> dict:
+    scenario = build(seed, place, category, size)
     reports, cues = reports_for(scenario, seed)
     fleet = FleetSpec(drones=drones)
     photos = photo_pool.shared()
@@ -44,9 +47,11 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
                      recorder=recorder, photos=photos).run()
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {
-        "id": run_id(seed, category, planner_names),
+        "id": run_id(seed, category, planner_names, place),
         "seed": seed,
         "category": category,
+        "place": None if place is None else {"name": place, "title": PLACES[place].title,
+                                             "bounds": PLACES[place].bounds(), "credit": MAP_CREDIT},
         "hours": hours,
         "imagery": photos is not None,
         "photo_credit": CREDIT if photos is not None else None,
@@ -79,8 +84,9 @@ def truth_json(scenario: Scenario, cues: list[Cue], hours: float) -> dict:
             "cues": [{"kind": c.kind, "true": c.true, "t_s": c.t_s, "detail": c.detail} for c in cues]}
 
 
-def run_id(seed: int, category: str, planner_names: list[str]) -> str:
-    return re.sub(r"[^a-z0-9-]", "", f"{category}-{seed}-" + "-".join(n.replace("+", "-") for n in planner_names))
+def run_id(seed: int, category: str, planner_names: list[str], place: str | None = None) -> str:
+    prefix = f"{place}-" if place else ""
+    return re.sub(r"[^a-z0-9-]", "", f"{prefix}{category}-{seed}-" + "-".join(n.replace("+", "-") for n in planner_names))
 
 
 def save(replay: dict) -> Path:
@@ -98,6 +104,7 @@ def main() -> None:
     parser.add_argument("--planners", default="lawnmower,greedy,greedy+spark")
     parser.add_argument("--category", default="dementia")
     parser.add_argument("--size", type=int, default=120)
+    parser.add_argument("--place", choices=sorted(PLACES), help="a real area from OpenStreetMap instead of a synthetic map")
     parser.add_argument("--hours", type=float, default=4.0)
     parser.add_argument("--live", action="store_true", help="allow paid Spark calls for readings not in the cache")
     parser.add_argument("--usd-cap", type=float, default=0.05)
@@ -105,7 +112,7 @@ def main() -> None:
     names = args.planners.split(",")[:MAX_LANES]
     os.environ["MODEL_MODE"] = "live" if args.live else "replay"
     os.environ["USD_CAP"] = str(args.usd_cap)
-    replay = race(args.seed, names, args.category, args.size, args.hours)
+    replay = race(args.seed, names, args.category, args.size, args.hours, place=args.place)
     path = save(replay)
     for name, lane in replay["lanes"].items():
         found = lane["result"]["found_s"]

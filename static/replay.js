@@ -20,7 +20,10 @@ const TRAIL = [233, 216, 166];
 const CUE_LABEL = { heading: "Direction of travel", fitness: "Fitness", sighting: "Sighting" };
 
 const $ = (id) => document.getElementById(id);
-const state = { run: null, lanes: [], t: 0, endT: 0, playing: false, scale: 4, base: null, feedKey: "" };
+const state = { run: null, lanes: [], t: 0, endT: 0, playing: false, scale: 4, base: null, aerial: null, feedKey: "" };
+// Aerial photos of real places, drawn by the browser straight from swisstopo's public tile service (Web Mercator).
+const AERIAL_TILES = "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857";
+const AERIAL_ZOOM = 15; // about 3 m per pixel here: sharper than the 5 m the map is drawn at
 
 // ---------- loading ----------
 
@@ -32,7 +35,7 @@ async function api(path, options) {
 
 async function loadRunList(selectId) {
   const runs = await api("/api/runs");
-  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.category} #${r.seed}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
+  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
   $("run").value = selectId || runs[0].id;
   await loadRun($("run").value);
@@ -45,6 +48,9 @@ async function loadRun(id) {
   state.run = run;
   state.scale = Math.max(1, Math.floor(600 / Math.max(rows, cols)));
   state.base = drawBaseMap(run.map, state.scale);
+  state.aerial = null;
+  $("aerial-toggle").classList.toggle("hidden", !run.place);
+  if (run.place) loadAerial(run).catch(() => showStatus("Aerial imagery unavailable; showing terrain classes."));
   state.lanes = Object.entries(run.lanes).map(([name, lane]) => prepareLane(name, lane, run.map));
   state.endT = Math.max(...state.lanes.map((l) => l.endT));
   $("time").max = state.endT;
@@ -95,6 +101,35 @@ function drawBaseMap(map, s) {
   return canvas;
 }
 
+async function loadAerial(run) {
+  // Paint the tiles covering the map's bounds onto a canvas the size of the base map, then redraw.
+  const { north, south, west, east } = run.place.bounds;
+  const n = 2 ** AERIAL_ZOOM;
+  const tx = (lon) => ((lon + 180) / 360) * n;
+  const ty = (lat) => { const r = (lat * Math.PI) / 180; return ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n; };
+  const [x0, x1, y0, y1] = [tx(west), tx(east), ty(north), ty(south)];
+  const canvas = document.createElement("canvas");
+  canvas.width = state.base.width;
+  canvas.height = state.base.height;
+  const ctx = canvas.getContext("2d");
+  const kx = canvas.width / (x1 - x0), ky = canvas.height / (y1 - y0);
+  const jobs = [];
+  for (let x = Math.floor(x0); x < x1; x++) {
+    for (let y = Math.floor(y0); y < y1; y++) {
+      const img = new Image();
+      jobs.push(new Promise((resolve, reject) => {
+        img.onload = () => resolve(ctx.drawImage(img, (x - x0) * kx, (y - y0) * ky, kx + 0.5, ky + 0.5));
+        img.onerror = reject;
+      }));
+      img.src = `${AERIAL_TILES}/${AERIAL_ZOOM}/${x}/${y}.jpeg`;
+    }
+  }
+  await Promise.all(jobs);
+  if (state.run !== run) return; // another race was opened meanwhile
+  state.aerial = canvas;
+  render();
+}
+
 function heatImage(snapshot) {
   // Probability per block, 0-255 relative to the likeliest block: transparent where unlikely, hot where likely.
   const side = snapshot.side;
@@ -117,7 +152,7 @@ function render() {
     const ctx = lane.ctx;
     const laneT = Math.min(t, lane.endT);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(state.base, 0, 0);
+    ctx.drawImage(state.aerial && $("show-aerial").checked ? state.aerial : state.base, 0, 0);
 
     const heat = lastAt(lane.maps, laneT);
     if (heat && $("show-heat").checked) {
@@ -243,6 +278,9 @@ function buildLaneDom() {
   $("imagery").innerHTML = state.run.imagery
     ? "Every photo that has the missing person in it is decided by a real SAM 3.1 + Muse Spark answer on a real drone photo of a person that size. Flagged = alarms a reviewer checks instead of every photo."
     : "Detections are sampled from the measured table (no photo pool on this server).";
+  if (state.run.place) {
+    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. The simulator walks the hidden person over terrain classes and paths read from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
+  }
   $("legend").innerHTML = [
     ...TERRAIN.map(([name, rgb]) => swatch(`rgb(${rgb})`, name)),
     swatch(`rgb(${TRAIL})`, "Trail"),
@@ -397,7 +435,7 @@ function showStatus(text, ms = 4000) {
 
 $("play").onclick = () => (state.playing ? pause() : play());
 $("time").oninput = (e) => { pause(); seek(+e.target.value); };
-["show-heat", "show-searched", "show-truth"].forEach((id) => ($(id).onchange = render));
+["show-heat", "show-searched", "show-truth", "show-aerial"].forEach((id) => ($(id).onchange = render));
 $("run").onchange = (e) => loadRun(e.target.value).catch((err) => showStatus(err.message));
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space" && e.target.tagName !== "INPUT") { e.preventDefault(); $("play").click(); }
@@ -410,7 +448,7 @@ $("new-race").onsubmit = async (e) => {
     const { id } = await api("/api/runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seed: +$("seed").value, planners }),
+      body: JSON.stringify({ seed: +$("seed").value, planners, place: state.run?.place?.name ?? null }),
     });
     await loadRunList(id);
     showStatus("Race recorded.");

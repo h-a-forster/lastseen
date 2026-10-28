@@ -37,6 +37,7 @@ _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, l
 class RaceRequest(BaseModel):
     seed: int = Field(ge=0, lt=SEED_SETS["heldout"].start)  # held-out scenarios stay unseen
     planners: list[str] = Field(min_length=1, max_length=replay.MAX_LANES)
+    place: str | None = None
 
 
 @app.get("/api/runs")
@@ -48,6 +49,7 @@ def list_runs():
         if _summaries.get(path.name, (None,))[0] != mtime:
             data = json.loads(path.read_text(encoding="utf-8"))
             _summaries[path.name] = (mtime, {"id": data["id"], "seed": data["seed"], "category": data["category"],
+                                             "place": (data.get("place") or {}).get("title"),
                                              "found_s": {n: lane["result"]["found_s"] for n, lane in data["lanes"].items()}})
         runs.append(_summaries[path.name][1])
     return runs
@@ -68,13 +70,15 @@ def new_race(req: RaceRequest):
     unknown = set(req.planners) - RACE_PLANNERS
     if unknown:
         raise HTTPException(422, f"unknown planners: {', '.join(sorted(unknown))}")
+    if req.place is not None and req.place not in replay.PLACES:
+        raise HTTPException(422, f"unknown place: {req.place}")
     if len(list(replay.RUNS_DIR.glob("*.json"))) >= MAX_STORED_RUNS:
         raise HTTPException(507, "storage for recorded races is full")
     if not _race_lock.acquire(blocking=False):
         raise HTTPException(429, "another race is being recorded; try again in a few seconds")
     try:
         os.environ["MODEL_MODE"] = "replay"
-        path = replay.save(replay.race(req.seed, req.planners))
+        path = replay.save(replay.race(req.seed, req.planners, place=req.place))
     finally:
         _race_lock.release()
     return {"id": path.stem}

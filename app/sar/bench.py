@@ -1,10 +1,12 @@
-"""Benchmark planners on the same synthetic scenarios (paired seeds). Fast mode: no model calls.
+"""Benchmark planners on the same scenarios (paired seeds): synthetic maps, or a real place with --place. Fast mode:
+no model calls.
 
     uv run python -m app.sar.bench --seeds 200 --category dementia --workers 8
     uv run python -m app.sar.bench --set heldout --planners ours,spiral --json results.json
     uv run python -m app.sar.bench --planners spiral,greedy,greedy+spark --seeds 30 --usd-cap 0.45
     uv run python -m app.sar.bench --imagery             # every photo of the person decided by a real SAM 3.1 + Spark answer
     uv run python -m app.sar.bench --truth-moving 1.5    # people who walk 50% longer than the statistics say
+    uv run python -m app.sar.bench --place saint-ursanne # hidden walks on a real valley mapped from OpenStreetMap
 
 Every planner receives the same witness reports. A name ending in "+spark" wraps that planner in the Spark advisor:
 Spark's readings are fetched first, in this process and under --usd-cap, then the simulations replay them from the
@@ -34,7 +36,7 @@ from app.sar.grid import Terrain
 from app.sar.interface import FleetSpec
 from app.sar.planners import BASELINES
 from app.sar.cues import reports_for
-from app.sar.scenario import synthetic
+from app.sar.terrain import PLACES, build
 from app.sar.sim import RunResult, Sim
 from app.sar.stats import lost_person_stats
 from app.sar.walker import PARAMS, WalkerParams
@@ -62,8 +64,8 @@ def make_planner(name: str):
 
 def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
              truth: WalkerParams | None = None, imagery: bool = False,
-             detection: DetectionModel | None = None) -> SeedResult:
-    scenario = synthetic(seed, size=size, category=category, truth=truth)
+             detection: DetectionModel | None = None, place: str | None = None) -> SeedResult:
+    scenario = build(seed, place, category, size, truth)
     reports, cues = reports_for(scenario, seed)
     photos = photo_pool.shared() if imagery else None
     if imagery and photos is None:
@@ -78,13 +80,13 @@ def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float
 
 
 def prefetch_readings(seeds: list[int], category: str, size: int, truth: WalkerParams | None = None,
-                      threads: int = 4) -> tuple[int, list[str]]:
+                      place: str | None = None, threads: int = 4) -> tuple[int, list[str]]:
     """Fetch Spark's reading of every report prefix for these scenarios (cached ones are free). Returns how many
     readings are available and any errors; stops cleanly at the spend cap."""
     stats = lost_person_stats()
 
     def one(seed: int) -> int:
-        scenario = synthetic(seed, size=size, category=category, truth=truth)
+        scenario = build(seed, place, category, size, truth)
         return len(read_all(scenario.map, reports_for(scenario, seed)[0], copy.deepcopy(stats)))
 
     done, errors = 0, []
@@ -99,9 +101,9 @@ def prefetch_readings(seeds: list[int], category: str, size: int, truth: WalkerP
 
 def run(seeds: list[int], planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
         workers: int, truth: WalkerParams | None = None, imagery: bool = False,
-        detection: DetectionModel | None = None) -> list[SeedResult]:
+        detection: DetectionModel | None = None, place: str | None = None) -> list[SeedResult]:
     job = partial(run_seed, planner_names=planner_names, fleet=fleet, max_s=max_s, category=category, size=size,
-                  truth=truth, imagery=imagery, detection=detection)
+                  truth=truth, imagery=imagery, detection=detection, place=place)
     if workers <= 1:
         return [job(s) for s in seeds]
     with ProcessPoolExecutor(workers) as pool:
@@ -168,6 +170,7 @@ def main() -> None:
     parser.add_argument("--hours", type=float, default=4.0)
     parser.add_argument("--category", default="dementia")
     parser.add_argument("--size", type=int, default=120, help="map side in 25 m cells (120 = 3 km; hikers need ~320)")
+    parser.add_argument("--place", choices=sorted(PLACES), help="a real area from OpenStreetMap instead of synthetic maps")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--usd-cap", type=float, default=0.5, help="most this run may spend on Spark readings")
     parser.add_argument("--json", help="also write the summary and per-seed times here")
@@ -196,18 +199,18 @@ def main() -> None:
             **detection.pod_by_terrain, Terrain.FOREST: tuple(p * args.forest_factor for p in open_pod)})
     if any(n.endswith(SPARK) for n in names):
         os.environ["USD_CAP"] = str(args.usd_cap)
-        readings, errors = prefetch_readings(seeds, args.category, args.size, truth)
+        readings, errors = prefetch_readings(seeds, args.category, args.size, truth, args.place)
         print(f"Spark readings ready: {readings} (spent ${spent_usd():.3f} now; cap ${args.usd_cap:.2f})"
               + "".join(f"\n  {e}" for e in errors[:5]))
         os.environ["MODEL_MODE"] = "replay"  # the simulations only replay; workers inherit this
     results = run(seeds, names, FleetSpec(drones=args.drones, alt_m=args.alt), max_s, args.category, args.size,
-                  args.workers, truth, args.imagery, detection)
+                  args.workers, truth, args.imagery, detection, args.place)
     summary = summarise(results, names, args.reference, max_s)
     print_table(summary, args.reference)
     failures = sum(r.spark_failures for r in results)
     if failures:
         print(f"{failures} Spark readings were missing; those runs carried on without hypotheses.")
-    print(f"{args.set} set, {len(seeds)} scenarios, {args.category}, {args.size * 25 / 1000:g} km map, in {time.perf_counter() - started:.0f} s")
+    print(f"{args.set} set, {len(seeds)} scenarios, {args.category}, {args.place or f"{args.size * 25 / 1000:g} km synthetic"} map, in {time.perf_counter() - started:.0f} s")
     if args.json:
         summary["args"] = vars(args)
         summary["per_seed"] = [{"seed": r.seed, "found_s": {k: v.found_s for k, v in r.runs.items()}, "cues": r.cues}
