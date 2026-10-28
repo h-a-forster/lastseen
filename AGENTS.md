@@ -26,6 +26,8 @@ When choosing what to build next, ask which of these it moves. Features that don
 - Every model call goes through `app/llm.py` (`complete()` / `stream()`, LiteLLM). `MODEL=meta/muse-spark-1.3` routes to the Meta Model API
   (OpenAI-compatible, base `https://api.meta.ai/v1`, key `MODEL_API_KEY`). `MAX_LLM_CALLS` caps calls per run to protect credits.
   Image, SAM and ASR endpoints are not chat completions: add helpers in `app/llm.py` (docs: https://dev.meta.ai/docs).
+- Structured Meta calls used by the search logic go through `app/meta_api.py` (httpx; retries per the API error guide,
+  `USD_CAP` per process, every answer cached in `data/cache/`; `MODEL_MODE=replay` = cache only, no network).
 - Frontend: `static/index.html` (HTML + Tailwind CDN + vanilla JS), served at `/`.
 - Deploy: `Dockerfile` -> Railway (`railway up`). Add deps with `uv add <pkg>`, never pip.
 
@@ -42,3 +44,4 @@ When choosing what to build next, ask which of these it moves. Features that don
 - Demo path: brief, then probability map, then a drone race against a lawnmower sweep on real terrain, then candidates on real photos, then a human confirms, then found.
 - Core maths lives in `app/sar/` (see its module docstrings). Run `uv run python -m app.sar.bench` and `uv run pytest`.
 - Planners plug into the arena through `app/sar/interface.py` and never see the truth (`Scenario`). Baselines live in `app/sar/planners/`; the team's planner in `app/planner/`.
+- Witness reports come from `app/sar/cues.py` (fixed reliability, frozen before any model read them). Spark turns them into weighted map layers in `app/agent/`; check its reading with `uv run python -m app.agent.reading_check`.

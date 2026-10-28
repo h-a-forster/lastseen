@@ -5,3 +5,5 @@ __pycache__/
 tmp/
 node_modules/
 .DS_Store
+# Cached model answers and the spend ledger (raw API responses stay local)
+data/cache/
