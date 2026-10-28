@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.28",
     "litellm>=1.104.2",
     "numpy>=2.3",
+    "pillow==12.3.0",
     "python-dotenv>=1.2.4",
     "uvicorn[standard]>=0.54.0",
 ]

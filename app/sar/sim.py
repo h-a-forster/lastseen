@@ -63,8 +63,9 @@ def planner_seed(seed: int) -> int:
 
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
-                 detection: DetectionModel = DetectionModel(), seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
+                 detection: DetectionModel | None = None, seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
                  reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None):
+        detection = detection or DetectionModel.load()
         self.scenario, self.planner, self.fleet, self.detection = scenario, planner, fleet, detection
         self.rec = recorder  # None in benchmarks: recording costs time
         self.pending_reports = sorted(reports, key=lambda r: r.t_s)

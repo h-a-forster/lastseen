@@ -9,3 +9,6 @@ node_modules/
 data/cache/
 # Recorded races for the replay page (regenerate with app.sar.replay)
 data/runs/
+# Downloaded datasets (fetched by script; never committed) and perception results
+data/datasets/
+data/perception/

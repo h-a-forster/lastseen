@@ -70,3 +70,16 @@ def test_spend_cap_stops_new_calls(gateway):
         ask(1)
     assert len((meta_api.LEDGER).read_text().splitlines()) == 1
     assert json.loads(meta_api.LEDGER.read_text())["usd"] > 0
+
+
+def test_sam_boxes_are_parsed_with_confidence_and_billed_per_image(gateway):
+    text = ("<0f>0<|box;x1=12;y1=40;x2=30;y2=71;w=1000;h=1000;c=0.83|><|mask;x=0;y=0;c=0.83;data=1,2,!!|>\n"
+            "<0f>1<|box;x1=500.5;y1=7;x2=520;y2=33;w=1000;h=1000;c=0.12|><|mask;x=0;y=0;c=0.12;data=1,2,!!|>")
+    sam_reply = {"output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}],
+                 "usage": {"input_tokens": 0, "output_tokens": 0, "images_processed": 1}}
+    gateway.setattr(meta_api.httpx, "post", lambda url, json, headers, timeout: httpx.Response(
+        200, json=sam_reply, request=httpx.Request("POST", url)))
+    segments, usd, cached = meta_api.sam_find(b"\xff\xd8jpeg", "person")
+    assert [s.box for s in segments] == [(12, 40, 30, 71), (500.5, 7, 520, 33)]
+    assert [s.confidence for s in segments] == [0.83, 0.12]
+    assert usd == pytest.approx(0.0025) and not cached

@@ -11,10 +11,12 @@
 Plain httpx rather than LiteLLM, because LiteLLM's `drop_params` can silently strip `response_format`.
 """
 
+import base64
 import hashlib
 import json
 import os
 import random
+import re
 import threading
 import time
 from dataclasses import dataclass
@@ -27,8 +29,10 @@ load_dotenv()
 
 BASE_URL = "https://api.meta.ai/v1"
 SPARK = "muse-spark-1.3"
+SAM = "sam-3.1"
 # USD per million tokens: input, cached input, output (reasoning is billed as output). dev.meta.ai pricing, 29 Oct 2026.
 PRICE_PER_M = {SPARK: (1.25, 0.15, 4.25)}
+SAM_USD_PER_IMAGE = 2.50 / 1000  # SAM is billed per image, not per token
 RETRY_STATUS = {429, 500, 503}
 MAX_ATTEMPTS = 4
 TIMEOUT_S = 120.0
@@ -54,6 +58,12 @@ class Answer:
     model: str
 
 
+@dataclass(frozen=True)
+class Segment:
+    box: tuple[float, float, float, float]  # x1, y1, x2, y2 in the image's pixels
+    confidence: float
+
+
 _spent_usd = 0.0
 _spend_lock = threading.Lock()
 
@@ -76,6 +86,32 @@ def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low
     except (TypeError, json.JSONDecodeError) as e:
         raise ModelCallError(f"answer was not JSON: {e}") from e
     return Answer(data, record["usd"], record["cached"], SPARK)
+
+
+def sam_find(image_jpeg: bytes, concept: str) -> tuple[list[Segment], float, bool]:
+    """Every instance of `concept` SAM 3.1 finds in the image, with its confidence; also what the call cost and whether
+    it came from the cache. Masks are requested in the compact encoding and ignored: boxes are enough to search."""
+    body = {
+        "model": SAM,
+        "metadata": {"include_confidence": "true", "mask_encoding": "one_bit"},
+        "input": [{"type": "message", "role": "user", "content": [
+            {"type": "input_text", "text": concept},
+            {"type": "input_image", "image_url": jpeg_data_url(image_jpeg)}]}],
+    }
+    record = _cached_or_call("/responses", body)
+    text = "".join(part.get("text", "") for item in record["response"].get("output", [])
+                   for part in item.get("content", []))
+    return [_segment(fields) for fields in re.findall(r"<\|box;([^|]*)\|>", text)], record["usd"], record["cached"]
+
+
+def _segment(fields: str) -> Segment:
+    """One box record of SAM's output grammar, e.g. `x1=12;y1=40;x2=30;y2=71;w=1000;h=1000;c=0.83`."""
+    v = dict(pair.split("=", 1) for pair in fields.split(";"))
+    return Segment((float(v["x1"]), float(v["y1"]), float(v["x2"]), float(v["y2"])), float(v.get("c", 1.0)))
+
+
+def jpeg_data_url(image_jpeg: bytes) -> str:
+    return "data:image/jpeg;base64," + base64.b64encode(image_jpeg).decode()
 
 
 def spent_usd() -> float:
@@ -135,6 +171,8 @@ def _backoff(attempt: int, retry_after: str | None) -> float:
 
 
 def _cost(model: str, usage: dict) -> float:
+    if model == SAM:
+        return usage.get("images_processed", 1) * SAM_USD_PER_IMAGE
     price_in, price_cached, price_out = PRICE_PER_M[model]
     cached = (usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0) or 0
     fresh = usage.get("prompt_tokens", 0) - cached
