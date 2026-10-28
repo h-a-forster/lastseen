@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from app.sar.detection import DetectionModel
+from app.sar.cues import Report
 from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
 from app.sar.routing import path_length, safe_path
 from app.sar.scenario import Scenario
@@ -56,8 +57,10 @@ class RunResult:
 
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
-                 detection: DetectionModel = DetectionModel(), seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0):
+                 detection: DetectionModel = DetectionModel(), seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
+                 reports: list[Report] | tuple[Report, ...] = ()):
         self.scenario, self.planner, self.fleet, self.detection = scenario, planner, fleet, detection
+        self.pending_reports = sorted(reports, key=lambda r: r.t_s)
         self.map = scenario.map
         self.detect_rng = np.random.default_rng(seed)
         self.max_s, self.dt_s = max_s, dt_s
@@ -69,6 +72,8 @@ class Sim:
     def run(self) -> RunResult:
         t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max = 0.0, None, 0, 0.0, 0, 0.0, 0.0
         while t < self.max_s and found_s is None:
+            while self.pending_reports and self.pending_reports[0].t_s <= t:
+                self.planner.observe(self.pending_reports.pop(0))
             for d in self.drones:
                 if self._at_base(d) and not d.route and t >= d.ready_at_s:
                     plan_ms_max = max(plan_ms_max, self._launch(d, t))

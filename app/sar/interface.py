@@ -1,8 +1,9 @@
 """The contract between the arena and a planner plug-in.
 
 A planner keeps its own probability map and learns only what a real search team would: the map, the fleet, the
-detection rates and published statistics at the start, then one event per photo that found nobody. The arena never
-passes the truth, and keeps the safety rules (forced return on low battery) to itself.
+detection rates and published statistics at the start, then events as the search goes on: each photo that found
+nobody, each witness report, and, when a model reads the reports, its hypotheses. The arena never passes the truth,
+and keeps the safety rules (forced return on low battery) to itself.
 """
 
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from typing import Protocol
 
 import numpy as np
 
+from app.sar.cues import Report
 from app.sar.detection import DetectionModel
 from app.sar.grid import Camera
 from app.sar.scenario import SearchMap
@@ -62,8 +64,29 @@ class Look:
     pod: np.ndarray  # read-only
 
 
-# Grows as the arena learns more: Candidate, Hypotheses, Clue, Zone, Constraint, Role, DroneLost, CommsSync.
-Observation = Look
+@dataclass(frozen=True)
+class Hypotheses:
+    """A model's reading of all reports so far: competing stories of where the person is, each a map layer (summing
+    to 1 over the area) with a weight. `rest_weight` is left on the planner's own map ("none of these"). Each new
+    Hypotheses replaces the previous one; it is not added to it."""
+
+    t_s: float
+    names: tuple[str, ...]
+    reasons: tuple[str, ...]
+    weights: tuple[float, ...]
+    layers: np.ndarray  # (n, rows, cols), read-only
+    rest_weight: float
+
+    def likelihood(self, base_poa: np.ndarray) -> np.ndarray:
+        """Per cell, how much more (above 1) or less likely the hypotheses make it than `base_poa` alone. Multiply a
+        map by this to fold the hypotheses in; raise it to a power below 1 to trust them less."""
+        base = base_poa / base_poa.sum()
+        mixture = self.rest_weight * base + np.tensordot(self.weights, self.layers, axes=1)
+        return np.where(base > 0, mixture / np.where(base > 0, base, 1.0), 1.0)
+
+
+# Grows as the arena learns more: Candidate, Clue, Zone, Constraint, Role, DroneLost, CommsSync.
+Observation = Look | Report | Hypotheses
 
 
 class Planner(Protocol):

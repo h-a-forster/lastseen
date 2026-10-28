@@ -17,6 +17,7 @@ import numpy as np
 
 from app.agent.layers import FEATURES, Shape, layer
 from app.meta_api import Answer, spark_json
+from app.sar.interface import Hypotheses
 from app.sar.cues import Report
 from app.sar.grid import Terrain
 from app.sar.scenario import SearchMap
@@ -88,6 +89,12 @@ class HypothesisSet:
     dropped: tuple[str, ...]  # hypotheses rejected by the checks, with the reason
     usd: float
     cached: bool
+
+    def to_event(self) -> Hypotheses:
+        layers = self.layers.copy()
+        layers.flags.writeable = False
+        return Hypotheses(self.t_s, tuple(h.name for h in self.hypotheses), tuple(h.reason for h in self.hypotheses),
+                          tuple(h.weight for h in self.hypotheses), layers, self.rest_weight)
 
     def mixture(self, base_poa: np.ndarray) -> np.ndarray:
         """Combined map: rest_weight on the base prior, the rest spread over the hypothesis layers."""

@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import random
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,7 @@ class Answer:
 
 
 _spent_usd = 0.0
+_spend_lock = threading.Lock()
 
 
 def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low", max_tokens: int = 6000) -> Answer:
@@ -137,8 +139,8 @@ def _cost(model: str, usage: dict) -> float:
 
 def _charge(usd: float, model: str, key: str) -> None:
     global _spent_usd
-    _spent_usd += usd
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with LEDGER.open("a", encoding="utf-8") as f:
+    with _spend_lock, LEDGER.open("a", encoding="utf-8") as f:
+        _spent_usd += usd
         f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "model": model, "usd": round(usd, 5),
                             "request_sha256": key}) + "\n")

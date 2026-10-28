@@ -2,27 +2,39 @@
 
     uv run python -m app.sar.bench --seeds 200 --category dementia --workers 8
     uv run python -m app.sar.bench --set heldout --planners ours,spiral --json results.json
+    uv run python -m app.sar.bench --planners spiral,greedy,greedy+spark --seeds 30 --usd-cap 0.45
+
+Every planner receives the same witness reports. A name ending in "+spark" wraps that planner in the Spark advisor:
+Spark's readings are fetched first, in this process and under --usd-cap, then the simulations replay them from the
+cache, so the parallel workers can't spend anything.
 
 Tune on the `dev` seeds only. The `heldout` seeds are for final numbers, so a result is never fitted to its own test.
 """
 
 import argparse
+import copy
 import dataclasses
 import json
+import os
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 
 import numpy as np
 
+from app.agent.advisor import SparkAdvisor, read_all
+from app.meta_api import ModelCallError, spent_usd
 from app.planner import SearchPlanner
 from app.sar import metrics
 from app.sar.interface import FleetSpec
 from app.sar.planners import BASELINES
+from app.sar.cues import reports_for
 from app.sar.scenario import synthetic
 from app.sar.sim import RunResult, Sim
+from app.sar.stats import lost_person_stats
 
 PLANNERS = {**BASELINES, SearchPlanner.name: SearchPlanner}
+SPARK = "+spark"
 SEED_SETS = {"dev": range(0, 100_000), "heldout": range(900_000, 1_000_000)}
 CHECKPOINTS_H = (1.0, 2.0)
 
@@ -32,12 +44,43 @@ class SeedResult:
     seed: int
     in_area_at_start: bool  # findable at all at t = 0; the rest start outside the mapped area
     runs: dict[str, RunResult]
+    spark_failures: int  # model readings that failed; those runs carried on without hypotheses
+
+
+def make_planner(name: str):
+    if name.endswith(SPARK):
+        return SparkAdvisor(PLANNERS[name.removesuffix(SPARK)]())
+    return PLANNERS[name]()
 
 
 def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int) -> SeedResult:
     scenario = synthetic(seed, size=size, category=category)
-    runs = {name: Sim(scenario, PLANNERS[name](), fleet, seed=seed, max_s=max_s).run() for name in planner_names}
-    return SeedResult(seed, scenario.subject_at(0) is not None, runs)
+    reports, _ = reports_for(scenario, seed)
+    runs, failures = {}, 0
+    for name in planner_names:
+        planner = make_planner(name)
+        runs[name] = Sim(scenario, planner, fleet, seed=seed, max_s=max_s, reports=reports).run()
+        failures += len(getattr(planner, "failures", ()))
+    return SeedResult(seed, scenario.subject_at(0) is not None, runs, failures)
+
+
+def prefetch_readings(seeds: list[int], category: str, size: int, threads: int = 4) -> tuple[int, list[str]]:
+    """Fetch Spark's reading of every report prefix for these scenarios (cached ones are free). Returns how many
+    readings are available and any errors; stops cleanly at the spend cap."""
+    stats = lost_person_stats()
+
+    def one(seed: int) -> int:
+        scenario = synthetic(seed, size=size, category=category)
+        return len(read_all(scenario.map, reports_for(scenario, seed)[0], copy.deepcopy(stats)))
+
+    done, errors = 0, []
+    with ThreadPoolExecutor(threads) as pool:
+        for seed, future in zip(seeds, [pool.submit(one, s) for s in seeds]):
+            try:
+                done += future.result()
+            except ModelCallError as e:
+                errors.append(f"seed {seed}: {e}")
+    return done, errors
 
 
 def run(seeds: list[int], planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
@@ -99,15 +142,25 @@ def main() -> None:
     parser.add_argument("--category", default="dementia")
     parser.add_argument("--size", type=int, default=120, help="map side in 25 m cells (120 = 3 km; hikers need ~320)")
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--usd-cap", type=float, default=0.5, help="most this run may spend on Spark readings")
     parser.add_argument("--json", help="also write the summary and per-seed times here")
     args = parser.parse_args()
     names = args.planners.split(",")
     seeds = list(SEED_SETS[args.set][: args.seeds])
     max_s = args.hours * 3600
     started = time.perf_counter()
+    if any(n.endswith(SPARK) for n in names):
+        os.environ["USD_CAP"] = str(args.usd_cap)
+        readings, errors = prefetch_readings(seeds, args.category, args.size)
+        print(f"Spark readings ready: {readings} (spent ${spent_usd():.3f} now; cap ${args.usd_cap:.2f})"
+              + "".join(f"\n  {e}" for e in errors[:5]))
+        os.environ["MODEL_MODE"] = "replay"  # the simulations only replay; workers inherit this
     results = run(seeds, names, FleetSpec(drones=args.drones), max_s, args.category, args.size, args.workers)
     summary = summarise(results, names, args.reference, max_s)
     print_table(summary, args.reference)
+    failures = sum(r.spark_failures for r in results)
+    if failures:
+        print(f"{failures} Spark readings were missing; those runs carried on without hypotheses.")
     print(f"{args.set} set, {len(seeds)} scenarios, {args.category}, {args.size * 25 / 1000:g} km map, in {time.perf_counter() - started:.0f} s")
     if args.json:
         summary["args"] = vars(args)
