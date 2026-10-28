@@ -71,7 +71,11 @@ def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low
     choice = record["response"]["choices"][0]
     if choice.get("finish_reason") == "length":
         raise ModelCallError("answer cut off at max_tokens; raise it or lower the reasoning effort")
-    return Answer(json.loads(choice["message"]["content"]), record["usd"], record["cached"], SPARK)
+    try:
+        data = json.loads(choice["message"]["content"])
+    except (TypeError, json.JSONDecodeError) as e:
+        raise ModelCallError(f"answer was not JSON: {e}") from e
+    return Answer(data, record["usd"], record["cached"], SPARK)
 
 
 def spent_usd() -> float:

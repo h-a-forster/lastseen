@@ -1,7 +1,7 @@
 """Record a race: several planners on the same scenario, same witness reports, same seed, each with its event log.
 The replay page plays the file back. Spark readings come from the cache only (no spending) unless `--live`.
 
-    uv run python -m app.sar.replay --seed 27 --planners lawnmower,greedy,greedy+spark
+    uv run python -m app.sar.replay --seed 17 --planners lawnmower,greedy,greedy+spark
     uv run python -m app.sar.replay --seed 3 --live --usd-cap 0.05
 
 One scenario is an illustration, not evidence: the benchmark (`app.sar.bench`) is where claims come from.
@@ -78,13 +78,15 @@ def run_id(seed: int, category: str, planner_names: list[str]) -> str:
 def save(replay: dict) -> Path:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     path = RUNS_DIR / f"{replay['id']}.json"
-    path.write_text(json.dumps(replay, separators=(",", ":")), encoding="utf-8")
+    partial = path.with_suffix(".part")  # written whole, then renamed, so a reader never sees half a file
+    partial.write_text(json.dumps(replay, separators=(",", ":")), encoding="utf-8")
+    os.replace(partial, path)
     return path
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--seed", type=int, default=27)
+    parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--planners", default="lawnmower,greedy,greedy+spark")
     parser.add_argument("--category", default="dementia")
     parser.add_argument("--size", type=int, default=120)

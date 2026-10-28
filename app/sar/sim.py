@@ -17,7 +17,7 @@ from app.sar.detection import DetectionModel
 from app.sar.cues import Report
 from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
 from app.sar.recorder import Recorder
-from app.sar.routing import path_length, safe_path
+from app.sar.routing import distance_field, path_length, safe_path
 from app.sar.scenario import Scenario
 from app.sar.stats import lost_person_stats
 
@@ -56,6 +56,11 @@ class RunResult:
     calibrated: bool
 
 
+def planner_seed(seed: int) -> int:
+    """The seed a planner gets: derived from the scenario's, so it can't regenerate the scenario and its truth."""
+    return int(np.random.SeedSequence([seed, 3]).generate_state(1)[0])
+
+
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
                  detection: DetectionModel = DetectionModel(), seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
@@ -64,12 +69,15 @@ class Sim:
         self.rec = recorder  # None in benchmarks: recording costs time
         self.pending_reports = sorted(reports, key=lambda r: r.t_s)
         self.map = scenario.map
-        self.detect_rng = np.random.default_rng(seed)
+        self.detect_rng = np.random.default_rng([seed, 1])  # its own stream, apart from the scenario's
         self.max_s, self.dt_s = max_s, dt_s
         self.base_m = self.map.grid.centre_m(*self.map.base)
         self.drones = [Drone(i, *self.base_m, fleet.alt_m, fleet.endurance_s) for i in range(fleet.drones)]
         self._pod_at: dict[float, np.ndarray] = {}
-        planner.reset(self.map, fleet, detection, copy.deepcopy(lost_person_stats()), seed)
+        self._home_m = distance_field(self.map.grid, self.map.no_fly, self.map.base)
+        for layer in (self.map.terrain, self.map.trails, self.map.no_fly):
+            layer.flags.writeable = False  # planners read the map; they can't change it for the arena or the next run
+        planner.reset(self.map, fleet, detection, copy.deepcopy(lost_person_stats()), planner_seed(seed))
 
     def run(self) -> RunResult:
         t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max = 0.0, None, 0, 0.0, 0, 0.0, 0.0
@@ -152,9 +160,11 @@ class Sim:
         return math.hypot(d.y - self.base_m[0], d.x - self.base_m[1]) < 1.0
 
     def _time_home(self, d: Drone) -> float:
-        straight = math.hypot(d.y - self.base_m[0], d.x - self.base_m[1]) / self.fleet.speed_mps
-        if d.battery_s > straight + DETOUR_MARGIN_S:
-            return straight  # far from the limit; skip the costlier detour check
+        """Flying time home around no-fly areas. Far from the battery limit an upper bound is enough (the grid
+        distance plus two cells for the ends of the route); near it, the autopilot's actual detour is measured."""
+        bound = (self._home_m[self.map.grid.cell_of(d.y, d.x)] + 2 * self.map.grid.cell_m) / self.fleet.speed_mps
+        if d.battery_s > bound + DETOUR_MARGIN_S:
+            return bound
         return path_length(safe_path([(d.y, d.x), self.base_m], self.map.no_fly, self.map.grid)) / self.fleet.speed_mps
 
     def _move(self, d: Drone) -> list[tuple[float, float, bool]]:

@@ -2,9 +2,10 @@
 miss, diffusion as time passes), and each sortie sweeps the block with the most probability of success per second of
 flight that fits in one battery, skipping blocks other airborne drones are already sweeping.
 
-Hypotheses from a model are folded in as a likelihood: the map is multiplied by how much more likely the hypotheses
-make each cell, raised to the power TRUST (1 = take them at face value, 0 = ignore them). A newer reading replaces
-the older one, so the brief is never counted twice.
+Hypotheses from a model are a separate factor: the map is multiplied by how much more likely the latest reading makes
+each cell, raised to the power TRUST (1 = take it at face value, 0 = ignore it). A newer reading replaces the older
+one exactly, so the brief is never counted twice. The reading doesn't spread over time like the map does: each one
+already describes where the person may be by then, and every new report brings a new reading.
 """
 
 import numpy as np
@@ -31,7 +32,7 @@ class ProbabilityGreedy:
         self.pod = detection.pod(fleet.gsd_cm, search_map.terrain)
         self.passability = search_map.passability
         self._prior = self.belief.poa.copy()
-        self._applied = np.ones(search_map.grid.shape)  # the hypotheses' likelihood currently folded into the map
+        self._likelihood = np.ones(search_map.grid.shape)  # the latest reading of the reports; all 1 before any
         self._claimed: dict[int, tuple[slice, slice]] = {}
         self._t_s = 0.0
         self._notes: list[dict] = []
@@ -41,14 +42,7 @@ class ProbabilityGreedy:
         if isinstance(event, Look):
             self.belief.observe_miss(event.cells, event.pod)
         elif isinstance(event, Hypotheses):
-            self._fold_in(event.likelihood(self._prior) ** TRUST)
-
-    def _fold_in(self, likelihood: np.ndarray) -> None:
-        """Swap the previous reading's likelihood for the new one, keeping the probability inside the area unchanged."""
-        inside = self.belief.poa.sum()
-        poa = self.belief.poa / self._applied * likelihood
-        self.belief.poa = poa * inside / poa.sum()
-        self._applied = likelihood
+            self._likelihood = event.likelihood(self._prior) ** TRUST
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         self._advance(t_s)
@@ -56,7 +50,7 @@ class ProbabilityGreedy:
         grid = self.map.grid
         lane_m = self.fleet.footprint_m[0] * (1 - self.fleet.overlap)
         side = max(1, round(BLOCK_LANES * lane_m / grid.cell_m))
-        value = self.belief.poa * self.pod
+        value = self.probability_map() * self.pod
         for rows, cols in self._claimed.values():
             value[rows, cols] = 0.0
         base = (drone.y_m, drone.x_m)
@@ -78,7 +72,9 @@ class ProbabilityGreedy:
         return at_altitude(best_route, self.fleet.alt_m)
 
     def probability_map(self):
-        return self.belief.poa
+        """The map with the latest reading applied, keeping the probability inside the area unchanged."""
+        poa = self.belief.poa * self._likelihood
+        return poa * (self.belief.poa.sum() / poa.sum())
 
     def drain_notes(self) -> list[dict]:
         notes, self._notes = self._notes, []

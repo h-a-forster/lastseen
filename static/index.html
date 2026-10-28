@@ -17,11 +17,11 @@
         <h1 class="font-semibold text-lg tracking-tight">LastSeen</h1>
         <p class="text-xs text-slate-400">Where should the drones fly next? The same search, flown by different planners.</p>
       </div>
-      <div class="flex items-center gap-2 ml-auto text-sm">
+      <div class="flex flex-wrap items-center gap-2 ml-auto text-sm min-w-0 max-w-full">
         <label for="run" class="text-slate-400">Scenario</label>
-        <select id="run" class="bg-slate-900 border border-slate-700 rounded px-2 py-1"></select>
+        <select id="run" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 min-w-0 max-w-full sm:max-w-md"></select>
         <form id="new-race" class="flex items-center gap-2">
-          <input id="seed" type="number" min="0" max="999999" placeholder="seed" aria-label="Scenario seed"
+          <input id="seed" type="number" min="0" max="899999" placeholder="seed" aria-label="Scenario seed"
                  class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1" />
           <button class="rounded bg-slate-800 hover:bg-slate-700 px-3 py-1">Record race</button>
         </form>

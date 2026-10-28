@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from app.agent.layers import FEATURES, Shape, layer
-from app.meta_api import Answer, spark_json
+from app.meta_api import Answer, ModelCallError, spark_json
 from app.sar.interface import Hypotheses
 from app.sar.cues import Report
 from app.sar.grid import Terrain
@@ -108,7 +108,11 @@ def interpret(search_map: SearchMap, reports: list[Report], base_poa: np.ndarray
     messages = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": f"{describe(search_map)}\n\nReports so far:\n{text}"}]
     answer = spark_json(messages, SCHEMA, "hypotheses")
-    return check(search_map, answer, text, base_poa, reports[-1].t_s)
+    said = "\n".join(r.text for r in reports)  # evidence must come from what people said, not our time stamps
+    try:
+        return check(search_map, answer, said, base_poa, reports[-1].t_s)
+    except (KeyError, TypeError, ValueError) as e:
+        raise ModelCallError(f"answer did not fit the schema: {e!r}") from e
 
 
 def describe(search_map: SearchMap) -> str:

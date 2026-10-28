@@ -91,7 +91,7 @@ def _fitness_cue(scenario: Scenario, rng: np.random.Generator) -> Cue:
 
 def _sighting_cue(scenario: Scenario, rng: np.random.Generator) -> Cue:
     t_s = rng.uniform(*SIGHTING_AT_S)
-    age_s = rng.uniform(*SIGHTING_AGE_S)
+    age_s = min(rng.uniform(*SIGHTING_AGE_S), t_s)  # the track starts with the search; no earlier record exists
     start = np.array(scenario.map.grid.centre_m(*scenario.map.ipp))
     true = rng.random() < RELIABILITY["sighting"]
     if true:

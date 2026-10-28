@@ -68,23 +68,26 @@ def west_reading(m, t_s=0.0, weight=0.85):
     return Hypotheses(t_s, ("west",), ("r",), (weight,), west[None], 1 - weight)
 
 
-def test_greedy_swaps_readings_instead_of_stacking_them():
+def test_greedy_replaces_readings_exactly_even_after_time_passes():
     from app.sar.interface import FleetSpec
     from app.sar.planners.greedy import ProbabilityGreedy
     from app.sar.detection import DetectionModel
     from app.sar.stats import lost_person_stats
 
+    def greedy():
+        g = ProbabilityGreedy()
+        g.reset(flat_map(), FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+        return g
+
     m = flat_map()
-    g = ProbabilityGreedy()
-    g.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
-    inside = g.belief.poa.sum()
-    g.observe(west_reading(m))
-    once = g.belief.poa.copy()
-    g.observe(west_reading(m))  # the same reading again must not double its effect
-    np.testing.assert_allclose(g.belief.poa, once)
-    assert g.belief.poa.sum() == pytest.approx(inside)
+    a, b = greedy(), greedy()
+    a.observe(west_reading(m, 0.0, weight=0.85))  # an early reading, then the map spreads for an hour
+    a.observe(west_reading(m, 3600.0, weight=0.3))  # the newer reading replaces it
+    b.observe(west_reading(m, 3600.0, weight=0.3))  # only the newer reading
+    np.testing.assert_allclose(a.probability_map(), b.probability_map())
+    assert a.probability_map().sum() == pytest.approx(a.belief.poa.sum())  # the reading only moves probability
     centre = m.ipp[0]
-    assert once[centre, 5] > once[centre, -6]  # west now outweighs east
+    assert a.probability_map()[centre, 5] > a.probability_map()[centre, -6]  # west outweighs east
 
 
 def test_advisor_carries_on_when_spark_fails(monkeypatch):
@@ -105,3 +108,34 @@ def test_advisor_carries_on_when_spark_fails(monkeypatch):
     a.observe(Report(0.0, "A neighbour saw them go west."))
     assert a.failures and not a.readings
     assert a.name == "greedy+spark"
+
+
+def fake_spark(monkeypatch, data):
+    from app.agent import interpret as interpret_module
+    monkeypatch.setattr(interpret_module, "spark_json", lambda *a, **k: Answer(data, 0.0, True, "test"))
+
+
+def test_evidence_must_quote_what_people_said_not_our_time_stamps(monkeypatch):
+    from app.agent.interpret import interpret
+    from app.sar.cues import Report
+
+    m = flat_map()
+    fake_spark(monkeypatch, {"hypotheses": [hypothesis("stamp", 0.9, ["into the search"], direction_deg=90, spread_deg=60)],
+                             "rest_weight": 0.1, "notes": ""})
+    result = interpret(m, [Report(0.0, "A neighbour saw them go west.")], np.full(m.grid.shape, 1.0))
+    assert not result.hypotheses and "stamp" in result.dropped[0]
+
+
+def test_advisor_carries_on_when_spark_answers_off_schema(monkeypatch):
+    from app.agent import advisor
+    from app.sar.cues import Report
+    from app.sar.interface import FleetSpec
+    from app.sar.detection import DetectionModel
+    from app.sar.planners.greedy import ProbabilityGreedy
+    from app.sar.stats import lost_person_stats
+
+    fake_spark(monkeypatch, {"hypotheses": [{"name": "no other fields"}]})
+    a = advisor.SparkAdvisor(ProbabilityGreedy())
+    a.reset(flat_map(), FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    a.observe(Report(0.0, "A neighbour saw them go west."))
+    assert a.failures and not a.readings

@@ -1,5 +1,7 @@
 """The arena: correct statistics, the same subject whichever planner flies, legal routes and detours around no-fly areas."""
 
+import math
+
 import numpy as np
 import pytest
 
@@ -66,3 +68,65 @@ def test_reports_are_fixed_by_the_seed_and_mistaken_witnesses_happen_at_the_set_
     assert first == reports_for(synthetic(5, category="dementia"), 5)
     headings = [c.true for s in range(60) for c in reports_for(synthetic(s, category="dementia"), s)[1] if c.kind == "heading"]
     assert abs(np.mean(headings) - RELIABILITY["heading"]) < 0.15  # about 2.5 standard errors at 60 scenarios
+
+
+def test_a_true_sighting_never_describes_a_time_before_the_track_starts():
+    from app.sar.cues import reports_for
+
+    scenario = synthetic(174, category="dementia")  # its sighting was drawn older than the search itself
+    sighting = next(c for c in reports_for(scenario, 174)[1] if c.kind == "sighting")
+    assert sighting.true
+    assert sighting.detail["minutes_ago"] * 60 <= sighting.t_s + 150  # rounding to 5 minutes
+    assert sighting.detail["distance_km"] < 3  # not where the person ends up 8 hours later
+
+
+def test_forced_return_prices_the_detour_around_a_long_no_fly_wall():
+    from app.sar.grid import Grid
+    from app.sar.interface import FleetSpec
+    from app.sar.scenario import Scenario, SearchMap
+
+    grid = Grid(200, 200, 25.0)
+    no_fly = np.zeros(grid.shape, bool)
+    no_fly[5:195, 20:22] = True  # a 4.75 km wall beside the base, with gaps only at its ends
+    flat = np.zeros(grid.shape, np.int8)
+    m = SearchMap(grid, flat, np.zeros(grid.shape, bool), no_fly, (100, 10), (100, 10), "dementia")
+    nobody = Scenario("wall", m, np.array([[-5000.0, -5000.0]]), 0.0)
+
+    class BehindTheWall:
+        name = "behind"
+        def reset(self, *args): self.sent = False
+        def observe(self, event): pass
+        def probability_map(self): return None
+        def plan(self, t_s, drone, fleet):
+            if self.sent:
+                return []
+            self.sent = True
+            return [(2512.5, 800.0 + 25 * (k % 2), 60.0) for k in range(400)]  # patrol just behind the wall
+
+    class Watched(Sim):
+        lowest = math.inf
+        def _move(self, d):
+            Watched.lowest = min(Watched.lowest, d.battery_s)
+            return super()._move(d)
+
+    result = Watched(nobody, BehindTheWall(), FleetSpec(drones=1), max_s=3000).run()
+    assert result.forced_returns == 1
+    assert Watched.lowest >= 0
+
+
+def test_planners_cannot_regenerate_the_truth_or_change_the_map():
+    scenario = synthetic(5, category="dementia")
+
+    class Snoop:
+        name = "snoop"
+        def reset(self, search_map, fleet, detection, stats, seed):
+            self.seed = seed
+            with pytest.raises(ValueError):
+                search_map.no_fly[0, 0] = True
+        def observe(self, event): pass
+        def plan(self, t_s, drone, fleet): return []
+        def probability_map(self): return None
+
+    snoop = Snoop()
+    Sim(scenario, snoop, seed=5, max_s=60).run()
+    assert not np.array_equal(synthetic(snoop.seed, category="dementia").track, scenario.track)

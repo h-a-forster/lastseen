@@ -25,8 +25,9 @@ def found_by(times: Times, t_s: float) -> int:
 
 
 def time_to_find_curve(times: Times) -> list[tuple[float, float]]:
-    """Kaplan-Meier estimate of P(found by t), as (t_s, fraction) steps. With one shared run length every unfound run
-    is censored at the end, so this equals the plain cumulative find fraction; it stays correct if run lengths differ."""
+    """P(found by t), as (t_s, fraction) steps, in Kaplan-Meier form. Every run here has the same length, so each
+    unfound run is censored at the end and this equals the plain cumulative find fraction. Runs of different lengths
+    would need their censoring times, which `Times` doesn't carry."""
     finds = sorted(t for t in times if t is not None)
     curve, remaining = [(0.0, 0.0)], len(times)
     still_missing = 1.0
