@@ -15,3 +15,5 @@ data/perception/
 data/tiles/
 # OpenStreetMap downloads for real places (ODbL; fetched on first use by app.sar.terrain)
 data/places/
+# Photo-check example (python -m app.perception.triage --example), built from the dataset
+data/triage/

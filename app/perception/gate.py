@@ -65,9 +65,15 @@ class Tile:
 def tiles_at(photo: Photo, scale: int, width: int = 4000, height: int = 3000) -> list[Tile]:
     """Squares of TILE_PX*scale photo pixels, spread evenly so together they cover the photo."""
     side = TILE_PX * scale
-    xs = np.linspace(0, width - side, math.ceil(width / side)).astype(int)
-    ys = np.linspace(0, height - side, math.ceil(height / side)).astype(int)
-    return [Tile(photo, scale, int(x), int(y)) for y in ys for x in xs]
+    return [Tile(photo, scale, x, y) for y in tile_starts(height, side) for x in tile_starts(width, side)]
+
+
+def tile_starts(length: int, side: int) -> list[int]:
+    """Where squares of `side` start along an edge of `length` so that, evenly spread, they cover it. A photo smaller
+    than one square gets a single square (the crop runs past its edge, padded black)."""
+    if length <= side:
+        return [0]
+    return [int(v) for v in np.linspace(0, length - side, math.ceil(length / side)).astype(int)]
 
 
 def sample(all_photos: list[Photo], scale: int, n_pos: int, n_neg: int, seed: int = 0) -> list[Tile]:

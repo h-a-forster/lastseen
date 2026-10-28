@@ -2,19 +2,24 @@ import json
 import os
 import re
 import threading
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi import FastAPI, HTTPException, Request  # noqa: E402
+from fastapi.concurrency import run_in_threadpool  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from app import llm  # noqa: E402
+from app.meta_api import ModelCallError, SpendCapReached  # noqa: E402
 from app.perception import pool as photo_pool  # noqa: E402
+from app.perception import triage  # noqa: E402
 from app.sar import replay  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
 
@@ -29,7 +34,8 @@ def health():
 
 
 RACE_PLANNERS = {"lawnmower", "spiral", "concentric", "sector", "greedy", "greedy+spark"}
-_race_lock = threading.Lock()  # one race at a time: each takes a few seconds of CPU
+# One model job at a time (a race, or a photo check). Both set MODEL_MODE for the process, so they must not overlap.
+_model_lock = threading.Lock()
 MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 
@@ -74,13 +80,13 @@ def new_race(req: RaceRequest):
         raise HTTPException(422, f"unknown place: {req.place}")
     if len(list(replay.RUNS_DIR.glob("*.json"))) >= MAX_STORED_RUNS:
         raise HTTPException(507, "storage for recorded races is full")
-    if not _race_lock.acquire(blocking=False):
-        raise HTTPException(429, "another race is being recorded; try again in a few seconds")
+    if not _model_lock.acquire(blocking=False):
+        raise HTTPException(429, "busy recording a race or checking a photo; try again in a few seconds")
     try:
         os.environ["MODEL_MODE"] = "replay"
         path = replay.save(replay.race(req.seed, req.planners, place=req.place))
     finally:
-        _race_lock.release()
+        _model_lock.release()
     return {"id": path.stem}
 
 
@@ -91,6 +97,65 @@ def get_tile(tile_id: str):
     if path is None:
         raise HTTPException(404, "no such tile")
     return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+
+LIVE_TRIAGE = os.getenv("LIVE_TRIAGE") == "1"  # paid: off unless the server is set up for it
+TRIAGE_PER_HOUR = 5  # photo checks per visitor address per hour
+MAX_UPLOAD_BYTES = 20_000_000
+_triage_times: dict[str, deque] = defaultdict(deque)
+
+
+@app.get("/api/triage/example")
+def triage_example():
+    """A labelled HERIDAL photo already checked by SAM 3.1 + Spark, shown before anyone uploads a photo."""
+    path = triage.EXAMPLE_DIR / "example.json"
+    if not path.is_file():
+        raise HTTPException(404, "no example on this server (python -m app.perception.triage --example)")
+    return FileResponse(path, media_type="application/json")
+
+
+@app.get("/api/triage/example.jpg")
+def triage_example_photo():
+    path = triage.EXAMPLE_DIR / "example.jpg"
+    if not path.is_file():
+        raise HTTPException(404, "no example photo")
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.post("/api/triage")
+async def triage_photo(request: Request):
+    """Check an uploaded photo (the raw image as the request body) with SAM 3.1 + Spark. The photo is not stored."""
+    if not LIVE_TRIAGE:
+        raise HTTPException(403, "live photo checks are switched off on this server")
+    if int(request.headers.get("content-length") or 0) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"photo is larger than {MAX_UPLOAD_BYTES // 1_000_000} MB")
+    _rate_limit(request.client.host if request.client else "unknown")
+    data = await request.body()
+    try:
+        image = await run_in_threadpool(triage.load, data)
+    except (ValueError, OSError) as e:  # not an image, or too many pixels
+        raise HTTPException(422, f"could not use this photo: {e}")
+    if not _model_lock.acquire(blocking=False):
+        raise HTTPException(429, "busy recording a race or checking a photo; try again in a few seconds")
+    try:
+        os.environ["MODEL_MODE"] = "live"
+        return await run_in_threadpool(triage.triage, image)
+    except SpendCapReached:
+        raise HTTPException(503, "this server's spending limit for model calls is reached")
+    except ModelCallError as e:
+        raise HTTPException(502, f"the model call failed: {e}")
+    finally:
+        os.environ["MODEL_MODE"] = "replay"
+        _model_lock.release()
+
+
+def _rate_limit(address: str) -> None:
+    times, now = _triage_times[address], time.monotonic()
+    while times and now - times[0] > 3600:
+        times.popleft()
+    if len(times) >= TRIAGE_PER_HOUR:
+        raise HTTPException(429, f"at most {TRIAGE_PER_HOUR} photo checks an hour; try again later")
+    times.append(now)
 
 
 # Serves static/index.html at "/". Keep this last so /api routes win.
