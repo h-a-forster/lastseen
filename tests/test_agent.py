@@ -115,15 +115,17 @@ def fake_spark(monkeypatch, data):
     monkeypatch.setattr(interpret_module, "spark_json", lambda *a, **k: Answer(data, 0.0, True, "test"))
 
 
-def test_evidence_must_quote_what_people_said_not_our_time_stamps(monkeypatch):
+def test_evidence_must_quote_the_reports_or_the_map_not_our_time_stamps(monkeypatch):
     from app.agent.interpret import interpret
     from app.sar.cues import Report
 
     m = flat_map()
-    fake_spark(monkeypatch, {"hypotheses": [hypothesis("stamp", 0.9, ["into the search"], direction_deg=90, spread_deg=60)],
+    fake_spark(monkeypatch, {"hypotheses": [hypothesis("stamp", 0.9, ["into the search"], direction_deg=90, spread_deg=60),
+                                            hypothesis("water", 0.5, ["streams and ponds"], direction_deg=180, spread_deg=60)],
                              "rest_weight": 0.1, "notes": ""})
     result = interpret(m, [Report(0.0, "A neighbour saw them go west.")], np.full(m.grid.shape, 1.0))
-    assert not result.hypotheses and "stamp" in result.dropped[0]
+    assert [h.name for h in result.hypotheses] == ["water"]  # quoted from the map description Spark was shown
+    assert "stamp" in result.dropped[0]
 
 
 def test_advisor_carries_on_when_spark_answers_off_schema(monkeypatch):

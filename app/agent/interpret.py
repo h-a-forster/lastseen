@@ -2,7 +2,8 @@
 
 The model decides what the reports mean; code decides everything numeric that follows. Spark's answer is strict JSON
 (schema below), and code then checks it:
-- every hypothesis must quote words that really appear in the reports, or it is dropped (no invented evidence);
+- every hypothesis must quote words that really appear in the reports or in the map description it was shown, or it
+  is dropped (no invented evidence);
 - every number is clamped to a sensible range, and at most MAX_HYPOTHESES are kept;
 - at least MIN_REST of the weight stays on "none of the above", because witnesses are often wrong.
 
@@ -106,12 +107,14 @@ class HypothesisSet:
 def interpret(search_map: SearchMap, reports: list[Report], base_poa: np.ndarray) -> HypothesisSet:
     """Ask Spark for hypotheses given all reports so far, then check them and build their layers."""
     text = "\n".join(f"[{r.t_s / 60:.0f} min into the search] {r.text}" for r in reports)
+    description = describe(search_map)
     messages = [{"role": "system", "content": SYSTEM},
-                {"role": "user", "content": f"{describe(search_map)}\n\nReports so far:\n{text}"}]
+                {"role": "user", "content": f"{description}\n\nReports so far:\n{text}"}]
     answer = spark_json(messages, SCHEMA, "hypotheses")
-    said = "\n".join(r.text for r in reports)  # evidence must come from what people said, not our time stamps
+    # Evidence may quote what people said or the map Spark was shown (e.g. "streams and ponds"), never our time stamps.
+    given = "\n".join([description, *(r.text for r in reports)])
     try:
-        return check(search_map, answer, said, base_poa, reports[-1].t_s)
+        return check(search_map, answer, given, base_poa, reports[-1].t_s)
     except (KeyError, TypeError, ValueError) as e:
         raise ModelCallError(f"answer did not fit the schema: {e!r}") from e
 
@@ -140,7 +143,7 @@ def check(search_map: SearchMap, answer: Answer, text: str, base_poa: np.ndarray
     kept, layers, dropped = [], [], []
     for raw in sorted(answer.data["hypotheses"], key=lambda h: -h["weight"])[:MAX_HYPOTHESES]:
         if not raw["evidence"] or not all(_quoted(q, text) for q in raw["evidence"]):
-            dropped.append(f"{raw['name']}: evidence not found in the reports")
+            dropped.append(f"{raw['name']}: evidence not found in the reports or the map")
             continue
         shape = _clamped_shape(raw)
         grid_layer = layer(search_map, base_poa, shape)
