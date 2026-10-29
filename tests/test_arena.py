@@ -50,6 +50,18 @@ def test_every_baseline_flies_legal_routes():
         assert result.photos > 0, name
 
 
+def test_fixed_patterns_keep_flying_where_a_detour_skims_a_no_fly_corner():
+    from app.sar.detection import DetectionModel
+    from app.sar.recorder import Recorder
+
+    scenario = synthetic(5, category="dementia")  # these paths pass exactly over a no-fly cell's corner
+    blind = DetectionModel(pod_by_terrain={t: (0.0,) * len(DetectionModel().gsd_cm) for t in Terrain})  # runs 4 h
+    for name in ("lawnmower", "spiral", "concentric", "sector"):
+        rec = Recorder()
+        Sim(scenario, BASELINES[name](), detection=blind, seed=5, max_s=4 * 3600, recorder=rec).run()
+        assert any(e["type"] == "photo" and e["t_s"] > 3.5 * 3600 for e in rec.events), name
+
+
 def test_detours_go_around_no_fly_and_cost_the_extra_distance():
     from app.sar.grid import Grid
     from app.sar.routing import distance_field, is_clear, path_length, safe_path

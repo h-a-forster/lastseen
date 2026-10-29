@@ -36,12 +36,16 @@ class PathPlanner:
     def paths(self, search_map: SearchMap, lane_m: float, drones: int) -> list[list[Point]]:
         raise NotImplementedError
 
-    @staticmethod
-    def _flyable(search_map: SearchMap, path: list[Point]) -> list[Point]:
+    def _flyable(self, search_map: SearchMap, path: list[Point]) -> list[Point]:
         """Drop points outside the area or over no-fly cells, then route around no-fly areas, so the battery
-        planning counts the detours the autopilot will fly."""
-        kept = [p for p in densify(path, STEP_M) if _allowed(search_map, p)]
-        return densify(safe_path(kept, search_map.no_fly, search_map.grid), STEP_M)
+        planning counts the detours the autopilot will fly. A detour corner can fall in a no-fly cell; it is dropped
+        too (the autopilot detours on every leg anyway), since a point no sortie can reach would stop the pattern."""
+        kept = [p for p in densify(path, STEP_M) if self._reachable(search_map, p)]
+        return [p for p in densify(safe_path(kept, search_map.no_fly, search_map.grid), STEP_M)
+                if self._reachable(search_map, p)]
+
+    def _reachable(self, search_map: SearchMap, p: Point) -> bool:
+        return _allowed(search_map, p) and bool(np.isfinite(self._home_m[self.grid.cell_of(*p)]))
 
     def observe(self, event: Look) -> None:
         pass
