@@ -9,14 +9,15 @@ with a person a few dozen pixels wide, or nobody. And every new witness report c
 LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
 
 ## What it does
-- **Is anyone in this photo?** SAM 3.1 proposes every person in each 1000 px tile of a drone photo, and Muse Spark
+- **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
   checks each proposal on a close-up. A reviewer checks a few alarms instead of every photo.
 - **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down,
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
   hill"). Each drone gets a first block to fly, downloadable as a QGroundControl mission.
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
-  decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size.
+  decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
+  them at an assumed rate, since the photos have no one under trees).
 
 ## Meta models
 | Model | Job |
@@ -84,7 +85,7 @@ docs/             evaluation plan, parameters, team workflow
   in `data/lost_person_stats.json`.
 
 ## Built during the hackathon
-Everything after commit `be7036a` was built during the event (26 Oct - 4 Nov 2026). Commit `be7036a` is a generic
+Everything after commit `be7036a` was built during the event (27 Oct - 4 Nov 2026). Commit `be7036a` is a generic
 FastAPI starter template written beforehand; it contains no project-specific code.
 
 ## License

@@ -81,5 +81,8 @@ find times and which report details were true, so every number above can be reco
   `spiral+spark` and the probability-map planner use it; planners that ignore the reports are unchanged.
 - **Detection re-measured with more photos:** every test-split tile at 2x shrink, so the size flown at 100 m rests
   on 227 people instead of 50 (79%, was 78%). The development runs in `docs/parameters.md` used the earlier table.
+- **Spark's evidence may quote the map description it is shown** ("streams and ponds"), not only the reports. Before,
+  such hypotheses were dropped, and on some scenarios the whole reading of the brief was lost. Plain planners are
+  unchanged; development numbers with Spark were re-run.
 - A bug that could stop fixed patterns flying for the rest of a search was fixed (commit `c912676`); all
   development numbers were re-run after it.

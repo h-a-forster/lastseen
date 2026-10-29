@@ -1,7 +1,7 @@
 [project]
-name = "hackathon-starter"
+name = "lastseen"
 version = "0.1.0"
-description = "Hackathon starter: FastAPI + LiteLLM (any model provider) + static frontend"
+description = "Drone search planning for missing people, built on Meta's models"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
