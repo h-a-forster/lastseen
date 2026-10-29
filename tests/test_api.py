@@ -2,6 +2,8 @@
 checks that are switched off, aren't images, or come too often."""
 
 import io
+import json
+import os
 
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -32,3 +34,21 @@ def test_photo_checks_are_off_by_default_and_never_spend_on_bad_input_or_past_th
     codes = [post(photo.getvalue()).status_code for _ in range(main.PAID_PER_HOUR)]
     assert codes == [200] * (main.PAID_PER_HOUR - 1) + [429]  # the refused non-image counted towards the limit
     assert calls == [(64, 48)] * (main.PAID_PER_HOUR - 1)
+
+
+def test_health_tells_the_page_whether_live_model_calls_are_on(monkeypatch):
+    assert client.get("/api/health").json()["live_models"] is False
+    monkeypatch.setattr(main, "LIVE_MODELS", True)
+    assert client.get("/api/health").json()["live_models"] is True
+
+
+def test_runs_list_featured_races_first_in_their_order_then_newest_first(tmp_path, monkeypatch):
+    monkeypatch.setattr(main.replay, "RUNS_DIR", tmp_path)
+    monkeypatch.setattr(main, "_summaries", {})
+    oldest_first = ["old", main.FEATURED_RUNS[0], "new", main.FEATURED_RUNS[2]]  # FEATURED_RUNS[1] is missing
+    for age, run_id in enumerate(reversed(oldest_first)):
+        path = tmp_path / f"{run_id}.json"
+        path.write_text(json.dumps({"id": run_id, "seed": 1, "category": "dementia", "lanes": {}}), encoding="utf-8")
+        os.utime(path, (1_000_000 - age, 1_000_000 - age))
+    listed = [run["id"] for run in client.get("/api/runs").json()]
+    assert listed == [main.FEATURED_RUNS[0], main.FEATURED_RUNS[2], "new", "old"]
