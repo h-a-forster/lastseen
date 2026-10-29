@@ -49,6 +49,7 @@ SPARK = "+spark"
 ALT = "@"
 SEED_SETS = {"dev": range(0, 100_000), "heldout": range(900_000, 1_000_000)}
 CHECKPOINTS_H = (1.0, 2.0)
+PRIMARY_H = 2.0  # the primary endpoint in docs/evaluation.md
 
 
 @dataclasses.dataclass
@@ -156,8 +157,31 @@ def summarise(results: list[SeedResult], planner_names: list[str], reference: st
             ref_times = [r.runs[reference].found_s for r in results]
             entry["vs_reference"] = {f"{t / 3600:g}h": metrics.paired_difference(times, ref_times, t, rng) for t in checkpoints}
         summary["planners"][name] = entry
+    summary["spark_gain"] = {name: spark_gain(results, name, checkpoints)
+                             for name in planner_names if SPARK in name and name.replace(SPARK, "") in planner_names}
     summary["calibrated"] = all(run.calibrated for r in results for run in r.runs.values())
     return summary
+
+
+def spark_gain(results: list[SeedResult], name: str, checkpoints: list[float]) -> dict:
+    """With Spark minus without, same planner, paired by scenario: the evaluation's primary comparison. The primary
+    checkpoint is also split by whether the sighting report was right, wrong or not given."""
+    without = name.replace(SPARK, "")
+
+    def diff(rs: list[SeedResult], t_s: float) -> tuple[float, float, float]:
+        return metrics.paired_difference([r.runs[name].found_s for r in rs], [r.runs[without].found_s for r in rs],
+                                         t_s, np.random.default_rng(0))
+
+    primary_s = min(PRIMARY_H * 3600, checkpoints[-1])
+    groups = {label: [r for r in results if sighting_label(r.cues.get("sighting")) == label]
+              for label in ("sighting right", "sighting wrong", "no sighting")}
+    return {"without": without, "diff": {f"{t / 3600:g}h": diff(results, t) for t in checkpoints},
+            "by_sighting": {"at": f"{primary_s / 3600:g}h",
+                            **{label: {"scenarios": len(rs), "diff": diff(rs, primary_s)} for label, rs in groups.items() if rs}}}
+
+
+def sighting_label(true: bool | None) -> str:
+    return "no sighting" if true is None else "sighting right" if true else "sighting wrong"
 
 
 def per_find(runs: list[RunResult]) -> dict | None:
@@ -185,6 +209,13 @@ def print_table(summary: dict, reference: str) -> None:
           "air: share of drone time spent flying; h/find: drone flight hours per person found; "
           "photos / alarms: per search, what a reviewer would check without / with SAM 3.1 + Spark triage; "
           "missed: photos with the person in them that found nobody.")
+    for name, gain in summary["spark_gain"].items():
+        split = gain["by_sighting"]
+        at = split["at"]
+        print(f"Spark, same planner: {name} minus {gain['without']}, found within {at}: "
+              "{:+.0%} [{:+.0%}, {:+.0%}]".format(*gain["diff"][at]) + "; by sighting report: "
+              + ", ".join(f"{label} {g['diff'][0]:+.0%} (n={g['scenarios']})"
+                          for label, g in split.items() if label != "at"))
     if not summary["calibrated"]:
         print("POD table is the placeholder: numbers are uncalibrated.")
 

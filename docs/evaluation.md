@@ -62,7 +62,8 @@ uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category 
   --planners spiral,spiral+spark,<planner>,<planner>+spark --reference spiral --lose-drone --usd-cap 4 \
   --json docs/results/final-lost-drone.json
 ```
-Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's
+The bench prints both primary comparisons itself (every `<name>+spark` run next to `<name>`), with the split by
+sighting report. Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's
 find times and which report details were true, so every number above can be recomputed from it.
 
 ## Known limits

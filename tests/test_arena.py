@@ -298,3 +298,20 @@ def test_a_height_in_the_planner_name_flies_that_planner_at_that_height():
     assert result.runs["spiral@120"].photos < result.runs["spiral"].photos  # bigger photos, taken further apart
     with pytest.raises(ValueError):
         fleet_for("spiral@150", FleetSpec())
+
+
+def test_the_bench_reports_sparks_gain_on_the_same_planner_split_by_the_sighting():
+    from app.sar.bench import SeedResult, summarise
+    from app.sar.sim import RunResult
+
+    def runs(plain, spark):
+        return {name: RunResult(name, "s", found, 0, 0.0, 0, 0.0, 0.0, True)
+                for name, found in (("greedy@80", plain), ("greedy+spark@80", spark))}
+    results = [SeedResult(0, True, runs(None, 600.0), 0, {"sighting": True}),     # Spark followed a right sighting
+               SeedResult(1, True, runs(600.0, None), 0, {"sighting": False}),    # ...and a wrong one
+               SeedResult(2, True, runs(600.0, 600.0), 0, {})]
+    gain = summarise(results, ["greedy@80", "greedy+spark@80"], "greedy@80", 4 * 3600)["spark_gain"]["greedy+spark@80"]
+    assert gain["without"] == "greedy@80" and gain["diff"]["2h"][0] == 0
+    split = gain["by_sighting"]
+    assert split["at"] == "2h"
+    assert [split[k]["diff"][0] for k in ("sighting right", "sighting wrong", "no sighting")] == [1, -1, 0]
