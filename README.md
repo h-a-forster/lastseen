@@ -85,8 +85,9 @@ docs/             evaluation plan, parameters, team workflow
   in `data/lost_person_stats.json`.
 
 ## Built during the hackathon
-Everything after commit `be7036a` was built during the event (27 Oct - 4 Nov 2026). Commit `be7036a` is a generic
-FastAPI starter template written beforehand; it contains no project-specific code.
+Commit `be7036a` is a generic FastAPI starter template written beforehand; it contains no project-specific code.
+The two commits on 26 Oct, kickoff day, are setup only (model API routing, spend guard, team docs, licence). All
+product code was written during the event, from 28 Oct.
 
 ## License
 MIT

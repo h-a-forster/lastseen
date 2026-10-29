@@ -315,3 +315,10 @@ def test_the_bench_reports_sparks_gain_on_the_same_planner_split_by_the_sighting
     split = gain["by_sighting"]
     assert split["at"] == "2h"
     assert [split[k]["diff"][0] for k in ("sighting right", "sighting wrong", "no sighting")] == [1, -1, 0]
+
+
+def test_an_empty_sortie_is_refused_rather_than_exported_at_a_made_up_height():
+    from app.sar.export import qgc_plan
+
+    with pytest.raises(ValueError):
+        qgc_plan(None, (0.0, 0.0), [], 5.0)  # checked before the place is used
