@@ -55,12 +55,14 @@ examples.
 
 ## Plug in a planner
 A planner implements `app/sar/interface.py`: `reset` (the map, fleet, detection rates and statistics), `observe`
-(photos that found nobody, witness reports, Spark's hypotheses), `plan` (the next sortie for a drone at base) and
-optionally `probability_map`. It never sees the hidden person. Start from `app/planner/__init__.py` (`ours`), with
-`app/sar/planners/greedy.py` as a complete example, then:
+(photos that found nobody, witness reports, Spark's hypotheses, a drone that fails), `plan` (the next sortie for a
+drone at base) and optionally `probability_map`. It never sees the hidden person. Start from `app/planner/__init__.py`
+(`ours`), with `app/sar/planners/greedy.py` as a complete example, then:
 ```bash
 uv run python -m app.sar.bench --planners ours,spiral,greedy --seeds 100 --workers 8
 uv run python -m app.sar.bench --planners ours,ours+spark --seeds 30   # with Spark's reading of the reports (paid)
+uv run python -m app.sar.bench --planners ours+spark,spiral+spark --seeds 30   # vs a spiral that restarts on Spark's readings (paid)
+uv run python -m app.sar.bench --planners ours,spiral,greedy --lose-drone      # one drone fails in the first 2 h
 ```
 
 ## Layout
