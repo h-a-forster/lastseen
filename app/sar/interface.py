@@ -111,5 +111,10 @@ class Planner(Protocol):
         """The next sortie for `drone`, which is at base. The arena adds the flight home. An empty list keeps it on the
         ground for a minute. Should take under ~50 ms on a 160x160 grid."""
 
+    def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
+        """Optional. Called for each drone in the air (not flying home) right after a witness report has been observed:
+        a new route from where the drone is, replacing what is left of its sortie, or None to keep flying it. An empty
+        list sends it home. The arena still forces a return if the battery runs low."""
+
     def probability_map(self) -> np.ndarray | None:
         """The planner's current probability of area per cell, for display and map scoring. Optional."""

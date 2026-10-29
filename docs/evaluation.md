@@ -76,5 +76,7 @@ find times and which report details were true, so every number above can be reco
   2 hours at 100-120 m than at 60 m for every planner; 100 m leaves a margin under the usual 120 m legal ceiling.
 - **Comparison 2 added**, with `spiral+spark` also set against the planner with Spark.
 - **Added secondary endpoints:** cost per person found, and a lost drone.
+- **Planners may now re-plan drones in the air** when a report comes in (`retask` in `app/sar/interface.py`). Both
+  `spiral+spark` and the probability-map planner use it; planners that ignore the reports are unchanged.
 - A bug that could stop fixed patterns flying for the rest of a search was fixed (commit `c912676`); all
   development numbers were re-run after it.

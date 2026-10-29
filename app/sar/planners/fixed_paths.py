@@ -14,6 +14,9 @@ the block one battery can sweep that holds the most probability under the readin
 there, forgetting where it has already searched. It is the fixed-pattern way to use Spark's readings, to set against
 planners that fold the same readings into a map they keep.
 
+When the pattern restarts, drones in the air break off and fly the new pattern's next pieces with the battery they
+have left, as a team would radio its pilots.
+
 When a drone is lost, the unflown rest of its sortie goes back on its path, and a drone whose own path is done takes
 over a lost drone's path before starting another pass, as a team would hand on a lost drone's sector.
 """
@@ -51,6 +54,7 @@ class PathPlanner:
             self._base_block = most_likely_block(self._base_poa, self.grid.cell_m, self._block_m)
         self._lost: list[int] = []
         self._notes: list[dict] = []
+        self._diverted: set[int] | None = None  # after a restart: the airborne drones already sent to the new pattern
         self._build()
 
     def _build(self) -> None:
@@ -83,6 +87,16 @@ class PathPlanner:
         route = take_sortie(queue, lambda p: self._home_m[self.grid.cell_of(*p)], self._budget_m)
         return at_altitude(route, self.fleet.alt_m)
 
+    def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
+        """After a restart, each airborne drone once breaks off for the new pattern's next piece."""
+        if self._diverted is None or drone.id in self._diverted:
+            return None
+        self._diverted.add(drone.id)
+        queue = self._todo[self._path_for(drone.id)]
+        budget_m = 0.95 * drone.battery_s * self.fleet.speed_mps
+        route = take_sortie(queue, lambda p: self._home_m[self.grid.cell_of(*p)], budget_m, (drone.y_m, drone.x_m))
+        return at_altitude(route, self.fleet.alt_m)
+
     def _path_for(self, drone_id: int) -> int:
         """The drone's own path; once that is done, a lost drone's unfinished one; else its own again, from the start."""
         own = drone_id % len(self._todo)
@@ -106,6 +120,7 @@ class PathPlanner:
             return
         self._centre = datum
         self._build()
+        self._diverted = set()
         self._notes.append({"kind": "restart", "text": f"Restarted the pattern on Spark's newest reading, centred "
                                                        f"{math.dist(datum, house) / 1000:.1f} km from the house"})
 

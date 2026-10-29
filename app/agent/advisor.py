@@ -61,6 +61,10 @@ class SparkAdvisor:
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         return self.inner.plan(t_s, drone, fleet)
 
+    def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
+        retask = getattr(self.inner, "retask", None)
+        return retask(t_s, drone, fleet) if retask else None
+
     def drain_notes(self) -> list[dict]:
         """Notes for the event log: Spark's readings, then whatever the inner planner explains."""
         notes, self._notes = self._notes, []

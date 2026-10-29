@@ -7,6 +7,8 @@ Fast mode samples each detection from the POD table, so thousands of runs cost n
 person of the same pixel size (`app.perception.pool`), also free. In both modes each photo of empty ground raises
 false alarms at the measured rate; a reviewer has to reject them, which is what the alarm count measures.
 
+When a witness report arrives, a planner that has `retask` may change what its airborne drones fly.
+
 A drone can be lost during the search (`losses`, see `drone_losses`): it stops where it is, keeps the photos it took,
 and the planner is told what it had left to fly.
 """
@@ -108,11 +110,15 @@ class Sim:
     def run(self) -> RunResult:
         t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max, drone_s = 0.0, None, 0, 0.0, 0, 0.0, 0.0, 0.0
         while t < self.max_s and found_s is None:
+            reported = False
             while self.pending_reports and self.pending_reports[0].t_s <= t:
                 report = self.pending_reports.pop(0)
                 if self.rec:
                     self.rec.add("report", t, text=report.text)
                 self.planner.observe(report)
+                reported = True
+            if reported:
+                plan_ms_max = max(plan_ms_max, self._retask(t))
             while self.pending_losses and self.pending_losses[0][0] <= t:
                 self._lose(self.drones[self.pending_losses.pop(0)[1]], t)
             for d in self.drones:
@@ -157,6 +163,29 @@ class Sim:
         if self.rec:
             self.rec.add("drone_lost", t, drone=d.id, y_m=round(d.y, 1), x_m=round(d.x, 1))
         self.planner.observe(DroneLost(t, d.id, unflown))
+
+    def _retask(self, t: float) -> float:
+        """Offer the planner a new route for every drone in the air; returns the slowest answer in ms."""
+        retask = getattr(self.planner, "retask", None)
+        slowest = 0.0
+        for d in self.drones:
+            if retask is None or d.lost or d.returning or not d.route:
+                continue
+            fleet = tuple(o.state(airborne=bool(o.route)) for o in self.drones if not o.lost)
+            started = time.perf_counter()
+            route = retask(t, d.state(airborne=True), fleet)
+            slowest = max(slowest, (time.perf_counter() - started) * 1000)
+            if route is None:
+                continue
+            route = list(route)
+            self._check(route)
+            if route:
+                d.route = self._safe((d.y, d.x), route)
+            else:
+                self._send_home(d)
+            if self.rec:
+                self.rec.add("retask", t, drone=d.id)
+        return slowest
 
     def _launch(self, d: Drone, t: float) -> float:
         """Ask the planner for a sortie; returns how long it took in ms. The fleet it sees leaves out lost drones."""
