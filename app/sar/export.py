@@ -15,8 +15,10 @@ ALTITUDE_RELATIVE = 1  # QGroundControl's AltitudeFrameRelative
 
 
 def qgc_plan(place: Place, base_m: tuple[float, float], route: list[Waypoint], speed_mps: float) -> dict:
+    if not route:
+        raise ValueError("an empty sortie has no mission to export")
     home = tuple(round(v, 7) for v in place.latlon(*base_m))
-    alt = route[0][2] if route else 60.0
+    alt = route[0][2]
     items = [_item(MAV_CMD_NAV_TAKEOFF, MAV_FRAME_GLOBAL_RELATIVE_ALT, [0, 0, 0, None, *home, alt])]
     items += [_item(MAV_CMD_NAV_WAYPOINT, MAV_FRAME_GLOBAL_RELATIVE_ALT, [0, 0, 0, None, *place.latlon(y, x), a])
               for y, x, a in route]
