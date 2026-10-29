@@ -59,17 +59,19 @@ def densify(points: list[Point], step_m: float) -> list[Point]:
     return out
 
 
-def take_sortie(path: deque[Point], home_m: Callable[[Point], float], budget_m: float) -> list[Point]:
+def take_sortie(path: deque[Point], home_m: Callable[[Point], float], budget_m: float,
+                start: Point | None = None) -> list[Point]:
     """Pop the longest prefix of `path` a drone can fly out to, along and back from within `budget_m` of flight.
-    `home_m(p)` is the flying distance between base and p (around no-fly areas). Raises if even a full battery can't
-    reach the next point, since every later sortie would come back empty and the pattern would stop for good."""
+    `home_m(p)` is the flying distance between base and p (around no-fly areas); `start` is where an airborne drone
+    is (None: at base). From base, raises if even a full battery can't reach the next point, since every later sortie
+    would come back empty and the pattern would stop for good."""
     route: list[Point] = []
     flown = 0.0
     while path:
         nxt = path[0]
-        leg = math.dist(route[-1], nxt) if route else home_m(nxt)
+        leg = math.dist(route[-1] if route else start, nxt) if route or start else home_m(nxt)
         if flown + leg + home_m(nxt) > budget_m:
-            if not route:
+            if not route and start is None:
                 raise ValueError(f"no sortie can reach ({nxt[0]:.0f}, {nxt[1]:.0f}) and fly home on one battery")
             break
         flown += leg

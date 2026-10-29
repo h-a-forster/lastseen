@@ -158,10 +158,79 @@ def test_a_spiral_restarts_on_the_readings_most_likely_block_and_only_when_that_
     no_news = Hypotheses(0.0, (), (), (), np.zeros((0, *m.grid.shape)), 1.0)
     reading = Hypotheses(1800.0, ("seen east",), ("r",), (0.9,), seen_east[None], 0.1)
     spiral = ExpandingSquare()
-    spiral.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    spiral.reset(m, FleetSpec(alt_m=60.0), DetectionModel(), lost_person_stats(), 0)  # a 1.1 km block
     spiral.observe(no_news)  # adds nothing to the statistics, so the pattern stays on the house
     spiral.observe(reading)
     spiral.observe(reading)  # the same reading again moves nothing, so the pattern isn't restarted twice
     route = spiral.plan(1800.0, DroneState(0, *house, 60.0, 1500.0, False, ()), ())
     assert math.dist(route[0][:2], spot) < 300 < 700 < math.dist(route[0][:2], house)
     assert [n["kind"] for n in spiral.drain_notes()] == ["restart"]
+
+
+def east_sighting(m, t_s, km=1.0):
+    """A reading that puts the person near a spot `km` east of the house."""
+    from app.agent.layers import layer
+    from app.sar.interface import Hypotheses
+
+    seen = layer(m, np.ones(m.grid.shape), Shape(spot_bearing_deg=90, spot_distance_km=km, spot_radius_km=0.15))
+    return Hypotheses(t_s, ("seen east",), ("r",), (0.9,), seen[None], 0.1)
+
+
+def test_a_new_reading_retasks_drones_in_the_air_once():
+    import math
+
+    from app.sar.cues import Report
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import DroneState, FleetSpec, Look
+    from app.sar.planners.fixed_paths import ExpandingSquare
+    from app.sar.planners.greedy import ProbabilityGreedy
+    from app.sar.recorder import Recorder
+    from app.sar.scenario import Scenario
+    from app.sar.sim import Sim
+    from app.sar.stats import lost_person_stats
+
+    m = flat_map(120)
+    house = m.grid.centre_m(*m.ipp)
+    spot = (house[0], house[1] + 1000)
+    airborne = DroneState(0, *house, 100.0, 1200.0, True, ())
+
+    greedy = ProbabilityGreedy()
+    greedy.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    first = greedy.plan(0.0, DroneState(0, *house, 100.0, 1500.0, False, ()), ())
+    rows, cols = zip(*(m.grid.cell_of(y, x) for y, x, _ in first))
+    cells = (slice(min(rows), max(rows) + 1), slice(min(cols), max(cols) + 1))
+    greedy.observe(Look(200.0, 0, *house, 100.0, cells, np.full((len(range(*cells[0].indices(120))),
+                                                                     len(range(*cells[1].indices(120)))), 0.9)))
+    assert greedy.retask(300.0, airborne, ()) is None  # its block is mostly searched, but nothing new was reported
+    greedy.observe(east_sighting(m, 300.0))
+    route = greedy.retask(300.0, airborne, ())
+    assert math.dist(np.mean([w[:2] for w in route], axis=0), spot) < 300  # the block holding the sighting
+    assert greedy.retask(300.0, airborne, ()) is None  # already acted on this reading
+
+    spiral = ExpandingSquare()
+    spiral.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    spiral.observe(east_sighting(m, 300.0))
+    route = spiral.retask(300.0, airborne, ())
+    assert math.dist(route[0][:2], spot) < math.dist(route[0][:2], house)  # off to the new datum
+    assert spiral.retask(300.0, airborne, ()) is None  # each drone breaks off once per restart
+
+    edge = SearchMap(m.grid, m.terrain, m.trails, m.no_fly, (60, 10), (60, 10), "dementia")  # house at the west edge
+    far = (edge.grid.centre_m(60, 10)[0], edge.grid.centre_m(60, 10)[1] + 2200)  # beyond the first sorties' reach
+
+    class SpiralHearingASighting(ExpandingSquare):  # stands in for the Spark advisor
+        def observe(self, event):
+            super().observe(east_sighting(edge, event.t_s, km=2.2) if isinstance(event, Report) else event)
+
+    class WithoutRetask(SpiralHearingASighting):
+        retask = None
+
+    def first_photo_near_the_spot(planner) -> float:
+        rec = Recorder()
+        blind = DetectionModel(pod_by_terrain={t: (0.0,) * len(DetectionModel().gsd_cm) for t in Terrain})
+        scenario = Scenario("flat", edge, np.array([edge.grid.centre_m(60, 10)] * 10_000), 0.0)
+        Sim(scenario, planner, detection=blind, seed=0, max_s=3600, recorder=rec,
+            reports=[Report(600.0, "seen east")]).run()
+        return min(e["t_s"] for e in rec.events if e["type"] == "photo" and e["t_s"] > 600
+                   and math.dist(edge.grid.centre_m(e["cells"][0], e["cells"][2]), far) < 300)
+
+    assert first_photo_near_the_spot(SpiralHearingASighting()) < first_photo_near_the_spot(WithoutRetask()) - 300

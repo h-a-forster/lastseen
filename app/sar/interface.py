@@ -24,7 +24,7 @@ MIN_ALT_M, MAX_ALT_M = 40.0, 120.0
 class FleetSpec:
     drones: int = 3
     speed_mps: float = 10.0
-    alt_m: float = 60.0  # default altitude; low enough that a person is 20-65 px for the detector
+    alt_m: float = 100.0  # default altitude: a person is about 44 px; found more people than 60 m (docs/parameters.md)
     endurance_s: float = 25 * 60  # usable flight time per battery, landing reserve already removed
     swap_s: float = 180.0  # battery swap and relaunch at base
     overlap: float = 0.1  # along-track photo overlap
@@ -110,6 +110,11 @@ class Planner(Protocol):
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         """The next sortie for `drone`, which is at base. The arena adds the flight home. An empty list keeps it on the
         ground for a minute. Should take under ~50 ms on a 160x160 grid."""
+
+    def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
+        """Optional. Called for each drone in the air (not flying home) right after a witness report has been observed:
+        a new route from where the drone is, replacing what is left of its sortie, or None to keep flying it. An empty
+        list sends it home. The arena still forces a return if the battery runs low."""
 
     def probability_map(self) -> np.ndarray | None:
         """The planner's current probability of area per cell, for display and map scoring. Optional."""

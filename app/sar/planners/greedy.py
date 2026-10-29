@@ -2,6 +2,9 @@
 miss, diffusion as time passes), and each sortie sweeps the block with the most probability of success per second of
 flight that fits in one battery, skipping blocks other airborne drones are already sweeping.
 
+When a new reading arrives mid-sortie, a drone in the air switches to another block if, under the new map, that block
+is a better use of the battery it has left (`retask`); with no new reading it flies its block to the end.
+
 Hypotheses from a model are a separate factor: the map is multiplied by how much more likely the latest reading makes
 each cell, raised to the power TRUST (1 = take it at face value, 0 = ignore it). A newer reading replaces the older
 one exactly, so the brief is never counted twice. The reading doesn't spread over time like the map does: each one
@@ -34,6 +37,9 @@ class ProbabilityGreedy:
         self._prior = self.belief.poa.copy()
         self._likelihood = np.ones(search_map.grid.shape)  # the latest reading of the reports; all 1 before any
         self._claimed: dict[int, tuple[slice, slice]] = {}
+        self._readings = 0  # readings received so far
+        self._planned_with: dict[int, int] = {}  # per drone, how many readings its block was chosen with
+        self._home = search_map.grid.centre_m(*search_map.base)
         self._t_s = 0.0
         self._notes: list[dict] = []
 
@@ -43,20 +49,50 @@ class ProbabilityGreedy:
             self.belief.observe_miss(event.cells, event.pod)
         elif isinstance(event, Hypotheses):
             self._likelihood = event.likelihood(self._prior) ** TRUST
+            self._readings += 1
         elif isinstance(event, DroneLost):  # its block is free again; the map still shows what it didn't photograph
             self._claimed.pop(event.drone, None)
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         self._advance(t_s)
         self._claimed.pop(drone.id, None)
+        rate, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * self.fleet.endurance_s)
+        if route:
+            self._claim(drone.id, block)
+            self._notes.append({"kind": "sortie", "drone": drone.id,
+                                "text": f"Drone {drone.id + 1}: block with {rate * 60:.1%} chance of finding per minute of flight"})
+        return at_altitude(route, self.fleet.alt_m)
+
+    def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
+        if self._planned_with.get(drone.id) == self._readings:  # nothing new since this block was chosen
+            return None
+        self._advance(t_s)
+        current = self._claimed.pop(drone.id, None)
+        rate, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * drone.battery_s)
+        if not route or block == current:
+            if current is not None:
+                self._claim(drone.id, current)
+            return None
+        self._claim(drone.id, block)
+        self._notes.append({"kind": "sortie", "drone": drone.id,
+                            "text": f"Drone {drone.id + 1} retasked mid-flight: the new reading makes another block "
+                                    f"worth {rate * 60:.1%} per minute"})
+        return at_altitude(route, self.fleet.alt_m)
+
+    def _claim(self, drone_id: int, block: tuple[slice, slice]) -> None:
+        self._claimed[drone_id] = block
+        self._planned_with[drone_id] = self._readings
+
+    def _best_block(self, start: tuple[float, float], budget_s: float) -> tuple[float, tuple[slice, slice] | None, list]:
+        """The unclaimed block with the most chance of finding per second of flight from `start`, along the block and
+        home, within `budget_s`."""
         grid = self.map.grid
         lane_m = self.fleet.footprint_m[0] * (1 - self.fleet.overlap)
         side = max(1, round(BLOCK_LANES * lane_m / grid.cell_m))
         value = self.probability_map() * self.pod
         for rows, cols in self._claimed.values():
             value[rows, cols] = 0.0
-        base = (drone.y_m, drone.x_m)
-        best, best_route = 0.0, []
+        best, best_block, best_route = 0.0, None, []
         for r0 in range(0, grid.rows, side):
             for c0 in range(0, grid.cols, side):
                 block = (slice(r0, min(r0 + side, grid.rows)), slice(c0, min(c0 + side, grid.cols)))
@@ -64,14 +100,10 @@ class ProbabilityGreedy:
                 if gain <= best * 1e-3:
                     continue
                 route = flatten(lanes(grid, self.map.no_fly, *block, lane_m))
-                seconds = path_length([base, *route, base]) / self.fleet.speed_mps
-                if route and seconds <= 0.95 * self.fleet.endurance_s and gain / seconds > best:
-                    best, best_route, chosen = gain / seconds, route, block
-        if best_route:
-            self._claimed[drone.id] = chosen
-            self._notes.append({"kind": "sortie", "drone": drone.id,
-                                "text": f"Drone {drone.id + 1}: block with {best * 60:.1%} chance of finding per minute of flight"})
-        return at_altitude(best_route, self.fleet.alt_m)
+                seconds = path_length([start, *route, self._home]) / self.fleet.speed_mps
+                if route and seconds <= budget_s and gain / seconds > best:
+                    best, best_block, best_route = gain / seconds, block, route
+        return best, best_block, best_route
 
     def probability_map(self):
         """The map with the latest reading applied, keeping the probability inside the area unchanged."""

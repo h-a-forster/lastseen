@@ -20,7 +20,7 @@ from pathlib import Path
 
 from app.perception import pool as photo_pool
 from app.perception.heridal import CREDIT
-from app.sar.bench import make_planner
+from app.sar.bench import fleet_for, make_planner
 from app.sar.cues import Cue, reports_for
 from app.sar.interface import FleetSpec
 from app.sar.recorder import Recorder
@@ -44,7 +44,7 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     lanes = {}
     for name in planner_names:
         recorder = Recorder()
-        result = Sim(scenario, make_planner(name), fleet, seed=seed, max_s=hours * 3600, reports=reports,
+        result = Sim(scenario, make_planner(name), fleet_for(name, fleet), seed=seed, max_s=hours * 3600, reports=reports,
                      recorder=recorder, photos=photos, losses=losses).run()
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {

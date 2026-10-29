@@ -286,3 +286,15 @@ def test_greedy_frees_a_lost_drones_block():
     assert greedy.plan(0.0, at_base(1), ()) != first  # an airborne drone keeps its block...
     greedy.observe(DroneLost(10.0, 0, ()))
     assert greedy.plan(10.0, at_base(2), ()) == first  # ...until it is lost
+
+
+def test_a_height_in_the_planner_name_flies_that_planner_at_that_height():
+    from app.sar.bench import fleet_for, run_seed
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import FleetSpec
+
+    blind = DetectionModel(pod_by_terrain={t: (0.0,) * len(DetectionModel().gsd_cm) for t in Terrain})  # full hour
+    result = run_seed(3, ["spiral", "spiral@120"], FleetSpec(), 3600, "dementia", 120, detection=blind)
+    assert result.runs["spiral@120"].photos < result.runs["spiral"].photos  # bigger photos, taken further apart
+    with pytest.raises(ValueError):
+        fleet_for("spiral@150", FleetSpec())
