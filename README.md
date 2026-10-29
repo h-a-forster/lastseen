@@ -26,7 +26,7 @@ LastSeen uses Meta's models for both, and tests every claim on a simulator built
 | Muse Voice Transcribe | Turns a spoken brief into text |
 
 ## How we know whether it works
-- **Detection is measured, not assumed.** SAM 3.1 + Spark ran on 263 labelled people in the HERIDAL test photos and on
+- **Detection is measured, not assumed.** SAM 3.1 + Spark ran on 660 labelled people in the HERIDAL test photos and on
   empty ground; the simulator uses the measured rates by person size (`data/pod_table.json`).
 - **The simulator can't grade its own homework.** Planners search with published lost-person statistics, while the
   hidden person follows behaviour rules; stress tests make the person behave unlike those statistics.
