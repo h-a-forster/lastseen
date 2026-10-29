@@ -17,14 +17,14 @@ unlike the statistics the planners were given.
 | Parameter | Value | Source |
 |---|---|---|
 | Camera | 72° × 57° field of view, 5280 px wide | A 4/3-inch, 84° diagonal survey camera, common on enterprise drones |
-| Altitude | 60 m (1.65 cm per pixel, an 87 × 65 m photo) | A person is then about 70 px across, where the measured detection is high. Swept 40-120 m: higher found people sooner in this model (below) |
+| Altitude | 100 m (2.75 cm per pixel, a 145 × 109 m photo) | A person is then about 44 px across. Chosen from the sweep below: 100-120 m found more people within 2 h than 40-80 m, and 100 m leaves a margin under the usual 120 m legal ceiling |
 | Speed | 10 m/s | Typical cruise for sharp survey stills |
 | Usable flight time | 25 min per battery, 3 min swap | Rated times of 40-45 min, minus real-world loss and a landing reserve |
 | Photo overlap | 10% along track | Search needs coverage, not stitched maps, so less than mapping's 60-80% |
 | Drones | 3 | Volunteer teams fly 1-3. Swept 1-4 |
 | Search time | 4 hours | One operational period |
 | Drone failure (`--lose-drone`) | One drone, at a time drawn uniformly from 15-120 min | **Assumption**, a stress test rather than a measured failure rate; the same failure for every planner |
-| Restart block (`spiral+spark`) | The square one battery can sweep (about 1.1 km at 60 m) | Choice: the area a team would cover first around a new datum; not tuned |
+| Restart block (`spiral+spark`) | The square one battery can sweep (about 1.4 km at 100 m) | Choice: the area a team would cover first around a new datum; not tuned |
 
 ## The hidden person
 | Parameter | Value | Source |
@@ -48,7 +48,8 @@ count as independent chances, which flatters re-searching a little.
 Each row is one run of `uv run python -m app.sar.bench --seeds 200 --workers 8 --category dementia
 --planners lawnmower,spiral,concentric,sector,greedy` plus the flags shown: 200 development scenarios (never the
 held-out ones), 3 km synthetic maps, no model calls. The `--truth-*` flags change how the hidden person behaves while
-the planners keep the statistics they were given.
+the planners keep the statistics they were given. The rows were run at 60 m, the default until the altitude rows
+below moved it to 100 m: add `--alt 60` to reproduce them.
 
 Columns: the share found within 2 hours by each planner; the probability-map planner minus the expanding square,
 paired by scenario, with a 95% bootstrap interval; and per search for the expanding square, the photos taken, the

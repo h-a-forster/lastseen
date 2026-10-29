@@ -1,17 +1,23 @@
-# Evaluation plan (written 28 Oct 2026, before the final run)
+# Evaluation plan (written 28 Oct 2026, amended 29 Oct; both before the final run)
 
 This fixes, in advance, how the headline comparison is run and reported, so that the endpoints, scenarios and wording
 can't be chosen after seeing the results. The final run happens once, after the feature freeze, and every endpoint
-below is published whatever it shows.
+below is published whatever it shows. What changed on 29 Oct, and why, is listed at the end.
 
 ## Question
-Does Muse Spark's reading of the witness reports help a planner find a missing person sooner?
+Does Muse Spark's reading of the witness reports help a search find a missing person sooner?
 
 ## What is compared
-- **With and without Spark, same planner.** The planner is the team's planner (`ours`) if it is merged by the feature
-  freeze (2 Nov, 12:00 UTC); otherwise the reference probability-map planner (`greedy`). This is decided by whether the
-  code exists at the freeze, not by any result.
-- **Fixed patterns for context:** lawnmower, spiral (expanding square), concentric, sector.
+Two comparisons are fixed in advance. Each gets its own interval and its own wording.
+1. **With and without Spark, same planner.** The planner is the team's planner (`ours`) if it is merged by the
+   feature freeze (2 Nov, 12:00 UTC); otherwise the reference probability-map planner (`greedy`). This is decided by
+   whether the code exists at the freeze, not by any result.
+2. **With and without Spark, expanding square.** `spiral+spark` restarts the expanding square on the block Spark's
+   newest reading makes most likely; `spiral` ignores the reports. This tests Spark's reading without depending on
+   how good the planner is.
+
+For context: the planner with Spark against `spiral+spark` (does keeping a map beat restarting a fixed pattern on the
+same readings?), and the fixed patterns lawnmower, spiral, concentric and sector.
 
 ## Scenarios
 - 200 held-out dementia scenarios, seeds **900030-900229**, 3 km map. None of these seeds has been run before.
@@ -20,21 +26,25 @@ Does Muse Spark's reading of the witness reports help a planner find a missing p
 - Imagery mode: every photo with the person in it is decided by a recorded SAM 3.1 + Muse Spark answer on a real drone
   photo of a person that size (`app/perception/pool.py`); the detection table is `data/pod_table.json` as committed at
   the freeze.
-- 3 drones, 60 m, 25 min per battery, 4 hours of search.
+- 3 drones at 100 m, 25 min per battery, 3 min turnaround at base, 4 hours of search.
 - Spark readings are fetched live once under a $4 cap, then replayed from the cache for every planner. Readings that
   fail are counted and reported; those runs carry on without hypotheses.
 
 ## Endpoints
-**Primary:** share of scenarios where the person is found within **2 hours**, with Spark minus without Spark, paired by
-scenario, with a 95% paired-bootstrap interval (2,000 resamples, generator seed 0). Two hours because survival falls
-with time and because that is where a reading can still change where the drones go.
+**Primary**, for each of the two comparisons: share of scenarios where the person is found within **2 hours**, with
+Spark minus without Spark, paired by scenario, with a 95% paired-bootstrap interval (2,000 resamples, generator seed
+0). Two hours because survival falls with time and because that is where a reading can still change where the drones
+go.
 
 **Secondary** (reported, not used for the headline):
-- found within 1 hour and within 4 hours, same comparison;
+- found within 1 hour and within 4 hours, same comparisons;
 - time-to-find curves (Kaplan-Meier) and median time to find;
 - every planner against the spiral at 1, 2 and 4 hours;
 - per search: photos taken, alarms raised for a reviewer, photos with the person in them that raised no alarm;
-- the primary endpoint split by whether the sighting report was correct, wrong, or absent.
+- per person found: drone flight hours, photos and alarms; and the share of drone time spent flying;
+- the primary endpoint split by whether the sighting report was correct, wrong, or absent;
+- **a lost drone:** found within 2 hours when one drone fails at a seeded time in the first 2 hours (the second
+  command below).
 
 ## How results will be worded
 - **"Helps"** only if the primary interval excludes zero.
@@ -43,11 +53,14 @@ with time and because that is where a reading can still change where the drones 
 - The share of scenarios where the person had already left the mapped area when the search started (the ceiling) is
   printed with every table.
 
-## Command
+## Commands
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners lawnmower,spiral,concentric,sector,<planner>,<planner>+spark --reference spiral --usd-cap 4 \
-  --json docs/results/final.json
+  --planners lawnmower,spiral,concentric,sector,spiral+spark,<planner>,<planner>+spark \
+  --reference spiral --usd-cap 4 --json docs/results/final.json
+uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
+  --planners spiral,spiral+spark,<planner>,<planner>+spark --reference spiral --lose-drone --usd-cap 4 \
+  --json docs/results/final-lost-drone.json
 ```
 Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's
 find times and which report details were true, so every number above can be recomputed from it.
@@ -56,3 +69,12 @@ find times and which report details were true, so every number above can be reco
 - The scenarios are synthetic maps with a simulated walker; detection rates come from one dataset of staged scenes.
 - Forest detection is an assumption (0.4 of open ground), not a measurement.
 - Repeated photos of the same spot on different sorties are treated as independent chances.
+- A leg can clip the corner of a no-fly cell by under 1.25 m (the route check samples every 1/20 of a cell).
+
+## Changes on 29 Oct (before any held-out seed was run)
+- **Height 60 m → 100 m.** The altitude sweep on development seeds (`docs/parameters.md`) found more people within
+  2 hours at 100-120 m than at 60 m for every planner; 100 m leaves a margin under the usual 120 m legal ceiling.
+- **Comparison 2 added**, with `spiral+spark` also set against the planner with Spark.
+- **Added secondary endpoints:** cost per person found, and a lost drone.
+- A bug that could stop fixed patterns flying for the rest of a search was fixed (commit `c912676`); all
+  development numbers were re-run after it.

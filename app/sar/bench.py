@@ -8,8 +8,10 @@ no model calls.
     uv run python -m app.sar.bench --truth-moving 1.5    # people who walk 50% longer than the statistics say
     uv run python -m app.sar.bench --place saint-ursanne # hidden walks on a real valley mapped from OpenStreetMap
     uv run python -m app.sar.bench --lose-drone          # one drone fails in the first two hours of every search
+    uv run python -m app.sar.bench --planners spiral,spiral@120   # the same planner flown at 120 m instead of 100 m
 
-Every planner receives the same witness reports. A name ending in "+spark" wraps that planner in the Spark advisor:
+Every planner receives the same witness reports. A name ending in "@<metres>" flies that planner at that height, so
+heights are compared on the same scenarios. A name ending in "+spark" wraps that planner in the Spark advisor:
 Spark's readings are fetched first, in this process and under --usd-cap, then the simulations replay them from the
 cache, so the parallel workers can't spend anything.
 
@@ -34,7 +36,7 @@ from app.planner import SearchPlanner
 from app.sar import metrics
 from app.sar.detection import DetectionModel
 from app.sar.grid import Terrain
-from app.sar.interface import FleetSpec
+from app.sar.interface import MAX_ALT_M, MIN_ALT_M, FleetSpec
 from app.sar.planners import BASELINES
 from app.sar.cues import reports_for
 from app.sar.terrain import PLACES, build
@@ -44,6 +46,7 @@ from app.sar.walker import PARAMS, WalkerParams
 
 PLANNERS = {**BASELINES, SearchPlanner.name: SearchPlanner}
 SPARK = "+spark"
+ALT = "@"
 SEED_SETS = {"dev": range(0, 100_000), "heldout": range(900_000, 1_000_000)}
 CHECKPOINTS_H = (1.0, 2.0)
 
@@ -58,9 +61,20 @@ class SeedResult:
 
 
 def make_planner(name: str):
+    name = name.partition(ALT)[0]
     if name.endswith(SPARK):
         return SparkAdvisor(PLANNERS[name.removesuffix(SPARK)]())
     return PLANNERS[name]()
+
+
+def fleet_for(name: str, fleet: FleetSpec) -> FleetSpec:
+    """The fleet a planner name flies: the shared one, or at the height after "@" (e.g. "spiral@120")."""
+    alt = name.partition(ALT)[2]
+    if not alt:
+        return fleet
+    if not MIN_ALT_M <= float(alt) <= MAX_ALT_M:
+        raise ValueError(f"{name}: height must be {MIN_ALT_M:g}-{MAX_ALT_M:g} m")
+    return dataclasses.replace(fleet, alt_m=float(alt))
 
 
 def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
@@ -75,7 +89,7 @@ def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float
     runs, failures = {}, 0
     for name in planner_names:
         planner = make_planner(name)
-        runs[name] = Sim(scenario, planner, fleet, detection, seed=seed, max_s=max_s, reports=reports,
+        runs[name] = Sim(scenario, planner, fleet_for(name, fleet), detection, seed=seed, max_s=max_s, reports=reports,
                          photos=photos, losses=losses).run()
         failures += len(getattr(planner, "failures", ()))
     return SeedResult(seed, scenario.subject_at(0) is not None, runs, failures, {c.kind: c.true for c in cues})
@@ -134,6 +148,8 @@ def summarise(results: list[SeedResult], planner_names: list[str], reference: st
             "alarms": float(np.mean([r.runs[name].alarms for r in results])),
             "missed_in_frame": float(np.mean([r.runs[name].in_frame - (r.runs[name].found_s is not None)
                                               for r in results])),
+            # What each find cost, over all searches (failed ones included): drone flight hours and photos to review.
+            "per_find": per_find([r.runs[name] for r in results]),
             "curve": metrics.time_to_find_curve(times),
         }
         if name != reference and reference in planner_names:
@@ -144,20 +160,29 @@ def summarise(results: list[SeedResult], planner_names: list[str], reference: st
     return summary
 
 
+def per_find(runs: list[RunResult]) -> dict | None:
+    finds = sum(r.found_s is not None for r in runs)
+    if not finds:
+        return None
+    return {"drone_h": sum(r.flight_s for r in runs) / 3600 / finds, "photos": sum(r.photos for r in runs) / finds,
+            "alarms": sum(r.alarms for r in runs) / finds}
+
+
 def print_table(summary: dict, reference: str) -> None:
     keys = list(next(iter(summary["planners"].values()))["found_by"])
     header = "".join(f"{'found ' + k:>22}" for k in keys)
-    print(f"{'planner':<12}{header}{'median min':>11}{'vs ' + reference + ' (end)':>24}{'RTL':>5}{'no-fly s':>9}"
-          f"{'plan ms':>8}{'air':>6}{'photos':>8}{'alarms':>8}{'missed':>7}")
+    print(f"{'planner':<16}{header}{'median min':>11}{'vs ' + reference + ' (end)':>24}{'RTL':>5}{'no-fly s':>9}"
+          f"{'plan ms':>8}{'air':>6}{'photos':>8}{'alarms':>8}{'missed':>7}{'h/find':>8}")
     for name, e in summary["planners"].items():
         cells = "".join(f"{p:>8.0%} [{lo:>4.0%}-{hi:>4.0%}]" for p, lo, hi in e["found_by"].values())
         median = "-" if e["median_min"] is None else f"{e['median_min']:.0f}"
         diff = "" if "vs_reference" not in e else "{:>+7.0%} [{:>+4.0%},{:>+4.0%}]".format(*e["vs_reference"][keys[-1]])
-        print(f"{name:<12}{cells}{median:>11}{diff:>24}{e['forced_returns']:>5}{e['no_fly_s']:>9.0f}{e['plan_ms_max']:>8.1f}"
-              f"{e['air']:>6.0%}{e['photos']:>8.0f}{e['alarms']:>8.0f}{e['missed_in_frame']:>7.1f}")
+        print(f"{name:<16}{cells}{median:>11}{diff:>24}{e['forced_returns']:>5}{e['no_fly_s']:>9.0f}{e['plan_ms_max']:>8.1f}"
+              f"{e['air']:>6.0%}{e['photos']:>8.0f}{e['alarms']:>8.0f}{e['missed_in_frame']:>7.1f}"
+              f"{'-' if e['per_find'] is None else format(e['per_find']['drone_h'], '.1f'):>8}")
     print(f"{summary['scenarios']} scenarios; subject inside the mapped area at the start in {summary['in_area_at_start']:.0%} "
           "(the ceiling). Brackets: 95% intervals (Wilson; paired bootstrap for differences).\n"
-          "air: share of drone time spent flying; "
+          "air: share of drone time spent flying; h/find: drone flight hours per person found; "
           "photos / alarms: per search, what a reviewer would check without / with SAM 3.1 + Spark triage; "
           "missed: photos with the person in them that found nobody.")
     if not summary["calibrated"]:
@@ -190,6 +215,9 @@ def main() -> None:
     parser.add_argument("--lose-drone", action="store_true", help="one drone fails at a seeded time in the first 2 h")
     args = parser.parse_args()
     names = args.planners.split(",")
+    fleet = FleetSpec(drones=args.drones, alt_m=args.alt, swap_s=args.swap_s)
+    for name in names:  # unknown names and bad heights fail here, not in a worker halfway through
+        make_planner(name), fleet_for(name, fleet)
     seeds = list(SEED_SETS[args.set][args.offset: args.offset + args.seeds])
     max_s = args.hours * 3600
     started = time.perf_counter()
@@ -210,7 +238,7 @@ def main() -> None:
         print(f"Spark readings ready: {readings} (spent ${spent_usd():.3f} now; cap ${args.usd_cap:.2f})"
               + "".join(f"\n  {e}" for e in errors[:5]))
         os.environ["MODEL_MODE"] = "replay"  # the simulations only replay; workers inherit this
-    results = run(seeds, names, FleetSpec(drones=args.drones, alt_m=args.alt, swap_s=args.swap_s), max_s, args.category, args.size,
+    results = run(seeds, names, fleet, max_s, args.category, args.size,
                   args.workers, truth, args.imagery, detection, args.place, args.lose_drone)
     summary = summarise(results, names, args.reference, max_s)
     print_table(summary, args.reference)

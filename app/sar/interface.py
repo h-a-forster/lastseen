@@ -24,7 +24,7 @@ MIN_ALT_M, MAX_ALT_M = 40.0, 120.0
 class FleetSpec:
     drones: int = 3
     speed_mps: float = 10.0
-    alt_m: float = 60.0  # default altitude; low enough that a person is 20-65 px for the detector
+    alt_m: float = 100.0  # default altitude: a person is about 44 px; found more people than 60 m (docs/parameters.md)
     endurance_s: float = 25 * 60  # usable flight time per battery, landing reserve already removed
     swap_s: float = 180.0  # battery swap and relaunch at base
     overlap: float = 0.1  # along-track photo overlap
