@@ -139,3 +139,29 @@ def test_advisor_carries_on_when_spark_answers_off_schema(monkeypatch):
     a.reset(flat_map(), FleetSpec(), DetectionModel(), lost_person_stats(), 0)
     a.observe(Report(0.0, "A neighbour saw them go west."))
     assert a.failures and not a.readings
+
+
+def test_a_spiral_restarts_on_the_readings_most_likely_block_and_only_when_that_moves():
+    import math
+
+    from app.agent.layers import layer
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import DroneState, FleetSpec, Hypotheses
+    from app.sar.planners.fixed_paths import ExpandingSquare
+    from app.sar.stats import lost_person_stats
+
+    flat = flat_map(120)
+    m = SearchMap(flat.grid, flat.terrain, flat.trails, flat.no_fly, (60, 10), (60, 10), "dementia")  # house near the
+    house = m.grid.centre_m(*m.ipp)  # west edge, so the statistics' most likely block is east of it
+    spot = (house[0], house[1] + 1000)  # a sighting 1 km east of the house
+    seen_east = layer(m, np.ones(m.grid.shape), Shape(spot_bearing_deg=90, spot_distance_km=1.0, spot_radius_km=0.15))
+    no_news = Hypotheses(0.0, (), (), (), np.zeros((0, *m.grid.shape)), 1.0)
+    reading = Hypotheses(1800.0, ("seen east",), ("r",), (0.9,), seen_east[None], 0.1)
+    spiral = ExpandingSquare()
+    spiral.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    spiral.observe(no_news)  # adds nothing to the statistics, so the pattern stays on the house
+    spiral.observe(reading)
+    spiral.observe(reading)  # the same reading again moves nothing, so the pattern isn't restarted twice
+    route = spiral.plan(1800.0, DroneState(0, *house, 60.0, 1500.0, False, ()), ())
+    assert math.dist(route[0][:2], spot) < 300 < 700 < math.dist(route[0][:2], house)
+    assert [n["kind"] for n in spiral.drain_notes()] == ["restart"]

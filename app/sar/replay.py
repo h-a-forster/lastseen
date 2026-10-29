@@ -27,7 +27,7 @@ from app.sar.recorder import Recorder
 from app.sar.scenario import Scenario
 from app.sar.terrain import PLACES, build
 from app.sar.terrain import CREDIT as MAP_CREDIT
-from app.sar.sim import Sim
+from app.sar.sim import Sim, drone_losses
 from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
@@ -35,19 +35,20 @@ MAX_LANES = 3
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
-         drones: int = 3, place: str | None = None) -> dict:
+         drones: int = 3, place: str | None = None, lose_drone: bool = False) -> dict:
     scenario = build(seed, place, category, size)
     reports, cues = reports_for(scenario, seed)
     fleet = FleetSpec(drones=drones)
+    losses = drone_losses(seed, drones) if lose_drone else None
     photos = photo_pool.shared()
     lanes = {}
     for name in planner_names:
         recorder = Recorder()
         result = Sim(scenario, make_planner(name), fleet, seed=seed, max_s=hours * 3600, reports=reports,
-                     recorder=recorder, photos=photos).run()
+                     recorder=recorder, photos=photos, losses=losses).run()
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {
-        "id": run_id(seed, category, planner_names, place),
+        "id": run_id(seed, category, planner_names, place) + ("-lost" if lose_drone else ""),
         "seed": seed,
         "category": category,
         "place": None if place is None else {"name": place, "title": PLACES[place].title,
@@ -108,11 +109,12 @@ def main() -> None:
     parser.add_argument("--hours", type=float, default=4.0)
     parser.add_argument("--live", action="store_true", help="allow paid Spark calls for readings not in the cache")
     parser.add_argument("--usd-cap", type=float, default=0.05)
+    parser.add_argument("--lose-drone", action="store_true", help="one drone fails at a seeded time in the first 2 h")
     args = parser.parse_args()
     names = args.planners.split(",")[:MAX_LANES]
     os.environ["MODEL_MODE"] = "live" if args.live else "replay"
     os.environ["USD_CAP"] = str(args.usd_cap)
-    replay = race(args.seed, names, args.category, args.size, args.hours, place=args.place)
+    replay = race(args.seed, names, args.category, args.size, args.hours, place=args.place, lose_drone=args.lose_drone)
     path = save(replay)
     for name, lane in replay["lanes"].items():
         found = lane["result"]["found_s"]

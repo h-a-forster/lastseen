@@ -1,7 +1,7 @@
 """The event log of one run, for replay in the UI. Everything the page shows comes from here.
 
 Events (all with `t_s`, search time in seconds):
-- `drones`: positions [y_m, x_m, returning] of every drone, every FRAME_S;
+- `drones`: positions [y_m, x_m, returning, lost] of every drone, every FRAME_S;
 - `photo`: the cells one photo covered, [row0, row1, col0, col1) (row1 and col1 excluded), and `alarms` if the photo
   raised any false alarms for a reviewer;
 - `sighting` (imagery mode): a photo with the person in it, the real tile and person it was decided by, and what SAM 3.1
@@ -9,7 +9,7 @@ Events (all with `t_s`, search time in seconds):
 - `report`: witness text as the team received it;
 - `note`: a planner explaining itself (e.g. Spark's hypotheses, why a block was chosen), if the planner offers notes;
 - `map`: the planner's probability map, shrunk to MAP_SIDE x MAP_SIDE and scaled to 0-255, every MAP_EVERY_S;
-- `forced_return`, `found`.
+- `forced_return`, `drone_lost` (where a drone failed), `found`.
 """
 
 import numpy as np
@@ -32,7 +32,7 @@ class Recorder:
             self.events.append({"type": "note", "t_s": t_s, **note})
         if t_s >= self._next_frame:
             self.events.append({"type": "drones", "t_s": t_s,
-                                "drones": [[round(d.y, 1), round(d.x, 1), d.returning] for d in drones]})
+                                "drones": [[round(d.y, 1), round(d.x, 1), d.returning, d.lost] for d in drones]})
             self._next_frame += FRAME_S
         if t_s >= self._next_map:
             poa = planner.probability_map()

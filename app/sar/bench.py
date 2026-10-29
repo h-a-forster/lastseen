@@ -7,6 +7,7 @@ no model calls.
     uv run python -m app.sar.bench --imagery             # every photo of the person decided by a real SAM 3.1 + Spark answer
     uv run python -m app.sar.bench --truth-moving 1.5    # people who walk 50% longer than the statistics say
     uv run python -m app.sar.bench --place saint-ursanne # hidden walks on a real valley mapped from OpenStreetMap
+    uv run python -m app.sar.bench --lose-drone          # one drone fails in the first two hours of every search
 
 Every planner receives the same witness reports. A name ending in "+spark" wraps that planner in the Spark advisor:
 Spark's readings are fetched first, in this process and under --usd-cap, then the simulations replay them from the
@@ -37,7 +38,7 @@ from app.sar.interface import FleetSpec
 from app.sar.planners import BASELINES
 from app.sar.cues import reports_for
 from app.sar.terrain import PLACES, build
-from app.sar.sim import RunResult, Sim
+from app.sar.sim import RunResult, Sim, drone_losses
 from app.sar.stats import lost_person_stats
 from app.sar.walker import PARAMS, WalkerParams
 
@@ -64,17 +65,18 @@ def make_planner(name: str):
 
 def run_seed(seed: int, planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
              truth: WalkerParams | None = None, imagery: bool = False,
-             detection: DetectionModel | None = None, place: str | None = None) -> SeedResult:
+             detection: DetectionModel | None = None, place: str | None = None, lose_drone: bool = False) -> SeedResult:
     scenario = build(seed, place, category, size, truth)
     reports, cues = reports_for(scenario, seed)
     photos = photo_pool.shared() if imagery else None
     if imagery and photos is None:
         raise RuntimeError("imagery mode needs gate 1 results (python -m app.perception.gate)")
+    losses = drone_losses(seed, fleet.drones) if lose_drone else None
     runs, failures = {}, 0
     for name in planner_names:
         planner = make_planner(name)
         runs[name] = Sim(scenario, planner, fleet, detection, seed=seed, max_s=max_s, reports=reports,
-                         photos=photos).run()
+                         photos=photos, losses=losses).run()
         failures += len(getattr(planner, "failures", ()))
     return SeedResult(seed, scenario.subject_at(0) is not None, runs, failures, {c.kind: c.true for c in cues})
 
@@ -101,9 +103,9 @@ def prefetch_readings(seeds: list[int], category: str, size: int, truth: WalkerP
 
 def run(seeds: list[int], planner_names: list[str], fleet: FleetSpec, max_s: float, category: str, size: int,
         workers: int, truth: WalkerParams | None = None, imagery: bool = False,
-        detection: DetectionModel | None = None, place: str | None = None) -> list[SeedResult]:
+        detection: DetectionModel | None = None, place: str | None = None, lose_drone: bool = False) -> list[SeedResult]:
     job = partial(run_seed, planner_names=planner_names, fleet=fleet, max_s=max_s, category=category, size=size,
-                  truth=truth, imagery=imagery, detection=detection, place=place)
+                  truth=truth, imagery=imagery, detection=detection, place=place, lose_drone=lose_drone)
     if workers <= 1:
         return [job(s) for s in seeds]
     with ProcessPoolExecutor(workers) as pool:
@@ -124,6 +126,8 @@ def summarise(results: list[SeedResult], planner_names: list[str], reference: st
             "forced_returns": sum(r.runs[name].forced_returns for r in results),
             "no_fly_s": sum(r.runs[name].no_fly_s for r in results),
             "plan_ms_max": max(r.runs[name].plan_ms_max for r in results),
+            # Share of the working drones' time spent flying; the rest is turnarounds at base or a planner idling.
+            "air": float(np.mean([r.runs[name].flight_s / max(r.runs[name].drone_s, 1.0) for r in results])),
             # Per search, averaged: photos a person would have to review without triage, alarms they review with it,
             # and fresh photos that had the person in them but found nobody (the detector's misses).
             "photos": float(np.mean([r.runs[name].photos for r in results])),
@@ -144,15 +148,16 @@ def print_table(summary: dict, reference: str) -> None:
     keys = list(next(iter(summary["planners"].values()))["found_by"])
     header = "".join(f"{'found ' + k:>22}" for k in keys)
     print(f"{'planner':<12}{header}{'median min':>11}{'vs ' + reference + ' (end)':>24}{'RTL':>5}{'no-fly s':>9}"
-          f"{'plan ms':>8}{'photos':>8}{'alarms':>8}{'missed':>7}")
+          f"{'plan ms':>8}{'air':>6}{'photos':>8}{'alarms':>8}{'missed':>7}")
     for name, e in summary["planners"].items():
         cells = "".join(f"{p:>8.0%} [{lo:>4.0%}-{hi:>4.0%}]" for p, lo, hi in e["found_by"].values())
         median = "-" if e["median_min"] is None else f"{e['median_min']:.0f}"
         diff = "" if "vs_reference" not in e else "{:>+7.0%} [{:>+4.0%},{:>+4.0%}]".format(*e["vs_reference"][keys[-1]])
         print(f"{name:<12}{cells}{median:>11}{diff:>24}{e['forced_returns']:>5}{e['no_fly_s']:>9.0f}{e['plan_ms_max']:>8.1f}"
-              f"{e['photos']:>8.0f}{e['alarms']:>8.0f}{e['missed_in_frame']:>7.1f}")
+              f"{e['air']:>6.0%}{e['photos']:>8.0f}{e['alarms']:>8.0f}{e['missed_in_frame']:>7.1f}")
     print(f"{summary['scenarios']} scenarios; subject inside the mapped area at the start in {summary['in_area_at_start']:.0%} "
           "(the ceiling). Brackets: 95% intervals (Wilson; paired bootstrap for differences).\n"
+          "air: share of drone time spent flying; "
           "photos / alarms: per search, what a reviewer would check without / with SAM 3.1 + Spark triage; "
           "missed: photos with the person in them that found nobody.")
     if not summary["calibrated"]:
@@ -180,7 +185,9 @@ def main() -> None:
     parser.add_argument("--truth-drift", type=float, default=1.0, help="scale the truth's heading drift")
     parser.add_argument("--truth-delay-h", help="'lo,hi': hours missing before the search starts, instead of the default")
     parser.add_argument("--alt", type=float, default=FleetSpec.alt_m, help="flying height in metres (40-120)")
+    parser.add_argument("--swap-s", type=float, default=FleetSpec.swap_s, help="turnaround at base after each landing")
     parser.add_argument("--forest-factor", type=float, help="forest POD as a share of open ground (measured table: 0.4)")
+    parser.add_argument("--lose-drone", action="store_true", help="one drone fails at a seeded time in the first 2 h")
     args = parser.parse_args()
     names = args.planners.split(",")
     seeds = list(SEED_SETS[args.set][args.offset: args.offset + args.seeds])
@@ -203,8 +210,8 @@ def main() -> None:
         print(f"Spark readings ready: {readings} (spent ${spent_usd():.3f} now; cap ${args.usd_cap:.2f})"
               + "".join(f"\n  {e}" for e in errors[:5]))
         os.environ["MODEL_MODE"] = "replay"  # the simulations only replay; workers inherit this
-    results = run(seeds, names, FleetSpec(drones=args.drones, alt_m=args.alt), max_s, args.category, args.size,
-                  args.workers, truth, args.imagery, detection, args.place)
+    results = run(seeds, names, FleetSpec(drones=args.drones, alt_m=args.alt, swap_s=args.swap_s), max_s, args.category, args.size,
+                  args.workers, truth, args.imagery, detection, args.place, args.lose_drone)
     summary = summarise(results, names, args.reference, max_s)
     print_table(summary, args.reference)
     failures = sum(r.spark_failures for r in results)

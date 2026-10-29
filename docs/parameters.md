@@ -23,6 +23,8 @@ unlike the statistics the planners were given.
 | Photo overlap | 10% along track | Search needs coverage, not stitched maps, so less than mapping's 60-80% |
 | Drones | 3 | Volunteer teams fly 1-3. Swept 1-4 |
 | Search time | 4 hours | One operational period |
+| Drone failure (`--lose-drone`) | One drone, at a time drawn uniformly from 15-120 min | **Assumption**, a stress test rather than a measured failure rate; the same failure for every planner |
+| Restart block (`spiral+spark`) | The square one battery can sweep (about 1.1 km at 60 m) | Choice: the area a team would cover first around a new datum; not tuned |
 
 ## The hidden person
 | Parameter | Value | Source |
@@ -55,37 +57,46 @@ alarms a reviewer would check after SAM 3.1 + Spark, and photos that had the per
 
 | Flags | In area at start | lawnmower | spiral | concentric | sector | greedy | Greedy − spiral at 2 h | Photos (spiral) | Alarms (spiral) | Missed in frame (spiral) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `(defaults)` | 87% | 57% | 56% | 57% | 57% | 47% | -10% [-15%, -4%] | 2196 | 495 | 0.39 |
-| `--imagery` | 87% | 58% | 57% | 58% | 60% | 49% | -8% [-14%, -2%] | 2089 | 470 | 0.29 |
-| `--truth-moving 0.6` | 90% | 64% | 61% | 58% | 62% | 58% | -3% [-8%, +2%] | 1930 | 435 | 0.42 |
-| `--truth-moving 1.5` | 86% | 52% | 49% | 52% | 52% | 40% | -9% [-14%, -4%] | 2492 | 561 | 0.36 |
-| `--truth-drift 2` | 93% | 69% | 70% | 63% | 72% | 59% | -11% [-18%, -4%] | 1515 | 342 | 0.41 |
-| `--truth-category hiker` | 32% | 25% | 26% | 26% | 24% | 20% | -6% [-10%, -2%] | 3583 | 806 | 0.12 |
-| `--truth-delay-h 0.25,0.5` | 100% | 64% | 74% | 73% | 68% | 62% | -12% [-19%, -6%] | 1447 | 326 | 0.47 |
-| `--truth-delay-h 3,5` | 64% | 52% | 51% | 50% | 50% | 45% | -6% [-11%, -2%] | 2468 | 556 | 0.33 |
-| `--alt 40` | 87% | 53% | 49% | 51% | 50% | 40% | -10% [-15%, -4%] | 3817 | 862 | 0.32 |
-| `--alt 80` | 87% | 62% | 62% | 60% | 60% | 52% | -10% [-16%, -4%] | 1538 | 347 | 0.43 |
-| `--alt 100` | 87% | 62% | 64% | 58% | 66% | 58% | -5% [-11%, +0%] | 1167 | 264 | 0.55 |
-| `--alt 120` | 87% | 62% | 64% | 61% | 64% | 59% | -6% [-11%, -0%] | 996 | 225 | 0.59 |
-| `--drones 1` | 87% | 32% | 40% | 42% | 41% | 38% | -2% [-8%, +3%] | 1087 | 246 | 0.27 |
-| `--drones 2` | 87% | 52% | 50% | 50% | 50% | 44% | -6% [-12%, -2%] | 1747 | 393 | 0.34 |
-| `--drones 4` | 87% | 63% | 58% | 62% | 64% | 51% | -7% [-13%, -2%] | 2730 | 615 | 0.41 |
-| `--forest-factor 0.25` | 87% | 52% | 52% | 54% | 53% | 45% | -6% [-12%, -1%] | 2339 | 527 | 0.54 |
-| `--forest-factor 0.6` | 87% | 62% | 62% | 61% | 62% | 50% | -13% [-19%, -7%] | 1952 | 441 | 0.19 |
+| `(defaults)` | 87% | 58% | 60% | 60% | 57% | 47% | -12% [-18%, -7%] | 2669 | 601 | 0.41 |
+| `--imagery` | 87% | 60% | 60% | 61% | 60% | 49% | -11% [-16%, -6%] | 2634 | 593 | 0.34 |
+| `--truth-moving 0.6` | 90% | 66% | 66% | 61% | 62% | 58% | -8% [-13%, -2%] | 2296 | 518 | 0.46 |
+| `--truth-moving 1.5` | 86% | 54% | 50% | 54% | 52% | 40% | -10% [-16%, -6%] | 3063 | 689 | 0.41 |
+| `--truth-drift 2` | 93% | 70% | 76% | 68% | 72% | 59% | -17% [-24%, -10%] | 1813 | 410 | 0.47 |
+| `--truth-category hiker` | 32% | 26% | 27% | 26% | 25% | 20% | -7% [-12%, -3%] | 4485 | 1009 | 0.12 |
+| `--truth-delay-h 0.25,0.5` | 100% | 65% | 80% | 74% | 69% | 62% | -18% [-24%, -11%] | 1648 | 372 | 0.48 |
+| `--truth-delay-h 3,5` | 64% | 52% | 55% | 53% | 50% | 45% | -10% [-15%, -4%] | 2980 | 671 | 0.34 |
+| `--alt 40` | 87% | 55% | 52% | 54% | 50% | 40% | -13% [-19%, -7%] | 4510 | 1017 | 0.33 |
+| `--alt 80` | 87% | 64% | 66% | 64% | 60% | 52% | -14% [-21%, -8%] | 1776 | 401 | 0.43 |
+| `--alt 100` | 87% | 65% | 68% | 62% | 66% | 58% | -9% [-14%, -4%] | 1340 | 302 | 0.58 |
+| `--alt 120` | 87% | 64% | 68% | 64% | 65% | 59% | -9% [-14%, -4%] | 1106 | 250 | 0.63 |
+| `--drones 1` | 87% | 33% | 40% | 42% | 41% | 38% | -2% [-8%, +3%] | 1223 | 276 | 0.28 |
+| `--drones 2` | 87% | 53% | 52% | 52% | 50% | 44% | -9% [-14%, -4%] | 2069 | 466 | 0.35 |
+| `--drones 4` | 87% | 64% | 64% | 66% | 64% | 51% | -12% [-18%, -7%] | 3274 | 738 | 0.42 |
+| `--forest-factor 0.25` | 87% | 54% | 55% | 56% | 54% | 45% | -10% [-16%, -4%] | 2900 | 653 | 0.59 |
+| `--forest-factor 0.6` | 87% | 62% | 65% | 64% | 62% | 50% | -16% [-22%, -10%] | 2385 | 538 | 0.20 |
+| `--lose-drone` | 87% | 55% | 57% | 58% | 54% | 46% | -12% [-18%, -6%] | 2230 | 502 | 0.36 |
+| `--swap-s 0` | 87% | 60% | 61% | 61% | 59% | 52% | -8% [-14%, -3%] | 2918 | 657 | 0.41 |
 
 What this shows:
-- **The four fixed patterns are within a few points of each other** in most settings (up to 10 with one drone or
-  a quick report), so none of them is
-  "the" baseline. The expanding square is the reference because it is the standard pattern around a known
-  last-seen point.
-- **The probability-map planner trails the expanding square in every setting**, by 2-13 points, including when the
+- **The four fixed patterns are within a few points of each other** in most settings (up to 15 when the person is
+  reported quickly, when the expanding square does best), so none of them is "the" baseline. The expanding square is
+  the reference because it is the standard pattern around a known last-seen point.
+- **The probability-map planner trails the expanding square in every setting**, by 2-18 points, including when the
   person behaves exactly as its statistics say. That is why the headline evaluation (`docs/evaluation.md`) compares
   the same planner with and without Spark, rather than claiming a better planner.
-- **A wrong behaviour model moves every planner together.** People who walk 50% longer, wander twice as much, walk like
-  hikers, or are reported late lower all find rates, but the order of the planners doesn't change.
-- **Higher flights found people sooner.** Within 2 hours, the expanding square found 49% at 40 m, 56% at 60 m and
-  64% at 100-120 m: each photo covers more ground, which outweighs the smaller person in the photo, although the
+- **A wrong behaviour model moves every planner together.** People who walk 50% longer, walk like hikers or are
+  reported late are found less often; people who wander twice as much stay nearer and are found more often. In every
+  case the probability-map planner stays behind the expanding square.
+- **Higher flights found people sooner.** Within 2 hours, the expanding square found 52% at 40 m, 60% at 60 m and
+  68% at 100-120 m: each photo covers more ground, which outweighs the smaller person in the photo, although the
   detector misses more people who are in frame (0.3 to 0.6 a search). This rests on the measured detection rates down
   to 36 px a person and on the forest assumption, so it is a result of this model, not field advice.
-- **Imagery mode agrees with fast mode** (57% against 56% for the expanding square), so deciding finds by real photo
+- **Imagery mode agrees with fast mode** (60% for the expanding square in both), so deciding finds by real photo
   answers instead of the measured table doesn't change the picture.
+- **Losing a drone** (one per search, at a seeded time in the first 2 hours) costs every planner 1-3 points within
+  2 hours. The fixed patterns hand the lost drone's path to the others, so a failure doesn't favour the planner that
+  keeps a map.
+- **Short sorties cost the probability-map planner a third of its gap.** It flies one small block per sortie and then
+  sits through the 3-minute turnaround, so its drones fly about 71% of the time against 93-94% for the fixed
+  patterns (the bench's `air` column). With no turnaround (`--swap-s 0`) it trails the expanding square by 8 points
+  instead of 12, so filling each battery is the first thing a better planner should do.

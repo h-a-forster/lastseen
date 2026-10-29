@@ -33,3 +33,8 @@ Read [README.md](README.md) first, and [docs/TEAM.md](docs/TEAM.md) for the git 
 - Tune on the `dev` seeds only; the `heldout` seeds are for the final run in `docs/evaluation.md`.
 - Paid server endpoints stay off unless `LIVE_MODELS=1`.
 - Small functions, clear names, brief comments only where intent isn't obvious, no dead code.
+- Fail loudly: check inputs before changing state, and raise rather than quietly skip. A planner that silently stops
+  flying looks like a weak planner in the bench.
+- Every fix gets a test that fails without it (check by reverting the fix).
+- After changing the arena or a baseline, compare per-seed find times (`bench --json`) before and after: planners the
+  change isn't about must not move.

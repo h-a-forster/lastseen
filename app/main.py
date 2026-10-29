@@ -34,7 +34,7 @@ def health():
     return {"ok": True}
 
 
-RACE_PLANNERS = {"lawnmower", "spiral", "concentric", "sector", "greedy", "greedy+spark"}
+RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", "greedy", "greedy+spark"}
 # One model job at a time (a race, or a photo check). Both set MODEL_MODE for the process, so they must not overlap.
 _model_lock = threading.Lock()
 MAX_STORED_RUNS = 200  # about 1 MB each
