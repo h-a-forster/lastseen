@@ -2,8 +2,8 @@
 
 A planner keeps its own probability map and learns only what a real search team would: the map, the fleet, the
 detection rates and published statistics at the start, then events as the search goes on: each photo that found
-nobody, each witness report, and, when a model reads the reports, its hypotheses. The arena never passes the truth,
-and keeps the safety rules (forced return on low battery) to itself.
+nobody, each witness report, when a model reads the reports, its hypotheses, and any drone that fails. The arena
+never passes the truth, and keeps the safety rules (forced return on low battery) to itself.
 """
 
 from dataclasses import dataclass
@@ -85,7 +85,17 @@ class Hypotheses:
         return np.where(base > 0, mixture / np.where(base > 0, base, 1.0), 1.0)
 
 
-Observation = Look | Report | Hypotheses
+@dataclass(frozen=True)
+class DroneLost:
+    """A drone failed at `t_s` and is out for the rest of the search. The photos it took before then were received;
+    `unflown` is what was left of its sortie (empty if it was flying home or on the ground)."""
+
+    t_s: float
+    drone: int
+    unflown: tuple[Waypoint, ...]
+
+
+Observation = Look | Report | Hypotheses | DroneLost
 
 
 class Planner(Protocol):

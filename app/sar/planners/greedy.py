@@ -12,7 +12,7 @@ import numpy as np
 
 from app.sar.belief import Belief, mobility
 from app.sar.detection import DetectionModel
-from app.sar.interface import DroneState, FleetSpec, Hypotheses, Look, Observation, Waypoint
+from app.sar.interface import DroneLost, DroneState, FleetSpec, Hypotheses, Look, Observation, Waypoint
 from app.sar.planners.patterns import at_altitude, flatten, lanes, path_length
 from app.sar.prior import ring_prior
 from app.sar.scenario import SearchMap
@@ -43,6 +43,8 @@ class ProbabilityGreedy:
             self.belief.observe_miss(event.cells, event.pod)
         elif isinstance(event, Hypotheses):
             self._likelihood = event.likelihood(self._prior) ** TRUST
+        elif isinstance(event, DroneLost):  # its block is free again; the map still shows what it didn't photograph
+            self._claimed.pop(event.drone, None)
 
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         self._advance(t_s)

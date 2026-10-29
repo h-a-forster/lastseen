@@ -50,6 +50,21 @@ def test_every_baseline_flies_legal_routes():
         assert result.photos > 0, name
 
 
+def test_fixed_patterns_skip_ground_one_battery_cant_reach_and_never_stall_silently():
+    from collections import deque
+
+    from app.sar.interface import FleetSpec
+    from app.sar.planners.patterns import take_sortie
+
+    with pytest.raises(ValueError):  # an unreachable next point would ground the pattern for good
+        take_sortie(deque([(0.0, 0.0)]), lambda p: math.inf, 1000.0)
+    scenario = synthetic(3, category="dementia")
+    short = FleetSpec(endurance_s=300.0)  # out and back to at most ~1.4 km, less than the corners of a 3 km map
+    for name in ("lawnmower", "spiral", "concentric", "sector"):
+        result = Sim(scenario, BASELINES[name](), fleet=short, seed=3, max_s=3600).run()
+        assert result.flight_s / result.drone_s > 0.5, name
+
+
 def test_fixed_patterns_keep_flying_where_a_detour_skims_a_no_fly_corner():
     from app.sar.detection import DetectionModel
     from app.sar.recorder import Recorder
@@ -214,3 +229,60 @@ def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(
     assert place.latlon(500, 500) == pytest.approx((47.0, 7.0))  # mission files: map centre is the place's point
     assert "Named places" not in describe(synthetic(1, size=40, category="dementia").map)  # cached readings stay valid
     terrain.search_map.cache_clear()
+
+
+def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():
+    from app.sar.detection import DetectionModel
+    from app.sar.recorder import Recorder
+
+    scenario = synthetic(3, category="dementia")
+    blind = DetectionModel(pod_by_terrain={t: (0.0,) * len(DetectionModel().gsd_cm) for t in Terrain})  # runs 4 h
+    rec = Recorder()
+    Sim(scenario, BASELINES["lawnmower"](), detection=blind, seed=3, max_s=4 * 3600, recorder=rec,
+        losses={1: 300.0}).run()
+    photos = [e for e in rec.events if e["type"] == "photo"]
+    assert [e["drone"] for e in rec.events if e["type"] == "drone_lost"] == [1]
+    assert not [p for p in photos if p["drone"] == 1 and p["t_s"] > 300]
+    seen = np.zeros(scenario.map.grid.shape, bool)
+    for p in photos:
+        r0, r1, c0, c1 = p["cells"]
+        seen[r0:r1, c0:c1] = True
+    cols = scenario.map.grid.cols
+    assert seen[:, cols // 3: 2 * cols // 3].mean() > 0.9  # drone 2's strip (index 1), lost 5 minutes in
+    rec = Recorder()  # a drone lost on the ground never takes off
+    Sim(scenario, BASELINES["lawnmower"](), detection=blind, seed=3, max_s=1800, recorder=rec, losses={0: 0.0}).run()
+    assert not [e for e in rec.events if e["type"] == "photo" and e["drone"] == 0]
+
+
+def test_a_lost_drones_unflown_route_is_flown_next_in_its_order():
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import DroneLost, DroneState, FleetSpec
+    from app.sar.stats import lost_person_stats
+
+    m = synthetic(3, category="dementia").map
+    spiral = BASELINES["spiral"]()
+    spiral.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    home = m.grid.centre_m(*m.base)
+    first = spiral.plan(0.0, DroneState(0, *home, 60.0, 1500.0, False, ()), ())
+    spiral.observe(DroneLost(600.0, 0, tuple(first[10:])))
+    nxt = spiral.plan(600.0, DroneState(1, *home, 60.0, 1500.0, False, ()), ())
+    assert nxt[:len(first) - 10] == first[10:]
+
+
+def test_greedy_frees_a_lost_drones_block():
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import DroneLost, DroneState, FleetSpec
+    from app.sar.stats import lost_person_stats
+
+    m = synthetic(3, category="dementia").map
+    greedy = BASELINES["greedy"]()
+    greedy.reset(m, FleetSpec(), DetectionModel.load(), lost_person_stats(), 0)
+    home = m.grid.centre_m(*m.base)
+
+    def at_base(i):
+        return DroneState(i, *home, 60.0, 1500.0, False, ())
+
+    first = greedy.plan(0.0, at_base(0), ())
+    assert greedy.plan(0.0, at_base(1), ()) != first  # an airborne drone keeps its block...
+    greedy.observe(DroneLost(10.0, 0, ()))
+    assert greedy.plan(10.0, at_base(2), ()) == first  # ...until it is lost

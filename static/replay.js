@@ -6,6 +6,7 @@ const PLANNERS = {
   spiral: ["Expanding square", "Fixed pattern; ignores reports"],
   concentric: ["Concentric rings", "Fixed pattern; ignores reports"],
   sector: ["Sector search", "Fixed pattern; ignores reports"],
+  "spiral+spark": ["Expanding square + Muse Spark", "Restarts on Spark's most likely block after each report"],
   greedy: ["Probability map", "Lost-person statistics only"],
   "greedy+spark": ["Probability map + Muse Spark", "Statistics plus Spark's reading of the witness reports"],
 };
@@ -73,6 +74,7 @@ function prepareLane(name, lane, map) {
     frames: byType("drones"),
     maps: byType("map").map((m) => ({ t_s: m.t_s, image: heatImage(m) })),
     notes: byType("note"),
+    lost: byType("drone_lost"),
     sightings: byType("sighting"),
     searched,
     photoIndex: 0,
@@ -217,7 +219,8 @@ function drawDrones(ctx, lane, t, toPx) {
   if (i < 0) return;
   const a = lane.frames[i], b = lane.frames[i + 1];
   const f = b ? Math.min(1, (t - a.t_s) / (b.t_s - a.t_s)) : 0;
-  a.drones.forEach(([y, x, returning], k) => {
+  a.drones.forEach(([y, x, returning, lost], k) => {
+    if (lost) return drawLost(ctx, toPx(x), toPx(y));
     const [y2, x2] = b ? b.drones[k] : [y, x];
     const px = toPx(x + (x2 - x) * f), py = toPx(y + (y2 - y) * f);
     ctx.beginPath();
@@ -228,6 +231,15 @@ function drawDrones(ctx, lane, t, toPx) {
     ctx.fill();
     ctx.stroke();
   });
+}
+
+function drawLost(ctx, px, py) {
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px - 5, py - 5); ctx.lineTo(px + 5, py + 5);
+  ctx.moveTo(px + 5, py - 5); ctx.lineTo(px - 5, py + 5);
+  ctx.stroke();
 }
 
 function drawTruth(ctx, t, toPx) {
@@ -299,7 +311,7 @@ function updateLaneText(lane, t) {
   const ended = !lane.found && t >= lane.endT;
   lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photos · ${lane.alarmCount} flagged`;
   lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
-  const sortie = lastAt(lane.notes.filter((n) => n.kind === "sortie"), Math.min(t, lane.endT));
+  const sortie = lastAt(lane.notes.filter((n) => n.kind === "sortie" || n.kind === "restart"), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
   const hit = found && lane.sightings.find((s) => s.found);
   if (Boolean(hit) !== lane.shownPhoto) {
@@ -314,6 +326,7 @@ function feedItems() {
     for (const note of lane.notes) {
       if (note.kind === "hypotheses") items.push({ t_s: note.t_s, html: hypothesesHtml(note) });
       if (note.kind === "spark_failed") items.push({ t_s: note.t_s, html: `<p class="text-amber-300">${note.text}</p>` });
+      if (note.kind === "restart") items.push({ t_s: note.t_s, html: `<p class="text-sky-300">${label(lane.name)}: ${note.text}</p>` });
     }
     if (lane.found) items.push({ t_s: lane.found.t_s, html: `<p class="text-green-400 font-medium">${label(lane.name)}: person found</p>` });
     if ($("show-truth").checked) {
@@ -323,6 +336,8 @@ function feedItems() {
       }
     }
   }
+  const lost = state.lanes.map((lane) => lane.lost[0]).find(Boolean); // the same failure in every lane
+  if (lost) items.push({ t_s: lost.t_s, html: `<p class="text-rose-300 font-medium">Drone ${lost.drone + 1} lost (simulated failure). Each planner carries on with the others.</p>` });
   return items.sort((a, b) => b.t_s - a.t_s);
 }
 

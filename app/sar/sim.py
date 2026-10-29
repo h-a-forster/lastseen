@@ -6,6 +6,9 @@ Fast mode samples each detection from the POD table, so thousands of runs cost n
 (`photos=PhotoPool`) decides each photo of the person with a real recorded answer of SAM 3.1 + Muse Spark on a real
 person of the same pixel size (`app.perception.pool`), also free. In both modes each photo of empty ground raises
 false alarms at the measured rate; a reviewer has to reject them, which is what the alarm count measures.
+
+A drone can be lost during the search (`losses`, see `drone_losses`): it stops where it is, keeps the photos it took,
+and the planner is told what it had left to fly.
 """
 
 import copy
@@ -18,7 +21,7 @@ import numpy as np
 from app.sar.detection import DetectionModel
 from app.sar.grid import Terrain
 from app.sar.cues import Report
-from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneState, FleetSpec, Look, Planner, Waypoint
+from app.sar.interface import MAX_ALT_M, MIN_ALT_M, DroneLost, DroneState, FleetSpec, Look, Planner, Waypoint
 from app.sar.recorder import Recorder
 from app.sar.routing import distance_field, path_length, safe_path
 from app.sar.scenario import Scenario
@@ -26,6 +29,7 @@ from app.sar.stats import lost_person_stats
 
 IDLE_RETRY_S = 60.0
 DETOUR_MARGIN_S = 120.0  # below this much spare battery, the time home is measured along the detour
+LOSS_WINDOW_S = (15 * 60.0, 2 * 3600.0)  # when a drone fails, if one does: within the first two hours
 
 
 @dataclass
@@ -41,6 +45,7 @@ class Drone:
     since_photo_m: float = math.inf
     east_west: bool = False
     seen: np.ndarray | None = None  # cells already photographed this sortie
+    lost: bool = False
 
     def state(self, airborne: bool) -> DroneState:
         return DroneState(self.id, self.y, self.x, self.alt_m, self.battery_s, airborne, tuple(self.route))
@@ -54,11 +59,18 @@ class RunResult:
     photos: int
     flight_s: float
     forced_returns: int  # battery safety overrides: the planner sent a drone too far
-    no_fly_s: float  # drone-seconds spent over no-fly cells; must be 0
+    no_fly_s: float  # drone-seconds over no-fly cells: 0, bar legs that clip a corner by under 1/20 of a cell
     plan_ms_max: float
     calibrated: bool
     alarms: int = 0  # false alarms raised on empty ground, each one for a reviewer to reject
     in_frame: int = 0  # fresh photos that had the person in them (a miss among these is the detector's)
+    drone_s: float = 0.0  # drone-seconds of working (not lost) drones; flight_s / drone_s is the share spent flying
+
+
+def drone_losses(seed: int, drones: int) -> dict[int, float]:
+    """One drone, chosen by the seed, fails at a time chosen by the seed: the same failure for every planner."""
+    rng = np.random.default_rng([seed, 5])
+    return {int(rng.integers(drones)): float(rng.uniform(*LOSS_WINDOW_S))}
 
 
 def planner_seed(seed: int) -> int:
@@ -69,12 +81,16 @@ def planner_seed(seed: int) -> int:
 class Sim:
     def __init__(self, scenario: Scenario, planner: Planner, fleet: FleetSpec = FleetSpec(),
                  detection: DetectionModel | None = None, seed: int = 0, max_s: float = 4 * 3600, dt_s: float = 5.0,
-                 reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None, photos=None):
+                 reports: list[Report] | tuple[Report, ...] = (), recorder: Recorder | None = None, photos=None,
+                 losses: dict[int, float] | None = None):
+        if any(not 0 <= d < fleet.drones for d in losses or {}):
+            raise ValueError(f"lost drones {sorted(losses)} are not all in a fleet of {fleet.drones}")
         detection = detection or DetectionModel.load()
         self.scenario, self.planner, self.fleet, self.detection = scenario, planner, fleet, detection
         self.rec = recorder  # None in benchmarks: recording costs time
         self.photos = photos  # a PhotoPool for imagery mode; None for fast mode
         self.pending_reports = sorted(reports, key=lambda r: r.t_s)
+        self.pending_losses = sorted((t_s, d) for d, t_s in (losses or {}).items())
         self.map = scenario.map
         self.detect_rng = np.random.default_rng([seed, 1])  # its own stream, apart from the scenario's
         self.alarm_rng = np.random.default_rng([seed, 4])  # and false alarms another, so they never shift detections
@@ -90,14 +106,19 @@ class Sim:
         planner.reset(self.map, fleet, detection, copy.deepcopy(lost_person_stats()), planner_seed(seed))
 
     def run(self) -> RunResult:
-        t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max = 0.0, None, 0, 0.0, 0, 0.0, 0.0
+        t, found_s, photos, flight_s, forced, no_fly_s, plan_ms_max, drone_s = 0.0, None, 0, 0.0, 0, 0.0, 0.0, 0.0
         while t < self.max_s and found_s is None:
             while self.pending_reports and self.pending_reports[0].t_s <= t:
                 report = self.pending_reports.pop(0)
                 if self.rec:
                     self.rec.add("report", t, text=report.text)
                 self.planner.observe(report)
+            while self.pending_losses and self.pending_losses[0][0] <= t:
+                self._lose(self.drones[self.pending_losses.pop(0)[1]], t)
             for d in self.drones:
+                if d.lost:
+                    continue
+                drone_s += self.dt_s
                 if self._at_base(d) and not d.route and t >= d.ready_at_s:
                     plan_ms_max = max(plan_ms_max, self._launch(d, t))
                 if not d.route:
@@ -128,11 +149,18 @@ class Sim:
                 self.rec.tick(t, self.drones, self.planner)
             t += self.dt_s
         return RunResult(self.planner.name, self.scenario.name, found_s, photos, flight_s, forced, no_fly_s,
-                         plan_ms_max, self.detection.calibrated, self.alarms, self.in_frame)
+                         plan_ms_max, self.detection.calibrated, self.alarms, self.in_frame, drone_s)
+
+    def _lose(self, d: Drone, t: float) -> None:
+        unflown = () if d.returning else tuple(d.route)
+        d.route, d.lost = [], True
+        if self.rec:
+            self.rec.add("drone_lost", t, drone=d.id, y_m=round(d.y, 1), x_m=round(d.x, 1))
+        self.planner.observe(DroneLost(t, d.id, unflown))
 
     def _launch(self, d: Drone, t: float) -> float:
-        """Ask the planner for a sortie; returns how long it took in ms."""
-        fleet = tuple(o.state(airborne=bool(o.route)) for o in self.drones)
+        """Ask the planner for a sortie; returns how long it took in ms. The fleet it sees leaves out lost drones."""
+        fleet = tuple(o.state(airborne=bool(o.route)) for o in self.drones if not o.lost)
         started = time.perf_counter()
         route = list(self.planner.plan(t, d.state(airborne=False), fleet))
         elapsed_ms = (time.perf_counter() - started) * 1000
