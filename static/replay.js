@@ -57,6 +57,7 @@ async function loadRun(id) {
   $("time").max = state.endT;
   $("seed").value = run.seed;
   buildLaneDom();
+  $("result-line").textContent = resultLine();
   seek(0);
 }
 
@@ -184,7 +185,16 @@ function render() {
   }
   $("clock").textContent = `${clock(t)} in`;
   $("time").value = t;
+  $("result-line").classList.toggle("hidden", t < state.endT && !$("show-truth").checked);
   updateFeed();
+}
+
+function resultLine() {
+  // Every lane's find time from the run file, fastest first; shown once playback ends or the truth is revealed.
+  const finds = state.lanes.map((lane) => [state.run.lanes[lane.name].result.found_s, label(lane.name)])
+    .sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity));
+  const notFound = `not found in ${clock(state.run.hours * 3600)}`;
+  return finds.map(([s, name], i) => (s == null ? `${name} ${notFound}` : i ? `${clock(s)} ${name}` : `Found at ${clock(s)} with ${name}`)).join(" · ");
 }
 
 function updateSearched(lane, t) {
@@ -476,4 +486,12 @@ $("new-race").onsubmit = async (e) => {
   }
 };
 
+async function showLiveControls() {
+  // Paid buttons only when the server allows live model calls; otherwise a note that the examples are recorded.
+  const live = await api("/api/health").then((h) => h.live_models).catch(() => false);
+  document.querySelectorAll("[data-live]").forEach((el) => el.classList.toggle("hidden", !live));
+  document.querySelectorAll("[data-live-off]").forEach((el) => el.classList.toggle("hidden", live));
+}
+
 loadRunList().catch((err) => showStatus(`Could not load races: ${err.message}`));
+showLiveControls();

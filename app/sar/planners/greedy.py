@@ -56,11 +56,11 @@ class ProbabilityGreedy:
     def plan(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint]:
         self._advance(t_s)
         self._claimed.pop(drone.id, None)
-        rate, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * self.fleet.endurance_s)
+        _, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * self.fleet.endurance_s)
         if route:
             self._claim(drone.id, block)
             self._notes.append({"kind": "sortie", "drone": drone.id,
-                                "text": f"Drone {drone.id + 1}: block with {rate * 60:.1%} chance of finding per minute of flight"})
+                                "text": f"Drone {drone.id + 1}: searching the most likely block it can reach on this battery"})
         return at_altitude(route, self.fleet.alt_m)
 
     def retask(self, t_s: float, drone: DroneState, fleet: tuple[DroneState, ...]) -> list[Waypoint] | None:
@@ -68,15 +68,15 @@ class ProbabilityGreedy:
             return None
         self._advance(t_s)
         current = self._claimed.pop(drone.id, None)
-        rate, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * drone.battery_s)
+        _, block, route = self._best_block((drone.y_m, drone.x_m), 0.95 * drone.battery_s)
         if not route or block == current:
             if current is not None:
                 self._claim(drone.id, current)
             return None
         self._claim(drone.id, block)
         self._notes.append({"kind": "sortie", "drone": drone.id,
-                            "text": f"Drone {drone.id + 1} retasked mid-flight: the new reading makes another block "
-                                    f"worth {rate * 60:.1%} per minute"})
+                            "text": f"Drone {drone.id + 1} changed course mid-flight: the new report makes another block "
+                                    "more likely"})
         return at_altitude(route, self.fleet.alt_m)
 
     def _claim(self, drone_id: int, block: tuple[slice, slice]) -> None:

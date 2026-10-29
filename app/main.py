@@ -31,7 +31,8 @@ app = FastAPI(title="LastSeen")
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    """`live_models` tells the page whether to offer the paid buttons (see _check_paid)."""
+    return {"ok": True, "live_models": LIVE_MODELS}
 
 
 RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", "greedy", "greedy+spark"}
@@ -39,6 +40,9 @@ RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", 
 _model_lock = threading.Lock()
 MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
+# Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
+FEATURED_RUNS = ("dementia-25-spiral-greedy-greedy-spark", "dementia-26-spiral-greedy-greedy-spark",
+                 "dementia-20-spiral-greedy-greedy-spark", "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
 
 
 class RaceRequest(BaseModel):
@@ -49,9 +53,9 @@ class RaceRequest(BaseModel):
 
 @app.get("/api/runs")
 def list_runs():
-    """Recorded races, newest first, with when each planner found the person."""
+    """Recorded races, featured first and then newest first, with when each planner found the person."""
     runs = []
-    for path in sorted(replay.RUNS_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+    for path in sorted(replay.RUNS_DIR.glob("*.json"), key=_list_order):
         mtime = path.stat().st_mtime
         if _summaries.get(path.name, (None,))[0] != mtime:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -60,6 +64,11 @@ def list_runs():
                                              "found_s": {n: lane["result"]["found_s"] for n, lane in data["lanes"].items()}})
         runs.append(_summaries[path.name][1])
     return runs
+
+
+def _list_order(path: Path) -> tuple[int, float]:
+    rank = FEATURED_RUNS.index(path.stem) if path.stem in FEATURED_RUNS else len(FEATURED_RUNS)
+    return rank, -path.stat().st_mtime
 
 
 @app.get("/api/runs/{run_id}")
