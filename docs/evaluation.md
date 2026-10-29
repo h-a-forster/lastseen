@@ -79,5 +79,7 @@ find times and which report details were true, so every number above can be reco
 - **Added secondary endpoints:** cost per person found, and a lost drone.
 - **Planners may now re-plan drones in the air** when a report comes in (`retask` in `app/sar/interface.py`). Both
   `spiral+spark` and the probability-map planner use it; planners that ignore the reports are unchanged.
+- **Detection re-measured with more photos:** every test-split tile at 2x shrink, so the size flown at 100 m rests
+  on 227 people instead of 50 (79%, was 78%). The development runs in `docs/parameters.md` used the earlier table.
 - A bug that could stop fixed patterns flying for the rest of a search was fixed (commit `c912676`); all
   development numbers were re-run after it.

@@ -8,7 +8,7 @@ unlike the statistics the planners were given.
 ## Detection (measured)
 | Parameter | Value | Source |
 |---|---|---|
-| Chance of finding a person in a photo, open ground | 1.00 / 0.96 / 0.96 / 0.78 / 0.57 / 0.44 at 1 / 1.5 / 2 / 3 / 5 / 8 cm per pixel | Measured: SAM 3.1 proposals checked by Muse Spark on 263 people in the HERIDAL test photos (`data/pod_table.json`, `app/perception/`) |
+| Chance of finding a person in a photo, open ground | 1.00 / 0.97 / 0.98 / 0.79 / 0.62 / 0.47 at 1 / 1.5 / 2 / 3 / 5 / 8 cm per pixel | Measured: SAM 3.1 proposals checked by Muse Spark on 660 labelled people in the HERIDAL test photos (`data/pod_table.json`, `app/perception/`). At 100 m a person is about 44 px: 179 of 227 people that size were found, 79% (95% interval 70-86%, resampling whole photos, since people in one photo share light and ground) |
 | False alarms | 0.0094 per 1000 px tile of empty ground (3 of 320; 95% upper bound 0.027) | Measured on 320 HERIDAL tiles without people. Looking at them, 3 of the 4 alarms raised on empty tiles at any scale were real people the labels missed, so this rate is pessimistic |
 | Forest | 0.4 of the open-ground chance | **Assumption**: the dataset has no people under canopy. Swept at 0.25 and 0.6 |
 | Person size from above | 1.2 m | Between standing (about 0.5 m) and lying (about 1.7 m); converts altitude into the pixel size the detector was measured at |
