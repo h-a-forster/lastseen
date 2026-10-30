@@ -2,8 +2,11 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier
 
-Search and rescue already runs on probability, but what witnesses say still reaches the search map by hand, or not
-at all: a fixed search pattern only uses it when someone moves the pattern by hand. LastSeen closes that gap. Muse
+Search at sea is planned with Bayesian software; on land, teams are taught probability methods but practitioners
+report rarely applying them in full, and planning a drone search is still "more art than science"
+([MIT Technology Review, 2024](https://www.technologyreview.com/2024/05/30/1092988/ai-directed-drones-could-help-find-lost-hikers-faster/)).
+What witnesses say reaches the search map by hand, or not at all: a fixed search pattern only uses it when someone
+moves the pattern by hand. LastSeen closes that gap. Muse
 Spark turns every report into weighted, checked scenarios in seconds; when a witness reports a sighting, the drone
 breaks off to search where the reading points, and it flies the search itself. SAM 3.1 and Muse Spark check every
 photo for a person a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in
@@ -110,7 +113,8 @@ cp .env.example .env          # add MODEL_API_KEY for live model calls
 uv run uvicorn app.main:app --reload
 uv run pytest
 ```
-Open http://localhost:8000. The simulator and bench need no key:
+Open http://localhost:8000 (with `RECORD_RACES=1` the page can also record a race for any development seed, from
+cached readings only). The simulator and bench need no key:
 ```bash
 uv run python -m app.sar.bench --planners lawnmower,spiral,greedy --seeds 40 --workers 4
 uv run python -m app.sar.replay --seed 19 --place saint-ursanne --planners spiral,greedy
