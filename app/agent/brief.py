@@ -28,7 +28,7 @@ EXAMPLE_BRIEF = ("Margaret, 81, has dementia and left her home in the old town a
 EXAMPLE_PATH = Path(__file__).resolve().parents[2] / "data" / "briefs" / "example.json"
 
 
-def read_brief(place_name: str, text: str, drones: int = 3) -> dict:
+def read_brief(place_name: str, text: str, drones: int = 1) -> dict:
     """Spark's hypotheses, the statistics-only map and the combined map (both MAP_SIDE x MAP_SIDE, 0-255), and the
     first sortie of each drone as map points and as a QGroundControl mission."""
     if not text.strip() or len(text) > MAX_BRIEF_CHARS:

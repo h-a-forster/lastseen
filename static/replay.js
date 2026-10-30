@@ -306,7 +306,7 @@ function buildLaneDom() {
     lane.photoEl = el.querySelector("[data-photo]");
   });
   $("imagery").innerHTML = state.run.imagery
-    ? "Every photo that has the missing person in it is decided by a real SAM 3.1 + Muse Spark answer on a real drone photo of a person that size. Flagged = alarms a reviewer checks instead of every photo."
+    ? "Every photo that has the missing person in it is decided by a real SAM 3.1 + Muse Spark answer on a real drone photo of a person that size (in forest, canopy also hides her at an assumed rate). Every lane draws its photos of her from the same sequence, so planners are compared on the same luck. Flagged = alarms a reviewer checks instead of every photo."
     : "Detections are sampled from the measured table (no photo pool on this server).";
   if (state.run.place) {
     $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. The simulator walks the hidden person over terrain classes and paths read from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
@@ -323,7 +323,7 @@ function buildLaneDom() {
 function updateLaneText(lane, t) {
   const found = lane.found && t >= lane.found.t_s;
   const ended = !lane.found && t >= lane.endT;
-  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photos · ${lane.alarmCount} flagged`;
+  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photo${lane.photoIndex === 1 ? "" : "s"} · ${lane.alarmCount} flagged`;
   lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
   const sortie = lastAt(lane.notes.filter((n) => ["sortie", "restart", "hunt"].includes(n.kind)), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
@@ -498,5 +498,5 @@ async function showLiveControls() {
   document.querySelectorAll("[data-live-off]").forEach((el) => el.classList.toggle("hidden", live));
 }
 
-loadRunList().catch((err) => showStatus(`Could not load races: ${err.message}`));
+loadRunList().then(() => state.run && play()).catch((err) => showStatus(`Could not load races: ${err.message}`));
 showLiveControls();
