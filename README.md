@@ -9,6 +9,8 @@ When an older person with dementia walks away from home, a volunteer with a dron
 photos come back, each with a person a few dozen pixels wide, or nobody. And every new witness report changes where
 the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
 
+**Try it live:** the hosted demo is the website link in this repository's About panel (the first visit takes a few seconds to wake the server).
+
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
 drone photo of a person her size](docs/img/race.jpg)
@@ -29,7 +31,8 @@ drone photo of a person her size](docs/img/race.jpg)
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
   hill"). Spark also grades each witness the way a search manager would (do they know her, did they see it
   themselves, does anyone back it up?); the grades are shown, not used to change weights. The drone gets a first block
-  to fly, downloadable as a QGroundControl mission.
+  to fly, downloadable as a QGroundControl mission (it loads and displays in QGroundControl; it hasn't been flown on a
+  real drone).
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
