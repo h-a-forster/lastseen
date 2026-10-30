@@ -171,6 +171,27 @@ def test_a_spiral_restarts_on_the_readings_most_likely_block_and_only_when_that_
     assert [n["kind"] for n in spiral.drain_notes()] == ["restart"]
 
 
+def test_the_witness_baseline_restarts_the_square_where_the_witness_said():
+    import math
+
+    from app.sar.cues import Report
+    from app.sar.detection import DetectionModel
+    from app.sar.interface import DroneState, FleetSpec
+    from app.sar.planners.witness import WitnessSquare
+    from app.sar.stats import lost_person_stats
+
+    m = flat_map(120)
+    house = m.grid.centre_m(*m.ipp)
+    at_base = DroneState(0, *house, 100.0, 1500.0, False, ())
+    square = WitnessSquare()
+    square.reset(m, FleetSpec(), DetectionModel(), lost_person_stats(), 0)
+    square.observe(Report(1800.0, "A dog walker reports seeing someone about 20 minutes ago, close to the house, in the woods."))
+    assert math.dist(square.plan(1800.0, at_base, ())[0][:2], house) < 300  # nothing new: still on the house
+    square.observe(Report(2400.0, "A dog walker reports seeing someone about 20 minutes ago, roughly 1.5 km "
+                                  "north-east of the house, on a footpath."))
+    spot = (house[0] - 1500 * math.cos(math.radians(45)), house[1] + 1500 * math.sin(math.radians(45)))
+    assert math.dist(square.plan(2400.0, at_base, ())[0][:2], spot) < 400
+
 def east_sighting(m, t_s, km=1.0):
     """A reading that puts the person near a spot `km` east of the house."""
     from app.agent.layers import layer

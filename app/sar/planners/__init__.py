@@ -2,5 +2,6 @@
 
 from app.sar.planners.fixed_paths import Concentric, ExpandingSquare, Lawnmower, Sector
 from app.sar.planners.greedy import ProbabilityGreedy
+from app.sar.planners.witness import WitnessSquare
 
-BASELINES = {p.name: p for p in (Lawnmower, ExpandingSquare, Concentric, Sector, ProbabilityGreedy)}
+BASELINES = {p.name: p for p in (Lawnmower, ExpandingSquare, Concentric, Sector, ProbabilityGreedy, WitnessSquare)}
