@@ -65,6 +65,12 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
 
+## Before anyone relies on it
+- The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
+  [docs/evaluation.md](docs/evaluation.md#known-limits).
+- The exported mission loads in QGroundControl but hasn't been flown; a volunteer checks and flies every mission.
+- Next: a test flight over open ground, and a trial with a volunteer search team on a training exercise.
+
 ## Run it
 ```bash
 uv sync
