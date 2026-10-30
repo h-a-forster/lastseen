@@ -49,8 +49,9 @@ drone photo of a person her size](docs/img/race.jpg)
 **Open weights.** With `SPARK_BACKEND=open`, every Spark call goes to Muse Spark Open, Meta's open-weight model, on
 Baseten. On the same 200 development scenarios (one drone, photo mode), the team planner found 52% within 2 h reading
 the reports with Muse Spark Open, against 53% with Muse Spark (paired difference -0.5 points, 95% interval -2.5 to
-+1.5; 5 of 200 scenarios changed). Baseten doesn't enforce the JSON schema for this model, so our checks rejected 5 of
-its 319 readings and those runs carried on without hypotheses. On the photo check's test tiles, SAM 3.1 + Muse Spark
++1.5; 5 of 200 scenarios changed). All 327 readings passed our checks, which matter more here because Baseten
+doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
+budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
 Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). Open weights mean a search team
 isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 

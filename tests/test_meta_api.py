@@ -111,3 +111,16 @@ def test_unknown_spark_backend_is_refused_before_any_call(gateway):
     with pytest.raises(meta_api.ModelCallError):
         ask()
     assert calls == []
+
+
+def test_an_answer_cut_off_is_asked_again_with_a_bigger_budget(gateway):
+    budgets = []
+    cut = {"choices": [{"message": {"content": '{"a"'}, "finish_reason": "length"}], "usage": {}}
+
+    def post(url, json, headers, timeout):
+        budgets.append(json["max_tokens"])
+        return httpx.Response(200, json=cut if len(budgets) == 1 else OK, request=httpx.Request("POST", url))
+
+    gateway.setattr(meta_api.httpx, "post", post)
+    assert ask().data == {"a": 1} and budgets == [6000, 12000]
+

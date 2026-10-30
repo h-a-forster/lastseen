@@ -43,6 +43,7 @@ RETRY_STATUS = {429, 500, 503}
 MAX_ATTEMPTS = 4
 TIMEOUT_S = 120.0
 MAX_WAIT_S = 60.0
+MAX_TOKENS_CEILING = 24000  # an answer cut off at max_tokens is asked again with double the budget, up to this
 
 # Where each model is served, and the env var holding its key; anything not listed goes to the Meta Model API.
 ENDPOINTS = {SPARK_OPEN: ("https://inference.baseten.co/v1", "BASETEN_API_KEY")}
@@ -90,7 +91,9 @@ def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low
     record = _cached_or_call("/chat/completions", body)
     choice = record["response"]["choices"][0]
     if choice.get("finish_reason") == "length":
-        raise ModelCallError("answer cut off at max_tokens; raise it or lower the reasoning effort")
+        if max_tokens * 2 <= MAX_TOKENS_CEILING:  # Muse Spark Open sometimes reasons past the usual budget
+            return spark_json(messages, schema, name, effort, max_tokens * 2)
+        raise ModelCallError(f"answer cut off at {max_tokens} tokens, the most we allow")
     try:
         data = json.loads(choice["message"]["content"])
     except (TypeError, json.JSONDecodeError) as e:
