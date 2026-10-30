@@ -18,6 +18,7 @@ def test_race_endpoint_refuses_held_out_seeds_and_unknown_planners():
     assert client.post("/api/runs", json={"seed": 900_001, "planners": ["greedy"]}).status_code == 422
     assert client.post("/api/runs", json={"seed": 1, "planners": ["mine"]}).status_code == 422
     assert client.post("/api/runs", json={"seed": 1, "planners": ["greedy"], "place": "atlantis"}).status_code == 422
+    assert client.post("/api/runs", json={"seed": 1, "planners": ["greedy"], "drones": 0}).status_code == 422
     assert client.get("/api/runs/..%2Fsecrets").status_code == 404
 
 
@@ -48,7 +49,16 @@ def test_runs_list_featured_races_first_in_their_order_then_newest_first(tmp_pat
     oldest_first = ["old", main.FEATURED_RUNS[0], "new", main.FEATURED_RUNS[2]]  # FEATURED_RUNS[1] is missing
     for age, run_id in enumerate(reversed(oldest_first)):
         path = tmp_path / f"{run_id}.json"
-        path.write_text(json.dumps({"id": run_id, "seed": 1, "category": "dementia", "lanes": {}}), encoding="utf-8")
+        path.write_text(json.dumps({"id": run_id, "seed": 1, "category": "dementia", "fleet": {"drones": 3},
+                                    "lanes": {}}), encoding="utf-8")
         os.utime(path, (1_000_000 - age, 1_000_000 - age))
     listed = [run["id"] for run in client.get("/api/runs").json()]
     assert listed == [main.FEATURED_RUNS[0], main.FEATURED_RUNS[2], "new", "old"]
+
+
+def test_a_race_can_be_recorded_with_one_drone(tmp_path, monkeypatch):
+    monkeypatch.setattr(main.replay, "RUNS_DIR", tmp_path)
+    monkeypatch.setattr(main, "_summaries", {})
+    run_id = client.post("/api/runs", json={"seed": 1, "planners": ["spiral"], "drones": 1}).json()["id"]
+    assert [(run["id"], run["drones"]) for run in client.get("/api/runs").json()] == [(run_id, 1)]
+    assert run_id != main.replay.run_id(1, "dementia", ["spiral"])  # doesn't overwrite the three-drone race
