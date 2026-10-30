@@ -17,10 +17,15 @@ The volunteer types or says what the family told them and launches the drone. Fr
   needed;
 - when the battery runs low the drone flies home, the volunteer swaps it, and the search carries on.
 
-The volunteer stays in command and the ground team confirms any find. The simulator runs this loop end to end. On a
-real drone, two links aren't built yet: sending each mission straight to the autopilot (today it exports as a
-QGroundControl mission, which loads but hasn't been flown), and getting photos off the drone during flight (a drone
-with a live photo link, or a small onboard computer).
+The volunteer stays in command, as the law requires, and the ground team confirms any find. The drone keeps its radio link to the base
+throughout, which is how a new leg reaches it mid-flight. LastSeen also expects each photo back as it is taken: in
+the simulator's flight plan that is one photo of about 5 MB every 10 seconds, around 4 Mbit/s. Some enterprise drones
+can send photos during flight, and on others a small onboard computer with a 4G modem can. Where photos only come off
+after landing, a find waits for the battery swap, up to 25 minutes.
+
+The simulator runs this loop end to end. What isn't built is LastSeen's connection to a real drone: each battery's
+mission exports as a QGroundControl file (it loads, but hasn't been flown) instead of going over the radio link, and
+nothing receives photos from a drone yet.
 
 **Try it live:** the hosted demo is the website link in this repository's About panel (the first visit takes a few seconds to wake the server).
 
@@ -81,9 +86,10 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 ## Before anyone relies on it
 - The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
   [docs/evaluation.md](docs/evaluation.md#known-limits).
-- The exported mission loads in QGroundControl but hasn't been flown, and the two links to a real drone above aren't
-  built. Without a live photo link, a find waits until the drone lands to swap batteries, up to 25 minutes later.
-- Next: those two links, a test flight over open ground, and a trial with a volunteer search team on a training exercise.
+- LastSeen isn't connected to a real drone yet: missions export as QGroundControl files (they load but haven't been
+  flown), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
+  battery swap, up to 25 minutes later.
+- Next: connecting to a real drone's radio link, a test flight over open ground, and a trial with a volunteer search team on a training exercise.
 
 ## Run it
 ```bash
