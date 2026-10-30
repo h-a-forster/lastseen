@@ -9,6 +9,9 @@ When an older person with dementia walks away from home, a volunteer with a dron
 photos come back, each with a person a few dozen pixels wide, or nobody. And every new witness report changes where
 the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
 
+![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
+to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48 in a real drone photo](docs/img/race.jpg)
+
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
   on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
@@ -92,7 +95,8 @@ docs/             evaluation plan, parameters, team workflow
 ## Data and credits
 - Drone photos: HERIDAL database (University of Split), repacked by P. Pyrrö, Aalto University
   (doi:10.5281/zenodo.5662350), CC BY 3.0.
-- Map data © OpenStreetMap contributors (ODbL). Aerial imagery © swisstopo, loaded by the browser from swisstopo.
+- Map data © OpenStreetMap contributors (ODbL). Aerial imagery © swisstopo, loaded by the browser from swisstopo
+  (and in `docs/img/race.jpg`).
 - Lost-person statistics: Koester, *Lost Person Behavior* (ISRID data); Hashimoto et al. (2022); sources per number
   in `data/lost_person_stats.json`.
 
