@@ -2,7 +2,7 @@
 no model calls.
 
     uv run python -m app.sar.bench --seeds 200 --category dementia --workers 8
-    uv run python -m app.sar.bench --set heldout --planners ours,spiral --json results.json
+    uv run python -m app.sar.bench --set heldout --planners hedge,spiral --json results.json
     uv run python -m app.sar.bench --planners spiral,greedy,greedy+spark --seeds 30 --usd-cap 0.45
     uv run python -m app.sar.bench --imagery             # every photo of the person decided by a real SAM 3.1 + Spark answer
     uv run python -m app.sar.bench --truth-moving 1.5    # people who walk 50% longer than the statistics say
@@ -33,6 +33,7 @@ from app.agent.advisor import SparkAdvisor, read_all
 from app.meta_api import ModelCallError, spent_usd
 from app.perception import pool as photo_pool
 from app.planner import SearchPlanner
+from app.planner.hedge import Hedge
 from app.sar import metrics
 from app.sar.detection import DetectionModel
 from app.sar.grid import Terrain
@@ -44,7 +45,7 @@ from app.sar.sim import RunResult, Sim, drone_losses
 from app.sar.stats import lost_person_stats
 from app.sar.walker import PARAMS, WalkerParams
 
-PLANNERS = {**BASELINES, SearchPlanner.name: SearchPlanner}
+PLANNERS = {**BASELINES, SearchPlanner.name: SearchPlanner, Hedge.name: Hedge}
 SPARK = "+spark"
 ALT = "@"
 SEED_SETS = {"dev": range(0, 100_000), "heldout": range(900_000, 1_000_000)}

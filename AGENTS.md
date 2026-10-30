@@ -22,7 +22,8 @@ Read [README.md](README.md) first, and [docs/TEAM.md](docs/TEAM.md) for the git 
   hidden person (`walker.py`), the arena (`sim.py`), witness reports (`cues.py`), baselines (`planners/`), the bench
   (`bench.py`) and replays (`replay.py`, `recorder.py`).
 - `app/sar/interface.py`: the contract a planner implements. Planners never see the truth.
-- `app/planner/`: the team's planner (`ours` in the bench; `ours+spark` adds Spark's reading of the reports).
+- `app/planner/`: the team's planner (`hedge`: the spiral until a sighting, then one drone hunts with the map planner
+  `ours`). A `+spark` suffix in the bench adds Spark's reading of the reports.
 - `app/agent/`: Spark reads reports into weighted hypotheses (`interpret.py`, `layers.py`), the advisor that feeds them
   to any planner (`advisor.py`), and the live brief (`brief.py`).
 - `app/perception/`: detection rates measured on HERIDAL photos (`gate.py`, `calibrate.py` → `data/pod_table.json`),
