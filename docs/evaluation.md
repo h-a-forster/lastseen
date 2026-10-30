@@ -79,6 +79,8 @@ find times and which report details were true, so every number above can be reco
 - The scenarios are synthetic maps with a simulated walker; detection rates come from one dataset of staged scenes.
 - Forest detection is an assumption (0.4 of open ground), not a measurement.
 - Repeated photos of the same spot on different sorties are treated as independent chances.
+- Each photo is checked the moment it is taken, as if the drone sends its photos during flight. Without that link a
+  find waits until the drone lands, up to one battery (25 min) later, for every planner alike.
 - A leg can clip the corner of a no-fly cell by under 1.25 m (the route check samples every 1/20 of a cell).
 - The witness reports are written from templates, so hand-written rules for those exact templates get most of
   Spark's gain on them (one drone, development seeds, imagery mode: 51% found within 2 h with rules, 53% with
