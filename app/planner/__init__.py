@@ -26,8 +26,8 @@ SEED_K = 8  # single-block seeds from which tours are grown
 PREDICT_EVERY_S = 60.0
 TRUST = 1.0
 
-ENTROPY_START_S = 900.0   # Start blending entropy gain after 1 hour
-ENTROPY_RAMP_S = 3600.0    # Fully transition entropy weight over 2 hours
+ENTROPY_START_S = 900.0   # Start blending entropy gain after 15 minutes
+ENTROPY_RAMP_S = 3600.0    # Fully transition entropy weight over 1 hour
 MAX_ENTROPY_WEIGHT = 0.45  # Maximum entropy gain scaling factor
 
 Block = tuple[slice, slice]
@@ -80,9 +80,7 @@ class SearchPlanner:
         rate, blocks, route = self._best_tour((drone.y_m, drone.x_m), 0.95 * self.fleet.endurance_s)
         if route:
             self._claim(drone.id, blocks)
-
             self._current_rate[drone.id] = rate
-            
             self._notes.append({
                 "kind": "sortie", "drone": drone.id,
                 "text": (f"Drone {drone.id + 1}: {len(blocks)}-block tour with "
@@ -102,7 +100,6 @@ class SearchPlanner:
             if current is not None:
                 self._claim(drone.id, current)
             return None
-            
 
         old_rate = self._current_rate.get(drone.id, 0.0)
         improvement_threshold = 1.05  
@@ -114,7 +111,6 @@ class SearchPlanner:
 
         self._claim(drone.id, blocks)
         self._current_rate[drone.id] = rate
-        
         self._notes.append({
             "kind": "sortie", "drone": drone.id,
             "text": (f"Drone {drone.id + 1} retasked mid-flight: new reading -> {len(blocks)}-block tour "
@@ -141,7 +137,6 @@ class SearchPlanner:
             return 0.0, [], []
 
         by_key = {c.key: c for c in cands}
-        # Prefer seeds that are already strong as single-block sorties (amortised base transit).
         ranked = sorted(cands, key=lambda c: self._tour_score(start, [c], budget_s)[0], reverse=True)
         seeds = [c for c in ranked if self._tour_score(start, [c], budget_s)[0] > 0][:SEED_K]
         if not seeds:
@@ -149,8 +144,6 @@ class SearchPlanner:
 
         best_rate, best_blocks, best_route, best_seconds = 0.0, [], [], 0.0
         for seed in seeds:
-            # Pack adjacent high-mass blocks up to MAX_TOUR / battery: fill the sortie first (closes the
-            # air-time gap), then compare packed tours by yield per second.
             tour = [seed]
             while len(tour) < MAX_TOUR:
                 used = {c.key for c in tour}
@@ -160,21 +153,18 @@ class SearchPlanner:
                     rate, route, seconds = self._tour_score(start, tour + [nxt], budget_s)
                     if not route:
                         continue
-                    # Prefer the extension with the best packed-tour score; tie-break on more flight time.
                     if grown is None or rate > grown[0] or (rate == grown[0] and seconds > grown[3]):
                         grown = (rate, tour + [nxt], route, seconds)
                 if grown is None:
-                    # If no profitable adjacent block found, attempt 2-hop neighbor search in late stage
+                    # 2-hop neighbor search fallback in late stage
                     if self._t_s > ENTROPY_START_S and len(tour) < MAX_TOUR:
                         extended_nbrs = [by_key[k] for k in _extended_neighbour_keys(tour, by_key) if k not in used]
                         for nxt in extended_nbrs:
                             rate, route, seconds = self._tour_score(start, tour + [nxt], budget_s)
                             if route and (grown is None or rate > grown[0]):
                                 grown = (rate, tour + [nxt], route, seconds)
-                    
                     if grown is None:
                         break
-
                 tour = grown[1]
 
             rate, route, seconds = self._tour_score(start, tour, budget_s)
@@ -198,26 +188,24 @@ class SearchPlanner:
         grid = self.map.grid
         lane_m = self.fleet.footprint_m[0] * (1 - self.fleet.overlap)
         side = max(1, round(BLOCK_LANES * lane_m / grid.cell_m))
-        # 1. Base probability of area map
+        
         p_map = self.probability_map()
         base_value = p_map * self.pod
 
-        # 2. Dynamic entropy-reduction gain map for long-tail search (>1h)
-        # Calculate binary entropy gain to reduce global uncertainty in low-POA regions
+        # Dynamic entropy-reduction gain map for long-tail search
         if self._t_s > ENTROPY_START_S:
             p_clamped = np.clip(p_map, 1e-9, 1.0 - 1e-9)
             entropy_map = -(p_clamped * np.log2(p_clamped) + (1.0 - p_clamped) * np.log2(1.0 - p_clamped))
-            
-            # Ramp up entropy weight dynamically based on elapsed search time
             gamma = min(MAX_ENTROPY_WEIGHT, (self._t_s - ENTROPY_START_S) / ENTROPY_RAMP_S)
             value = base_value + gamma * entropy_map * self.pod
         else:
             value = base_value
 
-        # 3. Mask out active claimed blocks by other drones
+        # Mask out active claimed blocks by other drones
         for blocks in self._claimed.values():
             for rows, cols in blocks:
                 value[rows, cols] = 0.0
+
         out: list[_Cand] = []
         for br, r0 in enumerate(range(0, grid.rows, side)):
             for bc, c0 in enumerate(range(0, grid.cols, side)):
@@ -237,7 +225,6 @@ class SearchPlanner:
 
 
 def _neighbour_keys(tour: list[_Cand], by_key: dict[BlockKey, _Cand]) -> set[BlockKey]:
-    """Block-grid 8-neighbours of any block already in the tour (adjacent chain constraint)."""
     keys: set[BlockKey] = set()
     for c in tour:
         br, bc = c.key
@@ -256,8 +243,8 @@ def _same_blocks(a: list[Block], b: list[Block] | None) -> bool:
         return False
     return [(s.start, s.stop) for block in a for s in block] == [(s.start, s.stop) for block in b for s in block]
 
+
 def _extended_neighbour_keys(tour: list[_Cand], by_key: dict[BlockKey, _Cand]) -> set[BlockKey]:
-    """Search up to 2-block radius when 1-block adjacent grid is fully scanned (late-stage fallback)."""
     keys: set[BlockKey] = set()
     for c in tour:
         br, bc = c.key
