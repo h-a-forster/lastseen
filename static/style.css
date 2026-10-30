@@ -55,11 +55,11 @@
 /* ---------- hero ---------- */
 
 .hero { position: relative; padding: 36px 0 20px; overflow: hidden; }
-.hero::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: url("contours.svg") center / cover no-repeat;
-  opacity: 0.22;
-  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+.sv::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--contour);
+  mask: url("contours.svg") center / cover no-repeat;
+  opacity: 0.45;
 }
 .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 56px; align-items: end; }
 .hero h1 {
@@ -113,9 +113,16 @@
 .btn-quiet { background: var(--surface); border: 1px solid var(--rule); color: var(--ink); }
 .btn-quiet:hover { border-color: var(--ink-3); }
 
-.watch { flex: 1 1 420px; max-width: 62ch; font-size: 14px; color: var(--ink-2); padding-left: 16px; border-left: 3px solid var(--red); }
 .other-races { margin-top: 14px; }
-.watch strong { color: var(--ink); }
+
+.map-key { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0 0 16px; font-size: 13px; color: var(--ink-2); }
+.map-key li { display: inline-flex; align-items: center; gap: 7px; }
+.map-key i { flex: none; width: 12px; height: 12px; }
+.k-drone { border-radius: 50%; background: #fbbf24; box-shadow: 0 0 0 1.5px var(--ink); }
+.k-heat { border-radius: 50%; background: radial-gradient(circle, rgb(255, 240, 30) 15%, rgba(255, 70, 30, .55) 75%); }
+.k-seen { background: rgb(125, 211, 252); box-shadow: inset 0 0 0 1px rgba(21, 35, 45, .35); }
+.k-found { border-radius: 50%; border: 2.5px solid #22c55e; }
+.k-truth { height: 0 !important; border-top: 2.5px solid #f43f5e; }
 
 .result-line {
   display: inline-block; margin-bottom: 18px; padding: 8px 14px;
@@ -130,9 +137,11 @@
 /* ---------- race ---------- */
 
 .race-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; }
-.lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 28px; }
+.lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 0 28px; }
 
-.sv #lanes article { background: none; border: 0; padding: 0; border-radius: 0; }
+/* each lane spans five shared rows (title, subtitle, map, note, photo), so the maps line up whatever the titles wrap to */
+.sv #lanes article { display: grid; grid-template-rows: subgrid; grid-row: span 5; background: none; border: 0; padding: 0; border-radius: 0; }
+.sv #lanes [data-photo] { padding-bottom: 24px; }
 .sv #lanes article > div:first-child { padding: 0 0 0 22px; align-items: baseline; }
 .sv #lanes h3 { font-size: 18px; font-weight: 650; font-stretch: 86%; letter-spacing: -0.01em; }
 .sv #lanes article > p.mb-2 { padding: 0 0 0 22px; margin-bottom: 4px; font-size: 13px; }
@@ -175,14 +184,17 @@
 .layers label { cursor: pointer; }
 
 /* feed: its height follows the maps, then scrolls */
-.feed { contain: size; display: flex; flex-direction: column; border-left: 1.5px solid var(--ink); padding-left: 8px; }
-.feed h3, .feed-sub { padding-left: 15px; }
+.feed { contain: size; display: flex; flex-direction: column; background: var(--well); border-top: 3px solid var(--ink); border-radius: 0 0 var(--r-frame) var(--r-frame); padding: 14px 6px 6px 16px; }
 .feed h3 { font-size: 18px; font-weight: 650; font-stretch: 86%; }
-.feed-sub { font-size: 13px; color: var(--ink-3); margin: 2px 0 12px; }
-.sv #feed { flex: 1; overflow-y: auto; padding-right: 8px; display: grid; gap: 16px; align-content: start; font-size: 14px; }
-.sv #feed > li { border-left: 3px solid transparent; padding-left: 12px; }
-.sv #feed > li > div:first-child { font-size: 12px; color: var(--ink-3); font-weight: 600; }
-.sv #feed > li:has(.text-amber-300) { border-left-color: var(--red); }
+.feed-sub { font-size: 13px; color: var(--ink-3); margin: 2px 0 14px; }
+.sv #feed { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; padding-right: 10px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; font-size: 14px; }
+/* a timeline: time on the left, a rail with a stop per entry, red stops for Muse Spark's readings */
+.sv #feed > li { position: relative; border: 0; padding: 0 0 18px 64px; }
+.sv #feed > li::before { content: ""; position: absolute; left: 50px; top: 6px; bottom: -6px; width: 1.5px; background: var(--rule); }
+.sv #feed > li:last-child::before { display: none; }
+.sv #feed > li::after { content: ""; position: absolute; left: 46px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--well); border: 2px solid var(--ink); }
+.sv #feed > li:has(.text-amber-300)::after, .sv #feed > li:has(.text-green-400)::after { background: var(--red); border-color: var(--red); }
+.sv #feed > li > div:first-child { position: absolute; left: 0; top: 1px; width: 38px; text-align: right; font-size: 13px; color: var(--ink-2); font-weight: 650; }
 
 .margin-notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 32px; margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--rule); }
 .margin-notes h4, .colophon h4 { font-size: 13px; font-weight: 650; margin-bottom: 6px; }
@@ -253,7 +265,7 @@
 @media (max-width: 1100px) {
   .hero-grid, .band-grid { grid-template-columns: 1fr; gap: 20px; }
   .race-grid, .triage-grid { grid-template-columns: minmax(0, 1fr); }
-  .feed { contain: none; max-height: 480px; border-left: 0; border-top: 1.5px solid var(--ink); padding: 16px 0 0; }
+  .feed { contain: none; max-height: 520px; }
   .brief-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
 @media (max-width: 640px) {

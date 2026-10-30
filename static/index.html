@@ -34,7 +34,7 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
         <h1 id="hero-title">Where should the drone fly next, and is she in this photo?</h1>
-        <p class="lede">LastSeen is search and rescue for one volunteer with one drone. <strong>Muse Spark</strong> reads what the family and witnesses say into weighted explanations on a real map. <strong>SAM&nbsp;3.1</strong> and Muse Spark check every drone photo for a person a few dozen pixels wide.</p>
+        <p class="lede">Search and rescue for one volunteer with one drone. <strong>Muse Spark</strong> turns what witnesses say into a search map. <strong>SAM&nbsp;3.1</strong> and Muse Spark spot a person a few dozen pixels wide in the drone's photos.</p>
       </div>
     </section>
 
@@ -46,16 +46,22 @@
             <span class="sheet-no" aria-hidden="true">1</span>
             <div>
               <h2 id="race-title">Watch a search</h2>
-              <p class="sheet-sub">The same search flown by two planners, side by side on a real valley. The missing person is hidden until the end.</p>
+              <p class="sheet-sub">Two planners fly the same search over a real Swiss valley. Watch the Muse Spark drone break off when a witness calls in.</p>
             </div>
           </div>
-          <p class="watch"><strong>What to watch.</strong> The yellow dot is the drone. The expanding square keeps to its pattern. When a witness reports a sighting, the team planner breaks off to hunt where Muse Spark's reading points. A green ring marks the find; the feed shows what the team knew at that moment.</p>
         </div>
 
         <p id="result-line" class="hidden result-line" role="status"></p>
 
         <div class="race-grid">
           <div class="race-main">
+            <ul class="map-key" aria-label="Map key">
+              <li><i class="k-drone"></i>Drone</li>
+              <li><i class="k-heat"></i>Where the planner thinks she is</li>
+              <li><i class="k-seen"></i>Photographed</li>
+              <li><i class="k-found"></i>Found</li>
+              <li><i class="k-truth"></i>Her real path (once revealed)</li>
+            </ul>
             <div id="lanes" class="lanes"></div>
 
             <div class="playbar">
@@ -88,7 +94,7 @@
 
           <aside class="feed" aria-labelledby="feed-title">
             <h3 id="feed-title">What the team knows</h3>
-            <p class="feed-sub">Witness reports, and Muse Spark's reading of them. Newest first.</p>
+            <p class="feed-sub">Reports and Muse Spark's reading, newest first.</p>
             <ol id="feed" aria-live="polite"></ol>
           </aside>
         </div>
@@ -110,7 +116,7 @@
       <div class="wrap band-grid">
         <div>
           <h2 id="facts-title">Measured, not assumed</h2>
-          <p class="band-sub">Detection was measured on real drone photos; the search result on a simulator that never shows the planner where she is.</p>
+          <p class="band-sub">Detection on real drone photos. Search times on a simulator the planners can't peek into.</p>
         </div>
         <dl class="facts">
           <div class="fact">
@@ -137,7 +143,7 @@
             <span class="sheet-no" aria-hidden="true">2</span>
             <div>
               <h2 id="brief-title">Start a search here</h2>
-              <p class="sheet-sub">Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down, Muse Spark turns it into explanations of where she might be, using the named places on the map, and the drone gets a first block to fly.</p>
+              <p class="sheet-sub">Type or speak what the family said. Muse Spark turns it into weighted guesses about real places on the map, and the drone gets its first block to fly.</p>
             </div>
           </div>
         </div>
@@ -176,7 +182,7 @@
             <span class="sheet-no" aria-hidden="true">3</span>
             <div>
               <h2 id="triage-title">Is anyone in this photo?</h2>
-              <p class="sheet-sub">SAM 3.1 proposes possible people in each 1000&nbsp;px tile, and Muse Spark checks each proposal on a close-up. A reviewer checks the alarms instead of the whole photo, and can overrule Spark.</p>
+              <p class="sheet-sub">SAM 3.1 marks anything that might be a person; Muse Spark checks each one on a close-up. The reviewer only looks at the alarms.</p>
             </div>
           </div>
           <div class="scenario">
