@@ -42,7 +42,7 @@ async function loadRunList(selectId) {
   const runs = await api("/api/runs");
   $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
-  $("run").value = selectId || runs[0].id;
+  $("run").value = runs.some((r) => r.id === selectId) ? selectId : runs[0].id;
   await loadRun($("run").value);
 }
 
@@ -500,5 +500,13 @@ async function showLiveControls() {
   document.querySelectorAll("[data-live-off]").forEach((el) => el.classList.toggle("hidden", live));
 }
 
-loadRunList().then(() => state.run && play()).catch((err) => showStatus(`Could not load races: ${err.message}`));
+// A shared link can open a race paused at a moment: /?race=<id>&t=40 (minutes into the search). Otherwise it plays.
+const link = new URLSearchParams(location.search);
+loadRunList(link.get("race")).then(() => {
+  if (!state.run) return;
+  const minutes = Number(link.get("t"));
+  if (!link.has("t") || !Number.isFinite(minutes)) return play();
+  seek(minutes * 60);
+  $("race").scrollIntoView();
+}).catch((err) => showStatus(`Could not load races: ${err.message}`));
 showLiveControls();

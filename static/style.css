@@ -215,7 +215,8 @@
 .grade-strong { background: var(--ink); color: var(--paper); }
 .grade-weak { border-style: dashed; color: var(--ink-2); }
 .offline { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
-.actions { gap: 8px; margin-top: 10px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 10px; }
+.actions .toggle { margin-top: 0; }
 .status-text { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
 .list-title { font-size: 15px; font-weight: 650; margin: 24px 0 10px; }
 .sv .hypotheses { display: grid; gap: 14px; font-size: 15px; }

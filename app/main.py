@@ -123,6 +123,7 @@ _paid_times: dict[str, deque] = defaultdict(deque)
 class BriefRequest(BaseModel):
     place: str
     text: str = Field(min_length=1, max_length=brief.MAX_BRIEF_CHARS)
+    open_weights: bool = False  # read with Muse Spark Open on Baseten instead of Muse Spark
 
 
 @app.get("/api/triage/example")
@@ -162,7 +163,7 @@ async def read_brief(req: BriefRequest, request: Request):
     if req.place not in replay.PLACES:
         raise HTTPException(422, f"unknown place: {req.place}")
     _check_paid(request)
-    return await _live(brief.read_brief, req.place, req.text)
+    return await _live(brief.read_brief, req.place, req.text, spark_backend="open" if req.open_weights else "meta")
 
 
 @app.post("/api/transcribe")
@@ -200,12 +201,13 @@ def _check_paid(request: Request) -> None:
     times.append(now)
 
 
-async def _live(fn, *args):
-    """Run a paid model job: one at a time, live calls allowed only while it runs, failures as clear HTTP errors."""
+async def _live(fn, *args, spark_backend: str = "meta"):
+    """Run a paid model job: one at a time, live calls allowed only while it runs (on the chosen Spark backend),
+    failures as clear HTTP errors."""
     if not _model_lock.acquire(blocking=False):
         raise HTTPException(429, "busy with another request; try again in a few seconds")
     try:
-        os.environ["MODEL_MODE"] = "live"
+        os.environ["MODEL_MODE"], os.environ["SPARK_BACKEND"] = "live", spark_backend
         return await run_in_threadpool(fn, *args)
     except SpendCapReached:
         raise HTTPException(503, "this server's spending limit for model calls is reached")
@@ -214,7 +216,7 @@ async def _live(fn, *args):
     except ValueError as e:
         raise HTTPException(422, str(e))
     finally:
-        os.environ["MODEL_MODE"] = "replay"
+        os.environ["MODEL_MODE"], os.environ["SPARK_BACKEND"] = "replay", "meta"
         _model_lock.release()
 
 

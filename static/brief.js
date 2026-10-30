@@ -37,7 +37,7 @@ async function showBrief(result) {
   B("brief-sorties").innerHTML = result.sorties.map((s, i) =>
     `<button data-sortie="${i}" class="rounded px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs" style="border-left:4px solid ${SORTIE_COLOURS[i % SORTIE_COLOURS.length]}">Drone ${s.drone}: download mission (.plan)</button>`).join(" ");
   B("brief-sorties").querySelectorAll("button").forEach((b) => (b.onclick = () => downloadPlan(result.sorties[+b.dataset.sortie])));
-  B("brief-status").textContent = `Muse Spark read the brief${result.cached ? " (replayed from cache)" : ""} · $${result.usd.toFixed(4)}. ` +
+  B("brief-status").textContent = `${result.model || "Muse Spark"} read the brief${result.cached ? " (replayed from cache)" : ""} · $${result.usd.toFixed(4)}. ` +
     "The first block comes from the probability-map planner. The mission loads in QGroundControl; it hasn't been flown on a real drone yet.";
   B("brief-credit").textContent = `${result.place.title}. Aerial imagery © swisstopo · ${result.place.credit}.`;
 }
@@ -73,10 +73,11 @@ function downloadPlan(sortie) {
 }
 
 async function readBrief() {
-  B("brief-status").textContent = "Muse Spark is reading the brief...";
+  B("brief-status").textContent = `${B("brief-open").checked ? "Muse Spark Open" : "Muse Spark"} is reading the brief...`;
   try {
     const response = await fetch("/api/brief", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ place: brief.result?.place.name || "saint-ursanne", text: B("brief-text").value }) });
+      body: JSON.stringify({ place: brief.result?.place.name || "saint-ursanne", text: B("brief-text").value,
+                             open_weights: B("brief-open").checked }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
     await showBrief(body);
@@ -139,6 +140,7 @@ function wav16k(buffer) {
 }
 
 B("brief-read").onclick = readBrief;
+B("brief-open").onchange = (e) => (B("brief-read").textContent = e.target.checked ? "Read with Muse Spark Open" : "Read with Muse Spark");
 B("brief-mic").onclick = toggleRecording;
 B("brief-spark").onchange = (e) => { brief.showSpark = e.target.checked; drawBrief(); };
 showBriefExample().catch(() => B("brief").classList.add("hidden"));

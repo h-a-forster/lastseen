@@ -44,6 +44,17 @@ drone photo of a person her size](docs/img/race.jpg)
 | SAM 3.1 | Finds people in drone photos (text prompt "person", boxes with confidence) |
 | Muse Spark | Checks each SAM proposal on a close-up; reads briefs and witness reports into hypotheses, as strict JSON whose quotes and numbers code then checks |
 | Muse Voice Transcribe | Turns a spoken brief into text |
+| Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
+
+**Open weights.** With `SPARK_BACKEND=open`, every Spark call goes to Muse Spark Open, Meta's open-weight model, on
+Baseten. On the same 200 development scenarios (one drone, photo mode), the team planner found 52% within 2 h reading
+the reports with Muse Spark Open, against 53% with Muse Spark (paired difference -0.5 points, 95% interval -2.5 to
++1.5; 5 of 200 scenarios changed). All 327 readings passed our checks, which matter more here because Baseten
+doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
+budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
+Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the hosted page, "Use open
+weights" reads a brief with Muse Spark Open. Open weights mean a search team
+isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 
 ## How we know whether it works
 - **Detection is measured, not assumed.** SAM 3.1 + Spark ran on 660 labelled people in the HERIDAL test photos and on
@@ -53,6 +64,12 @@ drone photo of a person her size](docs/img/race.jpg)
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
+
+## Before anyone relies on it
+- The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
+  [docs/evaluation.md](docs/evaluation.md#known-limits).
+- The exported mission loads in QGroundControl but hasn't been flown; a volunteer checks and flies every mission.
+- Next: a test flight over open ground, and a trial with a volunteer search team on a training exercise.
 
 ## Run it
 ```bash
@@ -83,6 +100,7 @@ planner `ours` (`app/planner/__init__.py`); `app/sar/planners/greedy.py` is a co
 ```bash
 uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 --drones 1 --workers 8
 uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200 --drones 1 --imagery   # with Spark's reading (paid once, then cached)
+SPARK_BACKEND=open uv run python -m app.sar.bench --planners spiral,hedge+spark --seeds 200 --drones 1 --imagery   # on Muse Spark Open
 uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200 --drones 1      # vs a spiral that restarts on Spark's readings
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3                        # three drones
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3 --lose-drone           # one of three fails in the first 2 h

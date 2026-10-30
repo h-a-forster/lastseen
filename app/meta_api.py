@@ -5,6 +5,8 @@
   too: it was seen on the first day and the same call succeeded seconds later.
 - Every answer is cached under a hash of its request, so reruns (tests, benchmarks, the demo) replay it for free.
   MODEL_MODE=replay forbids network calls: a cache miss is an error. Use it offline and in CI.
+- SPARK_BACKEND=open sends every Spark call to Muse Spark Open, the open-weight model, on Baseten's inference API
+  (BASETEN_API_KEY). It accepts a JSON schema but doesn't enforce it, so callers keep checking what comes back.
 - USD_CAP stops a process that has spent that much (default $2), so a loop can't drain the credits. Every paid call is
   appended to the spend ledger; with USD_CAP_INCLUDES_LEDGER=1 the cap counts the whole ledger instead, for a host
   that restarts often but keeps its ledger.
@@ -30,16 +32,21 @@ load_dotenv()
 
 BASE_URL = "https://api.meta.ai/v1"
 SPARK = "muse-spark-1.3"
+SPARK_OPEN = "meta-models/muse-spark-open-1026"
 SAM = "sam-3.1"
 VOICE = "muse-voice-transcribe-1.0"
 # USD per million tokens: input, cached input, output (reasoning is billed as output). dev.meta.ai pricing, 29 Oct 2026.
-PRICE_PER_M = {SPARK: (1.25, 0.15, 4.25)}
+PRICE_PER_M = {SPARK: (1.25, 0.15, 4.25), SPARK_OPEN: (1.25, 0.15, 4.25)}  # SPARK_OPEN: Baseten pricing, 30 Oct 2026
 SAM_USD_PER_IMAGE = 2.50 / 1000  # SAM is billed per image, not per token
 VOICE_USD_PER_HOUR = 0.18  # Voice Transcribe is billed per hour of audio
 RETRY_STATUS = {429, 500, 503}
 MAX_ATTEMPTS = 4
 TIMEOUT_S = 120.0
 MAX_WAIT_S = 60.0
+MAX_TOKENS_CEILING = 24000  # an answer cut off at max_tokens is asked again with double the budget, up to this
+
+# Where each model is served, and the env var holding its key; anything not listed goes to the Meta Model API.
+ENDPOINTS = {SPARK_OPEN: ("https://inference.baseten.co/v1", "BASETEN_API_KEY")}
 
 CACHE_DIR = Path(os.getenv("DATA_DIR", "data")) / "cache" / "meta"
 LEDGER = CACHE_DIR / "spend.jsonl"
@@ -72,9 +79,10 @@ _spend_lock = threading.Lock()
 
 
 def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low", max_tokens: int = 6000) -> Answer:
-    """Ask Muse Spark for JSON that matches `schema` (strict structured output) and return it parsed."""
+    """Ask Muse Spark (or Muse Spark Open, see SPARK_BACKEND) for JSON matching `schema` and return it parsed."""
+    model = spark_model()
     body = {
-        "model": SPARK,
+        "model": model,
         "messages": messages,
         "reasoning_effort": effort,  # set explicitly: reasoning tokens are billed as output
         "max_tokens": max_tokens,  # covers reasoning and the visible answer together
@@ -83,12 +91,21 @@ def spark_json(messages: list[dict], schema: dict, name: str, effort: str = "low
     record = _cached_or_call("/chat/completions", body)
     choice = record["response"]["choices"][0]
     if choice.get("finish_reason") == "length":
-        raise ModelCallError("answer cut off at max_tokens; raise it or lower the reasoning effort")
+        if max_tokens * 2 <= MAX_TOKENS_CEILING:  # Muse Spark Open sometimes reasons past the usual budget
+            return spark_json(messages, schema, name, effort, max_tokens * 2)
+        raise ModelCallError(f"answer cut off at {max_tokens} tokens, the most we allow")
     try:
         data = json.loads(choice["message"]["content"])
     except (TypeError, json.JSONDecodeError) as e:
         raise ModelCallError(f"answer was not JSON: {e}") from e
-    return Answer(data, record["usd"], record["cached"], SPARK)
+    return Answer(data, record["usd"], record["cached"], model)
+
+
+def spark_model() -> str:
+    backend = os.getenv("SPARK_BACKEND", "meta")
+    if backend not in ("meta", "open"):
+        raise ModelCallError(f"SPARK_BACKEND must be 'meta' or 'open', not {backend!r}")
+    return SPARK_OPEN if backend == "open" else SPARK
 
 
 def sam_find(image_jpeg: bytes, concept: str) -> tuple[list[Segment], float, bool]:
@@ -157,9 +174,10 @@ def _counted_usd() -> float:
 
 
 def _post(path: str, body: dict, files: dict | None = None) -> dict:
-    key = os.getenv("MODEL_API_KEY")
+    base_url, key_var = ENDPOINTS.get(body["model"], (BASE_URL, "MODEL_API_KEY"))
+    key = os.getenv(key_var)
     if not key:
-        raise ModelCallError("MODEL_API_KEY is not set")
+        raise ModelCallError(f"{key_var} is not set")
     cap = float(os.getenv("USD_CAP", "2"))
     spent = _counted_usd()
     if spent >= cap:
@@ -167,7 +185,7 @@ def _post(path: str, body: dict, files: dict | None = None) -> dict:
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             payload = {"files": files} if files else {"json": body}
-            r = httpx.post(BASE_URL + path, **payload, headers={"Authorization": f"Bearer {key}"}, timeout=TIMEOUT_S)
+            r = httpx.post(base_url + path, **payload, headers={"Authorization": f"Bearer {key}"}, timeout=TIMEOUT_S)
         except httpx.TransportError as e:  # connection reset, DNS, read timeout
             if attempt == MAX_ATTEMPTS:
                 raise ModelCallError(f"network error after {attempt} attempts: {e!r}") from e
