@@ -29,7 +29,7 @@ from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
 from app.sar.walker import WalkerParams, truth_track
 
 PLACES_DIR = Path(__file__).resolve().parents[2] / "data" / "places"
-OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
 CREDIT = "Map data © OpenStreetMap contributors (ODbL)"
 M_PER_DEG = 111_195.0  # metres per degree of latitude on a 6,371 km sphere
 PAINT_M = 5.0
@@ -97,7 +97,7 @@ def visitor_place(lat: float, lon: float) -> str:
                                              aerial=south <= lat <= north and west <= lon <= east)
     try:
         try:
-            osm = fetch(name, attempts=2, timeout_s=40, wait_s=2)
+            osm = fetch(name, attempts=2, timeout_s=90, wait_s=2)  # the main server takes about 45 s for 3 km when busy
         except (httpx.HTTPError, ValueError) as e:  # ValueError: an answer that isn't JSON, or a timed-out query
             raise MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute") from e
         _check_searchable(name, osm)
