@@ -58,13 +58,15 @@ examples.
 A planner implements `app/sar/interface.py`: `reset` (the map, fleet, detection rates and statistics), `observe`
 (photos that found nobody, witness reports, Spark's hypotheses, a drone that fails), `plan` (the next sortie for a
 drone at base) and optionally `retask` (a new route for a drone in the air when a report comes in) and
-`probability_map`. It never sees the hidden person. Start from `app/planner/__init__.py`
-(`ours`), with `app/sar/planners/greedy.py` as a complete example, then:
+`probability_map`. It never sees the hidden person. The team's planner, `hedge` (`app/planner/hedge.py`), flies the
+expanding square until a witness reports a sighting, then sends one drone after Spark's reading of it with the map
+planner `ours` (`app/planner/__init__.py`); `app/sar/planners/greedy.py` is a complete single-file example. Then:
 ```bash
-uv run python -m app.sar.bench --planners ours,spiral,greedy --seeds 100 --workers 8
-uv run python -m app.sar.bench --planners ours,ours+spark --seeds 30   # with Spark's reading of the reports (paid)
-uv run python -m app.sar.bench --planners ours+spark,spiral+spark --seeds 30   # vs a spiral that restarts on Spark's readings (paid)
-uv run python -m app.sar.bench --planners ours,spiral,greedy --lose-drone      # one drone fails in the first 2 h
+uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 --workers 8
+uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200   # with Spark's reading of the reports (paid once, then cached)
+uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200   # vs a spiral that restarts on Spark's readings
+uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 1         # one drone
+uv run python -m app.sar.bench --planners spiral,hedge+spark --lose-drone       # one drone fails in the first 2 h
 ```
 
 ## Layout
@@ -72,7 +74,7 @@ uv run python -m app.sar.bench --planners ours,spiral,greedy --lose-drone      #
 app/sar/          simulator: maps, hidden person, arena, witness reports, baselines, bench, replays
 app/agent/        Spark reads reports and briefs into hypotheses
 app/perception/   SAM 3.1 + Spark on photos: calibration, photo pool, photo check
-app/planner/      the team's planner
+app/planner/      the team's planner (`hedge`) and the map planner it hunts with (`ours`)
 app/main.py       web API;  static/  the page
 docs/             evaluation plan, parameters, team workflow
 ```

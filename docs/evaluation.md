@@ -1,4 +1,4 @@
-# Evaluation plan (written 28 Oct 2026, amended 29 Oct; both before the final run)
+# Evaluation plan (written 28 Oct 2026, amended 29 and 30 Oct; all before the final run)
 
 This fixes, in advance, how the headline comparison is run and reported, so that the endpoints, scenarios and wording
 can't be chosen after seeing the results. The final run happens once, after the feature freeze, and every endpoint
@@ -9,15 +9,16 @@ Does Muse Spark's reading of the witness reports help a search find a missing pe
 
 ## What is compared
 Two comparisons are fixed in advance. Each gets its own interval and its own wording.
-1. **With and without Spark, same planner.** The planner is the team's planner (`ours`) if it is merged by the
-   feature freeze (2 Nov, 12:00 UTC); otherwise the reference probability-map planner (`greedy`). This is decided by
-   whether the code exists at the freeze, not by any result.
+1. **With and without Spark, same planner.** The planner is the team's planner, `hedge`: the expanding square
+   until a witness sighting, then one drone hunts with the map planner `ours`. Without Spark it never hunts, so it
+   flies exactly the spiral, and this comparison is also the team's planner against the spiral.
 2. **With and without Spark, expanding square.** `spiral+spark` restarts the expanding square on the block Spark's
    newest reading makes most likely; `spiral` ignores the reports. This tests Spark's reading without depending on
    how good the planner is.
 
 For context: the planner with Spark against `spiral+spark` (does keeping a map beat restarting a fixed pattern on the
-same readings?), and the fixed patterns lawnmower, spiral, concentric and sector.
+same readings?), the map planner on its own with and without Spark (`ours`, `ours+spark`), and the fixed patterns
+lawnmower, spiral, concentric and sector.
 
 ## Scenarios
 - 200 held-out dementia scenarios, seeds **900030-900229**, 3 km map. None of these seeds has been run before.
@@ -44,7 +45,9 @@ go.
 - per person found: drone flight hours, photos and alarms; and the share of drone time spent flying;
 - the primary endpoint split by whether the sighting report was correct, wrong, or absent;
 - **a lost drone:** found within 2 hours when one drone fails at a seeded time in the first 2 hours (the second
-  command below).
+  command below);
+- **one drone:** both comparisons, found within 1, 2 and 4 hours, with a single drone instead of three (the third
+  command below), as many volunteer teams have.
 
 ## How results will be worded
 - **"Helps"** only if the primary interval excludes zero.
@@ -56,11 +59,14 @@ go.
 ## Commands
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners lawnmower,spiral,concentric,sector,spiral+spark,<planner>,<planner>+spark \
+  --planners lawnmower,spiral,concentric,sector,spiral+spark,ours,ours+spark,hedge,hedge+spark \
   --reference spiral --usd-cap 4 --json docs/results/final.json
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners spiral,spiral+spark,<planner>,<planner>+spark --reference spiral --lose-drone --usd-cap 4 \
+  --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --lose-drone --usd-cap 4 \
   --json docs/results/final-lost-drone.json
+uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
+  --planners spiral,spiral+spark,ours,ours+spark,hedge,hedge+spark --reference spiral --drones 1 --usd-cap 4 \
+  --json docs/results/final-one-drone.json
 ```
 The bench prints both primary comparisons itself (every `<name>+spark` run next to `<name>`), with the split by
 sighting report. Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's
@@ -86,3 +92,12 @@ find times and which report details were true, so every number above can be reco
   unchanged; development numbers with Spark were re-run.
 - A bug that could stop fixed patterns flying for the rest of a search was fixed (commit `c912676`); all
   development numbers were re-run after it.
+
+## Changes on 30 Oct (before any held-out seed was run)
+- **The team's planner is now `hedge`.** On 200 development seeds the map planner `ours` with Spark matched the
+  spiral at 2 hours but found fewer people in the first hour. `hedge` flies the spiral until a sighting, then sends
+  one drone after Spark's reading with `ours`: 71% found within 2 hours against the spiral's 68%, and no worse than
+  the spiral whether the sighting was right, wrong or absent.
+- **One drone added as a secondary endpoint.** With three drones on a 3 km map, most people the spiral misses within
+  2 hours have already walked off the map, so the order of search changes little. One drone is the common case for a
+  volunteer team, and the case where the order matters.
