@@ -29,6 +29,11 @@ async function showBrief(result) {
     </li>`).join("") +
     `<li class="text-xs text-slate-400">None of these (keep the statistics): ${Math.round(result.rest_weight * 100)}%` +
     (result.dropped.length ? ` · ${result.dropped.length} hypothesis dropped by the checks: ${escapeText(result.dropped.join("; "))}` : "") + "</li>";
+  B("brief-witnesses").innerHTML = (result.witnesses || []).map((w) => `<li>
+      <span class="grade grade-${w.reliability}">${escapeText(w.reliability)}</span>
+      <div><strong>${escapeText(w.who)}</strong>: ${escapeText(w.claim)}
+      <div class="witness-why">${escapeText(w.basis)} · ${w.knows_her ? "knows her" : "doesn't know her"} · ${w.backed_up ? "backed up" : "nobody else says so"} (${escapeText(w.why)})</div></div>
+    </li>`).join("");
   B("brief-sorties").innerHTML = result.sorties.map((s, i) =>
     `<button data-sortie="${i}" class="rounded px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs" style="border-left:4px solid ${SORTIE_COLOURS[i % SORTIE_COLOURS.length]}">Drone ${s.drone}: download mission (.plan)</button>`).join(" ");
   B("brief-sorties").querySelectorAll("button").forEach((b) => (b.onclick = () => downloadPlan(result.sorties[+b.dataset.sortie])));

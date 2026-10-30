@@ -27,7 +27,9 @@ drone photo of a person her size](docs/img/race.jpg)
   checks each proposal on a close-up. A reviewer checks a few alarms instead of every photo.
 - **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down,
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
-  hill"). The drone gets a first block to fly, downloadable as a QGroundControl mission.
+  hill"). Spark also grades each witness the way a search manager would (do they know her, did they see it
+  themselves, does anyone back it up?); the grades are shown, not used to change weights. The drone gets a first block
+  to fly, downloadable as a QGroundControl mission.
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides

@@ -208,6 +208,12 @@
 .toggle { display: block; font-size: 14px; color: var(--ink-2); margin-top: 8px; cursor: pointer; }
 .field-label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 6px; }
 .sv #brief-text { width: 100%; font-size: 16px; line-height: 1.5; padding: 12px 14px; resize: vertical; }
+.witnesses { display: grid; gap: 10px; margin-bottom: 22px; font-size: 14px; }
+.witnesses li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start; }
+.witness-why { font-size: 13px; color: var(--ink-2); }
+.grade { text-align: center; font-size: 12px; font-weight: 650; padding: 2px 0; border-radius: var(--r-frame); border: 1.5px solid var(--ink); }
+.grade-strong { background: var(--ink); color: var(--paper); }
+.grade-weak { border-style: dashed; color: var(--ink-2); }
 .offline { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
 .actions { gap: 8px; margin-top: 10px; }
 .status-text { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
