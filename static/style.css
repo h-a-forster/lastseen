@@ -307,3 +307,19 @@
   .datum { display: none; }
   .scenario select { max-width: 100%; }
 }
+
+/* Sheet 4: a place of your own */
+.place-note { max-width: 80ch; font-size: 14px; color: var(--ink-2); margin: 0 0 16px; }
+.place-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.place-map { height: 420px; border: 1px solid var(--ink); border-radius: var(--r-frame); background: var(--well); }
+.place-form { display: flex; flex-direction: column; gap: 6px; }
+.place-form label { font-size: 13px; font-weight: 600; margin-top: 8px; }
+.sv .place-form input, .sv .place-form textarea { font: inherit; font-size: 15px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-control); color: var(--ink); }
+.place-form button { margin-top: 12px; align-self: flex-start; }
+.place-hint { font-size: 12px; color: var(--ink-3); }
+.place-status { font-size: 14px; color: var(--ink-2); min-height: 1.4em; }
+@media (max-width: 900px) {
+  .place-grid { grid-template-columns: minmax(0, 1fr); }
+  .place-map { height: 320px; }
+}
+.leaflet-container img { max-width: none !important; } /* Tailwind's base style would break the map tiles */

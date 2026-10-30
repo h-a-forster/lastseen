@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,300..800;1,62..125,300..800&display=swap" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body class="sv">
@@ -25,6 +26,7 @@
         <a href="#race">Watch a search</a>
         <a href="#brief">Start a search</a>
         <a href="#triage">Check a photo</a>
+        <a href="#place">Your place</a>
         <a href="#faq">Questions</a>
       </nav>
       <a class="repo" href="https://github.com/h-a-forster/lastseen">Code on GitHub</a>
@@ -47,7 +49,7 @@
             <span class="sheet-no" aria-hidden="true">1</span>
             <div>
               <h2 id="race-title">Watch a search</h2>
-              <p class="sheet-sub">Two planners fly the same simulated search over a real Swiss valley; neither sees where she is. Watch the Muse Spark drone break off when a witness calls in.</p>
+              <p class="sheet-sub">Two planners fly the same simulated search over a real Swiss valley (or a place you pick in section 4); neither sees where she is. Watch the Muse Spark drone break off when a witness calls in.</p>
             </div>
           </div>
         </div>
@@ -210,6 +212,37 @@
       </div>
     </section>
 
+    <!-- Sheet 4: a race on a place the visitor picks -->
+    <section id="place" class="sheet" aria-labelledby="place-title">
+      <div class="wrap">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="sheet-no" aria-hidden="true">4</span>
+            <div>
+              <h2 id="place-title">Search a place you know</h2>
+              <p class="sheet-sub">Click a point on land. LastSeen builds a 3&nbsp;km search area around it from OpenStreetMap, a simulated person walks away from that point, and both planners search for her with one drone. The race opens in section 1.</p>
+            </div>
+          </div>
+        </div>
+        <p class="place-note">The map comes from OpenStreetMap's public servers, which limit how often they can be asked: if they're busy, wait a minute and try again. Coasts aren't supported yet (OpenStreetMap doesn't map the sea as an area), places with little map detail are refused, and outside Switzerland there is no aerial photo, only the map's terrain. It usually takes under a minute.</p>
+        <div class="place-grid">
+          <div id="place-map" class="place-map" aria-label="Map: click to choose where she was last seen"></div>
+          <form id="place-form" class="place-form">
+            <label for="place-coords">Last seen at</label>
+            <input id="place-coords" autocomplete="off" placeholder="Click the map, or type 47.365, 7.155" />
+            <label for="place-witness">A witness report of your own (optional)</label>
+            <textarea id="place-witness" maxlength="300" rows="3" placeholder="e.g. A cyclist saw an older woman by the church about twenty minutes ago."></textarea>
+            <p class="place-hint">She walks on her own, so your witness may be wrong, as real ones often are. Leave it empty and the simulator writes its own.</p>
+            <label for="place-minute">The report comes in after (minutes)</label>
+            <input id="place-minute" type="number" min="10" max="180" value="45" />
+            <button data-live class="hidden btn btn-ink" type="submit">Search here</button>
+            <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
+            <p id="place-status" class="place-status" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
     <!-- Questions: written answers, and a box that finds the right one -->
     <section id="faq" class="sheet" aria-labelledby="faq-title">
       <div class="wrap faq-wrap">
@@ -251,6 +284,8 @@
   <script src="/triage.js"></script>
   <script src="/brief.js"></script>
   <script src="/sheet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="/place.js"></script>
   <script src="/faq.js"></script>
 </body>
 </html>

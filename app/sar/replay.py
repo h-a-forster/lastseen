@@ -17,13 +17,15 @@ import dataclasses
 import json
 import os
 import re
+import zlib
 from pathlib import Path
 
 from app.perception import pool as photo_pool
 from app.perception.heridal import CREDIT
 from app.sar.bench import fleet_for, make_planner
-from app.sar.cues import Cue, reports_for
+from app.sar.cues import Cue, Report, reports_for
 from app.sar.interface import FleetSpec
+from app.sar.planners.fixed_paths import ExpandingSquare
 from app.sar.recorder import Recorder
 from app.sar.scenario import Scenario
 from app.sar.terrain import PLACES, build
@@ -36,9 +38,13 @@ MAX_LANES = 3
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
-         drones: int = 3, place: str | None = None, lose_drone: bool = False) -> dict:
+         drones: int = 3, place: str | None = None, lose_drone: bool = False, witness: Report | None = None) -> dict:
+    """Every planner flies the same hidden walk. A `witness` report replaces the generated sighting, if any: it is a
+    visitor's own, so whether it is right is unknown and the truth panel says nothing about it."""
     scenario = build(seed, place, category, size)
     reports, cues = reports_for(scenario, seed)
+    if witness is not None:
+        reports, cues = [reports[0], witness], [c for c in cues if c.kind != "sighting"]
     fleet = FleetSpec(drones=drones)
     losses = drone_losses(seed, drones) if lose_drone else None
     photos = photo_pool.shared()
@@ -49,11 +55,13 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
                      recorder=recorder, photos=photos, losses=losses).run()
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {
-        "id": run_id(seed, category, planner_names, place, drones) + ("-lost" if lose_drone else ""),
+        "id": run_id(seed, category, planner_names, place, drones) + ("-lost" if lose_drone else "")
+              + (f"-witness-{zlib.crc32(f'{witness.t_s}{witness.text}'.encode()):08x}" if witness else ""),
         "seed": seed,
         "category": category,
         "place": None if place is None else {"name": place, "title": PLACES[place].title,
-                                             "bounds": PLACES[place].bounds(), "credit": MAP_CREDIT},
+                                             "bounds": PLACES[place].bounds(), "credit": MAP_CREDIT,
+                                             "aerial": PLACES[place].aerial},
         "hours": hours,
         "imagery": photos is not None,
         "photo_credit": CREDIT if photos is not None else None,
@@ -64,6 +72,18 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
         "truth": truth_json(scenario, cues, hours),
         "lanes": lanes,
     }
+
+
+def watchable_seed(place: str, first: int, tries: int = 5, quiet_s: float = 2700.0) -> int:
+    """For a visitor's place: the first of `tries` walks from seed `first` that the expanding square hasn't found within
+    `quiet_s`, so the race has a search to watch (`first` if none). Photos are decided as in the race; no model calls."""
+    photos = photo_pool.shared()
+    for seed in range(first, first + tries):
+        scenario = build(seed, place, "dementia")
+        if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=quiet_s,
+               photos=photos).run().found_s is None:
+            return seed
+    return first
 
 
 def map_json(scenario: Scenario) -> dict:
