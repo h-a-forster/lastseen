@@ -14,7 +14,10 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_race_endpoint_refuses_held_out_seeds_and_unknown_planners():
+def test_race_endpoint_is_off_by_default_and_refuses_held_out_seeds_and_unknown_planners(monkeypatch):
+    assert client.post("/api/runs", json={"seed": 1, "planners": ["spiral"], "drones": 1}).status_code == 403
+    assert client.get("/api/health").json()["record_races"] is False
+    monkeypatch.setattr(main, "RECORD_RACES", True)
     assert client.post("/api/runs", json={"seed": 900_001, "planners": ["greedy"]}).status_code == 422
     assert client.post("/api/runs", json={"seed": 1, "planners": ["mine"]}).status_code == 422
     assert client.post("/api/runs", json={"seed": 1, "planners": ["greedy"], "place": "atlantis"}).status_code == 422
@@ -57,6 +60,7 @@ def test_runs_list_featured_races_first_in_their_order_then_newest_first(tmp_pat
 
 
 def test_a_race_can_be_recorded_with_one_drone(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "RECORD_RACES", True)
     monkeypatch.setattr(main.replay, "RUNS_DIR", tmp_path)
     monkeypatch.setattr(main, "_summaries", {})
     run_id = client.post("/api/runs", json={"seed": 1, "planners": ["spiral"], "drones": 1}).json()["id"]

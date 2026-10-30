@@ -498,9 +498,11 @@ $("new-race").onsubmit = async (e) => {
 
 async function showLiveControls() {
   // Paid buttons only when the server allows live model calls; otherwise a note that the examples are recorded.
-  const live = await api("/api/health").then((h) => h.live_models).catch(() => false);
+  const health = await api("/api/health").catch(() => ({}));
+  const live = Boolean(health.live_models);
   document.querySelectorAll("[data-live]").forEach((el) => el.classList.toggle("hidden", !live));
   document.querySelectorAll("[data-live-off]").forEach((el) => el.classList.toggle("hidden", live));
+  $("new-race").classList.toggle("hidden", !health.record_races);
 }
 
 // A shared link can open a race paused at a moment: /?race=<id>&t=40 (minutes into the search). Otherwise it plays.

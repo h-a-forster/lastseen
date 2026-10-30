@@ -32,8 +32,9 @@ app = FastAPI(title="LastSeen")
 
 @app.get("/api/health")
 def health():
-    """`live_models` tells the page whether to offer the paid buttons (see _check_paid)."""
-    return {"ok": True, "live_models": LIVE_MODELS}
+    """`live_models` tells the page whether to offer the paid buttons (see _check_paid); `record_races` whether to offer
+    recording a race."""
+    return {"ok": True, "live_models": LIVE_MODELS, "record_races": RECORD_RACES}
 
 
 RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", "greedy", "greedy+spark", "ours",
@@ -44,8 +45,8 @@ MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 # Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
 FEATURED_RUNS = ("saint-ursanne-dementia-19-spiral-hedge-spark-1drone", "dementia-5-spiral-hedge-spark-1drone",
-                 "dementia-197-spiral-hedge-spark-1drone", "dementia-25-spiral-greedy-greedy-spark",
-                 "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
+                 "dementia-197-spiral-hedge-spark-1drone")
+RECORD_RACES = os.getenv("RECORD_RACES") == "1"  # off on the hosted demo, so its list holds only the races above
 
 
 class RaceRequest(BaseModel):
@@ -88,6 +89,8 @@ def get_run(run_id: str):
 def new_race(req: RaceRequest):
     """Record a new race. Spark readings come from the cache only: this public endpoint never spends credits, and a
     reading that isn't cached leaves that lane searching on statistics alone."""
+    if not RECORD_RACES:
+        raise HTTPException(403, "recording races is off on this server")
     unknown = set(req.planners) - RACE_PLANNERS
     if unknown:
         raise HTTPException(422, f"unknown planners: {', '.join(sorted(unknown))}")
