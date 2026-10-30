@@ -37,18 +37,30 @@ def words(text: str) -> set[str]:
 
 
 def closest(question: str, n: int = MAX_ANSWERS) -> list[tuple[float, dict]]:
-    """Written entries ranked by the share of the question's words found in their question (ties: in their answer)."""
+    """Written entries ranked by the share of the question's words found in their question. Ties go to the written
+    question those words cover most fully, then to the answer that shares most of them."""
     asked = words(question)
     if not asked:
         return []
-    scored = [(len(asked & words(e["q"])) / len(asked), len(asked & words(e["a"])) / len(asked), e) for e in entries()]
-    return [(q, e) for q, _a, e in sorted(scored, key=lambda s: (-s[0], -s[1]))[:n]]
+    scored = []
+    for e in entries():
+        written = words(e["q"])
+        shared = len(asked & written)
+        scored.append((shared / len(asked), shared / max(len(written), 1), len(asked & words(e["a"])), e))
+    return [(s[0], s[3]) for s in sorted(scored, key=lambda s: (-s[0], -s[1], -s[2]))[:n]]
 
 
 def instant(question: str) -> dict | None:
     """The written entry for a question that is close enough to it, without a model call."""
+    exact = [e for e in entries() if _plain(e["q"]) == _plain(question)]
+    if exact:
+        return exact[0]
     best = closest(question, 1)
     return best[0][1] if best and best[0][0] >= MATCH_AT else None
+
+
+def _plain(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", text.lower()))
 
 
 def route(question: str) -> dict:

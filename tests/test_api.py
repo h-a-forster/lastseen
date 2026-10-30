@@ -80,6 +80,8 @@ def test_the_help_box_only_ever_returns_written_answers(monkeypatch):
     monkeypatch.setattr(main, "LIVE_MODELS", False)
     close = client.post("/api/ask", json={"question": "Does the AI fly the drone?"}).json()
     assert close["matched_by"] == "words" and close["answers"][0]["id"] == "control"
+    assert main.faq.instant("Who is it for?")["id"] == "who"  # only common words, but the written question itself
+    assert main.faq.instant("what does spark do")["id"] == "spark"  # not the longer question that also names Spark
     offline = client.post("/api/ask", json={"question": "Tell me a joke"}).json()
     assert offline["answers"] == [] and len(offline["suggestions"]) == 3
     answer = main.meta_api.Answer({"ids": ["open", "made-up", "open"]}, 0.001, False, "m")
