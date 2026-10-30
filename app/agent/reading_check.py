@@ -22,7 +22,7 @@ from app.sar.prior import ring_prior
 from app.sar.scenario import synthetic
 from app.sar.stats import lost_person_stats
 
-USD_PER_CALL = 0.01  # estimate from the day-0 spikes; the ledger records the real cost
+USD_PER_CALL = 0.01  # estimate from early test calls; the ledger records the real cost
 
 
 def check_seed(seed: int, category: str) -> list[dict]:

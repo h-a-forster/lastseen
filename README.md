@@ -3,9 +3,10 @@
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier
 
 Search and rescue already runs on probability, but what witnesses say still reaches the search map by hand, or not
-at all: the standard search pattern ignores it. LastSeen closes that gap. Muse Spark turns every report into weighted,
-checked scenarios in seconds, the drone re-plans from them and flies the search itself, and SAM 3.1 and Muse Spark
-check every photo for a person a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in
+at all: a fixed search pattern only uses it when someone moves the pattern by hand. LastSeen closes that gap. Muse
+Spark turns every report into weighted, checked scenarios in seconds; when a witness reports a sighting, the drone
+breaks off to search where the reading points, and it flies the search itself. SAM 3.1 and Muse Spark check every
+photo for a person a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in
 command.
 
 It is built for searches where minutes matter most, such as an older person with dementia who has walked away from
@@ -38,15 +39,17 @@ drone photo of a person her size](docs/img/race.jpg)
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
   on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
-- **About 150 close-ups instead of 660 photos** for a reviewer in a 4-hour, one-drone search. A mountain-rescue team
-  reports 5 to 45 seconds to look through one full photo ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)),
-  so 660 photos are about 1 to 8 hours of looking; a close-up is one spot to accept or reject (not timed yet).
+- **About 270 close-ups instead of 1,200 photos** for a reviewer in 4 hours of one-drone flying. A mountain-rescue
+  team reports 5 to 45 seconds to look through one full photo
+  ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,200 photos are about 2 to 15 hours of looking; a
+  close-up is one spot to accept or reject (not timed yet).
 - **53% found within 2 hours instead of 46%** with the expanding square alone: Muse Spark reads the witness reports,
   and when someone reports a sighting the drone breaks off its square to follow Spark's reading (one drone, 200
   development scenarios in photo mode, as the final run; when the sighting was wrong, it did as well as the square).
   A careful volunteer who restarts the square where the witness said gets 51%: on the simulator's simple reports,
-  most of the gain is acting on a sighting at all, and Spark's reading is built for real, messy speech, which they
-  don't test. The held-out result, run once after the feature freeze, goes in
+  most of the gain is acting on a sighting at all. Reworded the way people talk ("a 20-minute walk", "NE-ish",
+  witnesses who aren't sure), the same searches found 52% (-1.5 points, 95% interval -3.5 to 0), though Spark's
+  readings put a little less weight near the spot the witness named. The held-out result, run once after the feature freeze, goes in
   [docs/evaluation.md](docs/evaluation.md) whatever it shows.
 
 ## What it does
@@ -93,6 +96,8 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 ## Before anyone relies on it
 - The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
   [docs/evaluation.md](docs/evaluation.md#known-limits).
+- Mission heights are 100 m above the take-off point, and the simulator doesn't model terrain height; over hills a
+  real mission needs terrain-following heights (QGroundControl can adjust them).
 - LastSeen isn't connected to a real drone yet: missions export as QGroundControl files (they load but haven't been
   flown), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
   battery swap, up to 25 minutes later.

@@ -1,8 +1,9 @@
-"""The team's decision system: prior, belief updates and multi-drone multi-block tasking.
+"""The map planner `ours`: a probability map, and sorties that tour several promising blocks.
 
-Same map stack as `greedy` (ISRID prior, Bayes misses, time diffusion, Spark likelihood), but each sortie is a
-TSP-lite tour of up to MAX_TOUR adjacent high-yield blocks so one battery does more searching before the turnaround
-that costs greedy so much air time. Benchmark with:
+Same map stack as `greedy` (ISRID prior, Bayes misses, time diffusion, Spark likelihood), but each sortie is a short
+tour of up to MAX_TOUR adjacent high-yield blocks, so one battery does more searching before the turnaround that
+costs greedy so much air time. The team's planner (`hedge.py`) uses it for the drone that follows a sighting.
+Benchmark with:
 
     uv run python -m app.sar.bench --planners ours,greedy,spiral,lawnmower --seeds 40 --workers 4
 """
@@ -21,10 +22,10 @@ from app.sar.prior import ring_prior
 from app.sar.scenario import SearchMap
 
 BLOCK_LANES = 4  # same coarse tiling as greedy
-MAX_TOUR = 4  # blocks per sortie (TSP-lite)
+MAX_TOUR = 4  # blocks per sortie
 SEED_K = 8  # single-block seeds from which tours are grown
 PREDICT_EVERY_S = 60.0
-TRUST = 1.0
+RETASK_GAIN = 1.05  # a new reading retasks a drone only if its best tour finds people this much faster
 
 Block = tuple[slice, slice]
 BlockKey = tuple[int, int]  # (block-row, block-col) in the coarse tiling
@@ -76,9 +77,7 @@ class SearchPlanner:
         rate, blocks, route = self._best_tour((drone.y_m, drone.x_m), 0.95 * self.fleet.endurance_s)
         if route:
             self._claim(drone.id, blocks)
-
             self._current_rate[drone.id] = rate
-            
             self._notes.append({
                 "kind": "sortie", "drone": drone.id,
                 "text": (f"Drone {drone.id + 1}: {len(blocks)}-block tour with "
@@ -93,24 +92,21 @@ class SearchPlanner:
         current = self._claimed.pop(drone.id, None)
 
         rate, blocks, route = self._best_tour((drone.y_m, drone.x_m), 0.95 * drone.battery_s)
-        
+
         if not route or _same_blocks(blocks, current):
             if current is not None:
                 self._claim(drone.id, current)
             return None
-            
 
         old_rate = self._current_rate.get(drone.id, 0.0)
-        improvement_threshold = 1.05  
-        
-        if old_rate > 0 and rate < old_rate * improvement_threshold:
+        if old_rate > 0 and rate < old_rate * RETASK_GAIN:
             if current is not None:
                 self._claim(drone.id, current)
             return None
 
         self._claim(drone.id, blocks)
         self._current_rate[drone.id] = rate
-        
+
         self._notes.append({
             "kind": "sortie", "drone": drone.id,
             "text": (f"Drone {drone.id + 1} retasked mid-flight: new reading -> {len(blocks)}-block tour "

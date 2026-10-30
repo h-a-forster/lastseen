@@ -283,7 +283,7 @@ def test_handover_facts_come_from_the_race_and_the_message_may_only_repeat_them(
                      "direction_from_last_seen": "north", "ground": "forest", "nearest_path": "280 m away",
                      "photo_shows": "person in red"}
     handover.check("Drone 1 at 1:48: person in red, 200 m north, in forest, path 280 m away.", found)
-    for bad in ("Drone 1: person 250 m north.", "Drone one: person 200 m north."):
+    for bad in ("Drone 1: person 250 m north.", "Drone one: person 200 m north.", "Drone 1: person 200 m north-east."):
         with pytest.raises(ModelCallError):
             handover.check(bad, found)
 

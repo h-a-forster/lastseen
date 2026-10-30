@@ -21,6 +21,7 @@ MAX_WORDS = 70
 NUMBER_WORDS = re.compile(r"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|"
                           r"forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b", re.IGNORECASE)
 COMPASS = ("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west")
+DIRECTION = re.compile(r"\b(" + "|".join(sorted(COMPASS, key=len, reverse=True)) + r")\b")  # "north-east" before "north"
 
 SYSTEM = """You write the handover a search drone pilot sends to the ground team when a photo shows the missing person.
 Use only the facts given, at most 70 words, ready to read out on a radio: where to go (the photo centre's coordinates,
@@ -73,8 +74,8 @@ def write(found_facts: dict) -> dict:
 
 
 def check(message: str, found_facts: dict) -> None:
-    """Every number in the message must appear in the facts, written in digits, and the message must be short enough
-    to read out."""
+    """Every number in the message must appear in the facts, written in digits, any compass direction must be the one
+    in the facts, and the message must be short enough to read out."""
     if not message or len(message.split()) > MAX_WORDS:
         raise ModelCallError(f"handover must be 1-{MAX_WORDS} words")
     if NUMBER_WORDS.search(message):
@@ -83,6 +84,9 @@ def check(message: str, found_facts: dict) -> None:
     invented = [n for n in _numbers(message) if n not in known]
     if invented:
         raise ModelCallError(f"handover has numbers that aren't in the facts: {invented}")
+    wrong_way = [d for d in DIRECTION.findall(message.lower()) if d != found_facts["direction_from_last_seen"]]
+    if wrong_way:
+        raise ModelCallError(f"handover gives a direction that isn't in the facts: {wrong_way}")
 
 
 def _numbers(text: str) -> list[str]:
