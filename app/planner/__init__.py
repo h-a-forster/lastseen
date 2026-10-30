@@ -26,6 +26,10 @@ SEED_K = 8  # single-block seeds from which tours are grown
 PREDICT_EVERY_S = 60.0
 TRUST = 1.0
 
+ENTROPY_START_S = 900.0   # Start blending entropy gain after 1 hour
+ENTROPY_RAMP_S = 3600.0    # Fully transition entropy weight over 2 hours
+MAX_ENTROPY_WEIGHT = 0.45  # Maximum entropy gain scaling factor
+
 Block = tuple[slice, slice]
 BlockKey = tuple[int, int]  # (block-row, block-col) in the coarse tiling
 
@@ -160,7 +164,17 @@ class SearchPlanner:
                     if grown is None or rate > grown[0] or (rate == grown[0] and seconds > grown[3]):
                         grown = (rate, tour + [nxt], route, seconds)
                 if grown is None:
-                    break
+                    # If no profitable adjacent block found, attempt 2-hop neighbor search in late stage
+                    if self._t_s > ENTROPY_START_S and len(tour) < MAX_TOUR:
+                        extended_nbrs = [by_key[k] for k in _extended_neighbour_keys(tour, by_key) if k not in used]
+                        for nxt in extended_nbrs:
+                            rate, route, seconds = self._tour_score(start, tour + [nxt], budget_s)
+                            if route and (grown is None or rate > grown[0]):
+                                grown = (rate, tour + [nxt], route, seconds)
+                    
+                    if grown is None:
+                        break
+
                 tour = grown[1]
 
             rate, route, seconds = self._tour_score(start, tour, budget_s)
@@ -184,7 +198,23 @@ class SearchPlanner:
         grid = self.map.grid
         lane_m = self.fleet.footprint_m[0] * (1 - self.fleet.overlap)
         side = max(1, round(BLOCK_LANES * lane_m / grid.cell_m))
-        value = self.probability_map() * self.pod
+        # 1. Base probability of area map
+        p_map = self.probability_map()
+        base_value = p_map * self.pod
+
+        # 2. Dynamic entropy-reduction gain map for long-tail search (>1h)
+        # Calculate binary entropy gain to reduce global uncertainty in low-POA regions
+        if self._t_s > ENTROPY_START_S:
+            p_clamped = np.clip(p_map, 1e-9, 1.0 - 1e-9)
+            entropy_map = -(p_clamped * np.log2(p_clamped) + (1.0 - p_clamped) * np.log2(1.0 - p_clamped))
+            
+            # Ramp up entropy weight dynamically based on elapsed search time
+            gamma = min(MAX_ENTROPY_WEIGHT, (self._t_s - ENTROPY_START_S) / ENTROPY_RAMP_S)
+            value = base_value + gamma * entropy_map * self.pod
+        else:
+            value = base_value
+
+        # 3. Mask out active claimed blocks by other drones
         for blocks in self._claimed.values():
             for rows, cols in blocks:
                 value[rows, cols] = 0.0
@@ -225,3 +255,17 @@ def _same_blocks(a: list[Block], b: list[Block] | None) -> bool:
     if b is None or len(a) != len(b):
         return False
     return [(s.start, s.stop) for block in a for s in block] == [(s.start, s.stop) for block in b for s in block]
+
+def _extended_neighbour_keys(tour: list[_Cand], by_key: dict[BlockKey, _Cand]) -> set[BlockKey]:
+    """Search up to 2-block radius when 1-block adjacent grid is fully scanned (late-stage fallback)."""
+    keys: set[BlockKey] = set()
+    for c in tour:
+        br, bc = c.key
+        for dr in range(-2, 3):
+            for dc in range(-2, 3):
+                if dr == 0 and dc == 0:
+                    continue
+                k = (br + dr, bc + dc)
+                if k in by_key:
+                    keys.add(k)
+    return keys
