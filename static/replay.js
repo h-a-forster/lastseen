@@ -12,7 +12,7 @@ const PLANNERS = {
   ours: ["Probability map, packed tours", "Lost-person statistics only"],
   "ours+spark": ["Probability map, packed tours + Muse Spark", "Statistics plus Spark's reading of the witness reports"],
   hedge: ["Team planner", "Expanding square; without Spark it never leaves the pattern"],
-  "hedge+spark": ["Team planner + Muse Spark", "Expanding square until a sighting, then one drone follows Spark's reading"],
+  "hedge+spark": ["Team planner + Muse Spark", "Expanding square until a sighting, then follows Spark"],
 };
 const TERRAIN = [
   ["Open", [181, 201, 154]],
@@ -308,10 +308,10 @@ function buildLaneDom() {
     lane.photoEl = el.querySelector("[data-photo]");
   });
   $("imagery").innerHTML = state.run.imagery
-    ? "Every photo that has the missing person in it is decided by a real SAM 3.1 + Muse Spark answer on a real drone photo of a person that size (in forest, canopy also hides her at an assumed rate). Every lane draws its photos of her from the same sequence, so planners are compared on the same luck. Flagged = alarms a reviewer checks instead of every photo."
+    ? "Each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size (under trees, canopy also hides her at an assumed rate). Every planner draws from the same photos, so they share the same luck. Flagged: alarms a reviewer checks."
     : "Detections are sampled from the measured table (no photo pool on this server).";
   if (state.run.place) {
-    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. The simulator walks the hidden person over terrain classes and paths read from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
+    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
   }
   $("legend").innerHTML = [
     ...TERRAIN.map(([name, rgb]) => swatch(`rgb(${rgb})`, name)),
