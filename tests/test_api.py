@@ -75,3 +75,14 @@ def test_a_brief_can_be_read_on_open_weights_and_the_server_switches_back_after(
     assert client.post("/api/brief", json=body).status_code == 200
     assert seen == ["open", "meta"]
 
+
+def test_the_help_box_only_ever_returns_written_answers(monkeypatch):
+    monkeypatch.setattr(main, "LIVE_MODELS", False)
+    close = client.post("/api/ask", json={"question": "Does the AI fly the drone?"}).json()
+    assert close["matched_by"] == "words" and close["answers"][0]["id"] == "control"
+    offline = client.post("/api/ask", json={"question": "Tell me a joke"}).json()
+    assert offline["answers"] == [] and len(offline["suggestions"]) == 3
+    answer = main.meta_api.Answer({"ids": ["open", "made-up", "open"]}, 0.001, False, "m")
+    monkeypatch.setattr(main.faq, "spark_json", lambda *a, **k: answer)
+    assert [e["id"] for e in main.faq.route("Can it run without signal?")["answers"]] == ["open"]
+
