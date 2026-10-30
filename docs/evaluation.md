@@ -80,6 +80,10 @@ find times and which report details were true, so every number above can be reco
 - Forest detection is an assumption (0.4 of open ground), not a measurement.
 - Repeated photos of the same spot on different sorties are treated as independent chances.
 - A leg can clip the corner of a no-fly cell by under 1.25 m (the route check samples every 1/20 of a cell).
+- The witness reports are written from templates, so hand-written rules for those exact templates get most of
+  Spark's gain on them (one drone, development seeds, imagery mode: 51% found within 2 h with rules, 53% with
+  Spark, 46% with the square alone). Spark's edge is the free speech and named places of a real brief, which rules
+  can't read.
 
 ## Changes on 29 Oct (before any held-out seed was run)
 - **Height 60 m → 100 m.** The altitude sweep on development seeds (`docs/parameters.md`) found more people within

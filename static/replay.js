@@ -48,7 +48,9 @@ async function loadRunList(selectId) {
 
 async function loadRun(id) {
   pause();
+  showStatus("Loading race...", 60000);
   const run = await api(`/api/runs/${id}`);
+  $("status").classList.add("hidden");
   const { rows, cols } = run.map;
   state.run = run;
   state.scale = Math.max(1, Math.floor(600 / Math.max(rows, cols)));
