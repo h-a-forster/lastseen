@@ -25,6 +25,7 @@
         <a href="#race">Watch a search</a>
         <a href="#brief">Start a search</a>
         <a href="#triage">Check a photo</a>
+        <a href="#faq">Questions</a>
       </nav>
       <a class="repo" href="https://github.com/h-a-forster/lastseen">Code on GitHub</a>
     </div>
@@ -208,6 +209,26 @@
         </div>
       </div>
     </section>
+
+    <!-- Questions: written answers, and a box that finds the right one -->
+    <section id="faq" class="sheet" aria-labelledby="faq-title">
+      <div class="wrap faq-wrap">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <div>
+              <h2 id="faq-title">Questions</h2>
+              <p class="sheet-sub">Ask anything about LastSeen. You'll get one of our written answers below; nothing is made up on the spot.</p>
+            </div>
+          </div>
+        </div>
+        <form id="ask" class="ask">
+          <input id="ask-text" type="text" maxlength="300" placeholder="e.g. Does the AI fly the drone?" aria-label="Your question" />
+          <button type="submit" class="btn btn-ink">Ask</button>
+        </form>
+        <div id="ask-result" class="ask-result" aria-live="polite"></div>
+        <div id="faq-list" class="faq-list"></div>
+      </div>
+    </section>
   </main>
 
   <footer class="colophon">
@@ -230,5 +251,6 @@
   <script src="/triage.js"></script>
   <script src="/brief.js"></script>
   <script src="/sheet.js"></script>
+  <script src="/faq.js"></script>
 </body>
 </html>

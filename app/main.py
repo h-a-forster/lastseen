@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
-from app import meta_api  # noqa: E402
+from app import faq, meta_api  # noqa: E402
 from app.agent import brief  # noqa: E402
 from app.meta_api import ModelCallError, SpendCapReached  # noqa: E402
 from app.perception import pool as photo_pool  # noqa: E402
@@ -164,6 +164,23 @@ async def read_brief(req: BriefRequest, request: Request):
         raise HTTPException(422, f"unknown place: {req.place}")
     _check_paid(request)
     return await _live(brief.read_brief, req.place, req.text, spark_backend="open" if req.open_weights else "meta")
+
+
+class Question(BaseModel):
+    question: str = Field(min_length=1, max_length=faq.MAX_QUESTION_CHARS)
+
+
+@app.post("/api/ask")
+async def ask(req: Question, request: Request):
+    """The help box: a written FAQ answer at once when the question is close to one; otherwise Muse Spark Open picks
+    written answers (a paid call, so it counts towards the hourly limit). Without live models, the closest entries."""
+    entry = faq.instant(req.question)
+    if entry:
+        return {"answers": [entry], "matched_by": "words", "usd": 0, "suggestions": []}
+    if not LIVE_MODELS:
+        return {"answers": [], "matched_by": "none", "usd": 0, "suggestions": [e for _s, e in faq.closest(req.question)]}
+    _check_paid(request)
+    return await _live(faq.route, req.question, spark_backend="open")
 
 
 @app.post("/api/transcribe")
