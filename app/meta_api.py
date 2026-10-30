@@ -6,7 +6,8 @@
 - Every answer is cached under a hash of its request, so reruns (tests, benchmarks, the demo) replay it for free.
   MODEL_MODE=replay forbids network calls: a cache miss is an error. Use it offline and in CI.
 - USD_CAP stops a process that has spent that much (default $2), so a loop can't drain the credits. Every paid call is
-  appended to the spend ledger.
+  appended to the spend ledger; with USD_CAP_INCLUDES_LEDGER=1 the cap counts the whole ledger instead, for a host
+  that restarts often but keeps its ledger.
 
 Plain httpx rather than LiteLLM, because LiteLLM's `drop_params` can silently strip `response_format`.
 """
@@ -148,13 +149,21 @@ def _cached_or_call(path: str, body: dict, files: dict | None = None) -> dict:
     return {**record, "cached": False}
 
 
+def _counted_usd() -> float:
+    """What USD_CAP is checked against: this process's spend, or the whole ledger with USD_CAP_INCLUDES_LEDGER=1."""
+    if os.getenv("USD_CAP_INCLUDES_LEDGER") != "1" or not LEDGER.exists():
+        return _spent_usd
+    return sum(json.loads(line)["usd"] for line in LEDGER.read_text(encoding="utf-8").splitlines() if line)
+
+
 def _post(path: str, body: dict, files: dict | None = None) -> dict:
     key = os.getenv("MODEL_API_KEY")
     if not key:
         raise ModelCallError("MODEL_API_KEY is not set")
     cap = float(os.getenv("USD_CAP", "2"))
-    if _spent_usd >= cap:
-        raise SpendCapReached(f"spent ${_spent_usd:.2f} of the USD_CAP ${cap:.2f} for this process")
+    spent = _counted_usd()
+    if spent >= cap:
+        raise SpendCapReached(f"spent ${spent:.2f} of the USD_CAP ${cap:.2f}")
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             payload = {"files": files} if files else {"json": body}

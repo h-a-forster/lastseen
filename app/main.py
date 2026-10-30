@@ -43,8 +43,9 @@ _model_lock = threading.Lock()
 MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 # Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
-FEATURED_RUNS = ("dementia-5-spiral-hedge-spark-1drone", "saint-ursanne-dementia-19-spiral-hedge-spark-1drone",
-                 "dementia-25-spiral-greedy-greedy-spark", "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
+FEATURED_RUNS = ("saint-ursanne-dementia-19-spiral-hedge-spark-1drone", "dementia-5-spiral-hedge-spark-1drone",
+                 "dementia-197-spiral-hedge-spark-1drone", "dementia-25-spiral-greedy-greedy-spark",
+                 "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
 
 
 class RaceRequest(BaseModel):

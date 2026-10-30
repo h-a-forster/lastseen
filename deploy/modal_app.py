@@ -3,7 +3,8 @@
     uvx --from modal==1.6.2 modal deploy deploy/modal_app.py
 
 Needs a Modal Secret named `lastseen-meta` holding MODEL_API_KEY. Live model calls stay under the spend cap below and
-the per-visitor hourly limit in `app/main.py`; one container at most, so the cap holds for the whole deployment.
+the per-visitor hourly limit in `app/main.py`. The cache and spend ledger live on a Volume and the cap counts the whole
+ledger, so it holds across container restarts; one container at most.
 """
 
 from pathlib import Path
@@ -17,7 +18,7 @@ DATA = ["runs", "briefs", "triage", "tiles", "perception", "places", "pod_table.
 image = (
     modal.Image.debian_slim(python_version="3.13")
     .uv_sync(str(ROOT), extra_options="--no-dev")
-    .env({"LIVE_MODELS": "1", "USD_CAP": "20"})
+    .env({"LIVE_MODELS": "1", "USD_CAP": "20", "USD_CAP_INCLUDES_LEDGER": "1", "DATA_DIR": "/vol"})
     .add_local_dir(ROOT / "app", "/root/app", ignore=["**/__pycache__"])
     .add_local_dir(ROOT / "static", "/root/static")
 )
@@ -27,9 +28,11 @@ for name in DATA:
         path, f"/root/data/{name}")
 
 app = modal.App("lastseen", image=image)
+cache = modal.Volume.from_name("lastseen-cache", create_if_missing=True)
 
 
-@app.function(secrets=[modal.Secret.from_name("lastseen-meta")], max_containers=1, scaledown_window=1200)
+@app.function(secrets=[modal.Secret.from_name("lastseen-meta")], volumes={"/vol": cache}, max_containers=1,
+              scaledown_window=1200)
 @modal.concurrent(max_inputs=50)
 @modal.asgi_app()
 def web():
