@@ -42,9 +42,10 @@ class Hedge:
             if event.t_s > 0 and not self._hunting:
                 self._hunting = True
                 if self.hunter is not None:
-                    self._notes.append({"kind": "sortie", "drone": self.hunter,
+                    others = "; the others keep sweeping" if len(self._alive) > 1 else ""
+                    self._notes.append({"kind": "hunt", "drone": self.hunter,
                                         "text": f"Drone {self.hunter + 1} leaves the pattern to search where the new "
-                                                "report points; the others keep sweeping"})
+                                                f"report points{others}"})
             return
         if isinstance(event, DroneLost):
             on_pattern = event.drone in self._on_pattern

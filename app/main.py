@@ -23,6 +23,7 @@ from app.perception import pool as photo_pool  # noqa: E402
 from app.perception import triage  # noqa: E402
 from app.sar import replay  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
+from app.sar.interface import FleetSpec  # noqa: E402
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -35,20 +36,22 @@ def health():
     return {"ok": True, "live_models": LIVE_MODELS}
 
 
-RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", "greedy", "greedy+spark"}
+RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", "greedy", "greedy+spark", "ours",
+                 "ours+spark", "hedge", "hedge+spark"}
 # One model job at a time (a race, or a photo check). Both set MODEL_MODE for the process, so they must not overlap.
 _model_lock = threading.Lock()
 MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 # Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
-FEATURED_RUNS = ("dementia-25-spiral-greedy-greedy-spark", "dementia-26-spiral-greedy-greedy-spark",
-                 "dementia-20-spiral-greedy-greedy-spark", "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
+FEATURED_RUNS = ("dementia-5-spiral-hedge-spark-1drone", "saint-ursanne-dementia-19-spiral-hedge-spark-1drone",
+                 "dementia-25-spiral-greedy-greedy-spark", "saint-ursanne-dementia-39-spiral-greedy-greedy-spark")
 
 
 class RaceRequest(BaseModel):
     seed: int = Field(ge=0, lt=SEED_SETS["heldout"].start)  # held-out scenarios stay unseen
     planners: list[str] = Field(min_length=1, max_length=replay.MAX_LANES)
     place: str | None = None
+    drones: int = Field(FleetSpec.drones, ge=1, le=FleetSpec.drones)
 
 
 @app.get("/api/runs")
@@ -61,6 +64,7 @@ def list_runs():
             data = json.loads(path.read_text(encoding="utf-8"))
             _summaries[path.name] = (mtime, {"id": data["id"], "seed": data["seed"], "category": data["category"],
                                              "place": (data.get("place") or {}).get("title"),
+                                             "drones": data["fleet"]["drones"],
                                              "found_s": {n: lane["result"]["found_s"] for n, lane in data["lanes"].items()}})
         runs.append(_summaries[path.name][1])
     return runs
@@ -94,7 +98,7 @@ def new_race(req: RaceRequest):
         raise HTTPException(429, "busy with another request; try again in a few seconds")
     try:
         os.environ["MODEL_MODE"] = "replay"
-        path = replay.save(replay.race(req.seed, req.planners, place=req.place))
+        path = replay.save(replay.race(req.seed, req.planners, drones=req.drones, place=req.place))
     finally:
         _model_lock.release()
     return {"id": path.stem}

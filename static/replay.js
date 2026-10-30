@@ -9,6 +9,10 @@ const PLANNERS = {
   "spiral+spark": ["Expanding square + Muse Spark", "Restarts on Spark's most likely block after each report"],
   greedy: ["Probability map", "Lost-person statistics only"],
   "greedy+spark": ["Probability map + Muse Spark", "Statistics plus Spark's reading of the witness reports"],
+  ours: ["Probability map, packed tours", "Lost-person statistics only"],
+  "ours+spark": ["Probability map, packed tours + Muse Spark", "Statistics plus Spark's reading of the witness reports"],
+  hedge: ["Team planner", "Expanding square; without Spark it never leaves the pattern"],
+  "hedge+spark": ["Team planner + Muse Spark", "Expanding square until a sighting, then one drone follows Spark's reading"],
 };
 const TERRAIN = [
   ["Open", [181, 201, 154]],
@@ -36,7 +40,7 @@ async function api(path, options) {
 
 async function loadRunList(selectId) {
   const runs = await api("/api/runs");
-  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
+  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
   $("run").value = selectId || runs[0].id;
   await loadRun($("run").value);
@@ -321,7 +325,7 @@ function updateLaneText(lane, t) {
   const ended = !lane.found && t >= lane.endT;
   lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photos · ${lane.alarmCount} flagged`;
   lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
-  const sortie = lastAt(lane.notes.filter((n) => n.kind === "sortie" || n.kind === "restart"), Math.min(t, lane.endT));
+  const sortie = lastAt(lane.notes.filter((n) => ["sortie", "restart", "hunt"].includes(n.kind)), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
   const hit = found && lane.sightings.find((s) => s.found);
   if (Boolean(hit) !== lane.shownPhoto) {
@@ -336,7 +340,7 @@ function feedItems() {
     for (const note of lane.notes) {
       if (note.kind === "hypotheses") items.push({ t_s: note.t_s, html: hypothesesHtml(note) });
       if (note.kind === "spark_failed") items.push({ t_s: note.t_s, html: `<p class="text-amber-300">${note.text}</p>` });
-      if (note.kind === "restart") items.push({ t_s: note.t_s, html: `<p class="text-sky-300">${label(lane.name)}: ${note.text}</p>` });
+      if (note.kind === "restart" || note.kind === "hunt") items.push({ t_s: note.t_s, html: `<p class="text-sky-300">${label(lane.name)}: ${note.text}</p>` });
     }
     if (lane.found) items.push({ t_s: lane.found.t_s, html: `<p class="text-green-400 font-medium">${label(lane.name)}: person found</p>` });
     if ($("show-truth").checked) {
@@ -477,7 +481,8 @@ $("new-race").onsubmit = async (e) => {
     const { id } = await api("/api/runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seed: +$("seed").value, planners, place: state.run?.place?.name ?? null }),
+      body: JSON.stringify({ seed: +$("seed").value, planners, place: state.run?.place?.name ?? null,
+                             drones: state.run?.fleet.drones ?? 3 }),
     });
     await loadRunList(id);
     showStatus("Race recorded.");
