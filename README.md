@@ -2,11 +2,21 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier
 
-Drone search and rescue for volunteer teams: where to fly next, and whether the missing person is in the photos.
+Drone search and rescue for a volunteer with one drone: where to fly next, and whether the missing person is in the
+photos.
 
-When someone goes missing, a team with one to three drones faces two problems. Thousands of photos come back, each
-with a person a few dozen pixels wide, or nobody. And every new witness report changes where the drones should go.
-LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
+When an older person with dementia walks away from home, a volunteer with a drone faces two problems. Hundreds of
+photos come back, each with a person a few dozen pixels wide, or nobody. And every new witness report changes where
+the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
+
+## In numbers
+- **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
+  on 227 labelled people in real drone photos (95% interval 70-86%).
+- **About 150 close-ups instead of 660 photos** for a reviewer in a 4-hour, one-drone search.
+- **53% found within 2 hours instead of 48%** with the expanding square alone: Muse Spark reads the witness reports,
+  and when someone reports a sighting the drone breaks off its square to follow Spark's reading (one drone, 200
+  development scenarios; when the sighting was wrong, it did as well as the square). The held-out result, run once
+  after the feature freeze, goes in [docs/evaluation.md](docs/evaluation.md) whatever it shows.
 
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
