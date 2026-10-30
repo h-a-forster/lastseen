@@ -62,3 +62,16 @@ def test_a_race_can_be_recorded_with_one_drone(tmp_path, monkeypatch):
     run_id = client.post("/api/runs", json={"seed": 1, "planners": ["spiral"], "drones": 1}).json()["id"]
     assert [(run["id"], run["drones"]) for run in client.get("/api/runs").json()] == [(run_id, 1)]
     assert run_id != main.replay.run_id(1, "dementia", ["spiral"])  # doesn't overwrite the three-drone race
+
+
+def test_a_brief_can_be_read_on_open_weights_and_the_server_switches_back_after(monkeypatch):
+    seen = []
+    monkeypatch.setattr(main.brief, "read_brief", lambda place, text: seen.append(os.environ["SPARK_BACKEND"]) or {})
+    monkeypatch.setattr(main, "LIVE_MODELS", True)
+    monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
+    body = {"place": "saint-ursanne", "text": "Seen by the river."}
+    assert client.post("/api/brief", json=body | {"open_weights": True}).status_code == 200
+    assert os.environ["SPARK_BACKEND"] == "meta"
+    assert client.post("/api/brief", json=body).status_code == 200
+    assert seen == ["open", "meta"]
+

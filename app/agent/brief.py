@@ -12,6 +12,7 @@ from pathlib import Path
 from app.agent.advisor import base_map
 from app.agent.interpret import interpret
 from app.agent.witnesses import grade
+from app.meta_api import SPARK_OPEN, spark_model
 from app.sar import terrain
 from app.sar.cues import Report
 from app.sar.detection import DetectionModel
@@ -58,6 +59,7 @@ def read_brief(place_name: str, text: str, drones: int = 1) -> dict:
         "sorties": [{"drone": i + 1, "route": [[round(y), round(x)] for y, x, _ in route],
                      "plan": qgc_plan(place, home, route, fleet.speed_mps)} for i, route in enumerate(routes)],
         "usd": round(reading.usd + witnesses.usd, 4), "cached": reading.cached and witnesses.cached,
+        "model": "Muse Spark Open" if spark_model() == SPARK_OPEN else "Muse Spark",
     }
 
 
