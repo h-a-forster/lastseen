@@ -1,6 +1,6 @@
 """Start a real search from what people said. The brief (typed, or spoken and transcribed by Muse Voice Transcribe)
-is read by Muse Spark into weighted hypotheses on a real place's map, exactly as in the simulated races; the
-reference planner then picks a first block for each drone, which downloads as a QGroundControl mission.
+is read by Muse Spark into weighted hypotheses on a real place's map, exactly as in the simulated races, and Spark
+grades who said what (`witnesses.py`); the reference planner then picks a first block for each drone, which downloads as a QGroundControl mission.
 
     uv run python -m app.agent.brief --example    # the page's example brief (one Spark call the first time)
 """
@@ -11,6 +11,7 @@ from pathlib import Path
 
 from app.agent.advisor import base_map
 from app.agent.interpret import interpret
+from app.agent.witnesses import grade
 from app.sar import terrain
 from app.sar.cues import Report
 from app.sar.detection import DetectionModel
@@ -37,6 +38,7 @@ def read_brief(place_name: str, text: str, drones: int = 1) -> dict:
     stats, fleet = lost_person_stats(), FleetSpec(drones=drones)
     base = base_map(search, stats)
     reading = interpret(search, [Report(0.0, text)], base)
+    witnesses = grade(text)
     planner = ProbabilityGreedy()
     planner.reset(search, fleet, DetectionModel.load(), stats, seed=0)
     planner.observe(reading.to_event())
@@ -52,9 +54,10 @@ def read_brief(place_name: str, text: str, drones: int = 1) -> dict:
         "hypotheses": [{"name": h.name, "weight": round(h.weight, 3), "reason": h.reason, "evidence": list(h.evidence)}
                        for h in reading.hypotheses],
         "rest_weight": round(reading.rest_weight, 3), "dropped": list(reading.dropped),
+        "witnesses": witnesses.data["witnesses"],
         "sorties": [{"drone": i + 1, "route": [[round(y), round(x)] for y, x, _ in route],
                      "plan": qgc_plan(place, home, route, fleet.speed_mps)} for i, route in enumerate(routes)],
-        "usd": round(reading.usd, 4), "cached": reading.cached,
+        "usd": round(reading.usd + witnesses.usd, 4), "cached": reading.cached and witnesses.cached,
     }
 
 
@@ -66,6 +69,8 @@ def main() -> None:
         result = read_brief(EXAMPLE_PLACE, EXAMPLE_BRIEF)
         EXAMPLE_PATH.parent.mkdir(parents=True, exist_ok=True)
         EXAMPLE_PATH.write_text(json.dumps(result), encoding="utf-8")
+        for w in result["witnesses"]:
+            print(f"{w['reliability']:<6}  {w['who']}: {w['claim']} ({w['why']})")
         for h in result["hypotheses"]:
             print(f"{h['weight']:.0%}  {h['name']}: {h['reason']}")
         print(f"rest {result['rest_weight']:.0%}; dropped {result['dropped']}; ${result['usd']:.4f}; wrote {EXAMPLE_PATH}")
