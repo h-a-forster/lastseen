@@ -44,7 +44,14 @@ async function loadRunList(selectId) {
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
   if (selectId?.startsWith("at-")) addVisitorRace(selectId);
   $("run").value = [...$("run").options].some((o) => o.value === selectId) ? selectId : runs[0].id;
-  await loadRun($("run").value);
+  try {
+    await loadRun($("run").value);
+  } catch (err) {
+    if (!selectId?.startsWith("at-")) throw err;
+    $("run").remove(0); // the server keeps visitors' races only for a while
+    await loadRun(runs[0].id);
+    showStatus("That race is no longer on the server; showing a recorded one. Pick the place again in section 4.", 8000);
+  }
 }
 
 function addVisitorRace(id) {
