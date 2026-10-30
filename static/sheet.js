@@ -24,8 +24,14 @@ function gridTicks(lo, hi, format) {
   return ticks;
 }
 
+const SWISS_GRID = { south: 45.8, north: 47.85, west: 5.9, east: 10.55 }; // where LV95 coordinates mean something
+
+function inSwissGrid(lat, lon) {
+  return lat >= SWISS_GRID.south && lat <= SWISS_GRID.north && lon >= SWISS_GRID.west && lon <= SWISS_GRID.east;
+}
+
 function sheetAxes(bounds, widthM) {
-  if (!bounds) {
+  if (!bounds || !inSwissGrid((bounds.north + bounds.south) / 2, (bounds.west + bounds.east) / 2)) {
     const local = (v) => `${v / 1000} km`;
     return { x: gridTicks(0, widthM, local), y: gridTicks(0, widthM, local), datum: "Local grid, 1 km ticks" };
   }

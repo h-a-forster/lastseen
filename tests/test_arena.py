@@ -231,6 +231,56 @@ def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(
     terrain.search_map.cache_clear()
 
 
+def test_a_visitors_place_is_refused_on_coasts_water_or_sparse_maps_and_when_osm_is_busy(tmp_path, monkeypatch):
+    """No network: the download is faked. A refused place isn't kept, and a busy server is told apart from a bad place."""
+    import httpx
+
+    def fake_osm(*extra, buildings=40):
+        def answer(query, attempts, timeout_s, wait_s):
+            b = {k: float(v) for k, v in zip(("south", "west", "north", "east"), query.split("[bbox:")[1].split("]")[0].split(","))}
+            at = lambda fy, fx: {"lat": b["south"] + fy * (b["north"] - b["south"]), "lon": b["west"] + fx * (b["east"] - b["west"])}
+            houses = [{"type": "way", "tags": {"building": "yes"}, "geometry": [at(0.1 + i / 50, 0.1), at(0.1 + i / 50, 0.12),
+                                                                                at(0.11 + i / 50, 0.12), at(0.1 + i / 50, 0.1)]}
+                      for i in range(buildings)]
+            return {"elements": houses + [e(at) for e in extra]}
+        return answer
+
+    lake = lambda at: {"type": "way", "tags": {"natural": "water"}, "geometry": [at(0.4, 0.4), at(0.4, 0.6), at(0.6, 0.6), at(0.6, 0.4), at(0.4, 0.4)]}
+    coast = lambda at: {"type": "way", "tags": {"natural": "coastline"}, "geometry": [at(0.9, 0), at(0.9, 1)]}
+    monkeypatch.setattr(terrain, "PLACES_DIR", tmp_path)
+    terrain.search_map.cache_clear()
+    for point, answer, refusal in [((10.0, 10.0), fake_osm(coast), "coasts"), ((11.0, 11.0), fake_osm(lake), "in water"),
+                                   ((12.0, 12.0), fake_osm(buildings=5), "too little detail")]:
+        monkeypatch.setattr(terrain, "_overpass", answer)
+        with pytest.raises(ValueError, match=refusal):
+            terrain.visitor_place(*point)
+    assert not any(name.startswith(terrain.VISITOR_PREFIX) for name in terrain.PLACES)
+
+    def busy(*args):
+        raise httpx.ConnectTimeout("busy")
+    monkeypatch.setattr(terrain, "_overpass", busy)
+    with pytest.raises(terrain.MapDataUnavailable):
+        terrain.visitor_place(13.0, 13.0)
+
+    monkeypatch.setattr(terrain, "_overpass", fake_osm())
+    name = terrain.visitor_place(14.00012, 14.0)
+    assert name == "at-14000n-14000e" and terrain.visitor_place(14.0, 13.99996) == name  # rounded to about 100 m
+    assert not terrain.PLACES[name].aerial  # no swisstopo photo outside Switzerland
+    monkeypatch.delitem(terrain.PLACES, name)
+    terrain.search_map.cache_clear()
+
+
+def test_a_visitors_witness_replaces_the_generated_sighting_and_gets_its_own_race():
+    from app.sar import replay
+    from app.sar.cues import Report
+
+    plain = replay.race(2, ["spiral"], hours=0.2, drones=1)
+    own = replay.race(2, ["spiral"], hours=0.2, drones=1, witness=Report(1800.0, "Seen by the church."))
+    assert [r["text"] for r in own["reports"]] == [plain["reports"][0]["text"], "Seen by the church."]
+    assert not any(c["kind"] == "sighting" for c in own["truth"]["cues"])  # nobody knows if the visitor's witness is right
+    assert own["id"].startswith(plain["id"] + "-witness-")
+
+
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():
     from app.sar.detection import DetectionModel
     from app.sar.recorder import Recorder

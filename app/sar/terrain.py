@@ -6,6 +6,8 @@ committed). `search_map` paints them at 5 m (later classes win: scrub, forest, b
 cell its most common class; any cell a path or road crosses is a trail. The truth walker then walks on this map exactly
 as it does on a synthetic one.
 
+`visitor_place` builds a place around any point a visitor picks, refusing ones it can't map honestly.
+
 Not modelled: height. The map is flat, so slopes, cliffs and the valley sides don't slow the walker or change the
 camera's ground resolution.
 """
@@ -13,6 +15,7 @@ camera's ground resolution.
 import json
 import math
 import time
+import zlib
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -33,6 +36,9 @@ PAINT_M = 5.0
 MAX_LANDMARKS = 25
 LANDMARK_SPACING_M = 150.0
 LANDMARK_TOURISM = {"viewpoint", "attraction"}
+VISITOR_PREFIX = "at-"  # names of places visitors pick
+MIN_ELEMENTS = 40  # fewer OpenStreetMap features than this in 3 km: too sparse to tell land cover apart
+SWISS_IMAGERY = (45.8, 47.85, 5.9, 10.55)  # south, north, west, east: roughly where swisstopo's aerial photos exist
 
 
 @dataclass(frozen=True)
@@ -42,6 +48,7 @@ class Place:
     lon: float
     side_m: float = 3000.0
     cell_m: float = 25.0
+    aerial: bool = True  # swisstopo aerial photos cover it
 
     def bounds(self) -> dict[str, float]:
         """South, west, north, east edges in degrees."""
@@ -73,35 +80,84 @@ WALKABLE_WAYS = {"track", "path", "footway", "bridleway", "cycleway", "steps", "
                  "residential", "service", "unclassified", "tertiary", "secondary", "primary"}  # not trunk or motorway
 
 
-def fetch(name: str) -> dict:
+class MapDataUnavailable(Exception):
+    """OpenStreetMap's servers didn't answer in time."""
+
+
+def visitor_place(lat: float, lon: float) -> str:
+    """Register the 3 km square around a visitor's point as a place, download it and check it can be searched; returns
+    its name. The point is rounded to about 100 m, so a place is downloaded once. Raises ValueError for coasts, water
+    and places OpenStreetMap maps too sparsely, and MapDataUnavailable when its servers are busy."""
+    lat, lon = round(lat, 3), round(lon, 3)
+    name = f"{VISITOR_PREFIX}{abs(lat) * 1000:.0f}{'n' if lat >= 0 else 's'}-{abs(lon) * 1000:.0f}{'e' if lon >= 0 else 'w'}"
+    south, north, west, east = SWISS_IMAGERY
+    known = name in PLACES
+    PLACES[name] = PLACES.get(name) or Place(f"{abs(lat):.3f}° {'N' if lat >= 0 else 'S'}, "
+                                             f"{abs(lon):.3f}° {'E' if lon >= 0 else 'W'}", lat, lon,
+                                             aerial=south <= lat <= north and west <= lon <= east)
+    try:
+        try:
+            osm = fetch(name, attempts=2, timeout_s=40, wait_s=2)
+        except (httpx.HTTPError, ValueError) as e:  # ValueError: an answer that isn't JSON, or a timed-out query
+            raise MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute") from e
+        _check_searchable(name, osm)
+    except Exception:
+        if not known:
+            del PLACES[name]
+        raise
+    return name
+
+
+def visitor_seed(name: str) -> int:
+    """The same hidden walk every time for one place (a development seed), so repeat visits reuse Spark's readings."""
+    return zlib.crc32(name.encode()) % 100_000
+
+
+def _check_searchable(name: str, osm: dict) -> None:
+    if any(e.get("tags", {}).get("natural") == "coastline" for e in osm["elements"]):
+        raise ValueError("coasts aren't supported yet: OpenStreetMap doesn't map the sea as an area, so it would "
+                         "count as land")
+    m = search_map(name)
+    if m.terrain[m.ipp] == Terrain.WATER:
+        raise ValueError("that point is in water; pick a point on land")
+    if (m.terrain == Terrain.WATER).mean() > 0.5:
+        raise ValueError("most of this area is water; pick a point further inland")
+    if len(osm["elements"]) < MIN_ELEMENTS:
+        raise ValueError("OpenStreetMap has too little detail here to build a search map (or it is open water); try "
+                         "a spot with roads and paths nearby")
+
+
+def fetch(name: str, attempts: int = 4, timeout_s: float = 120, wait_s: float = 10) -> dict:
     """The place's OpenStreetMap features, downloaded on first use and cached on disk."""
     path = PLACES_DIR / f"{name}.osm.json"
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     b = PLACES[name].bounds()
-    query = (f"[out:json][timeout:90][bbox:{b['south']},{b['west']},{b['north']},{b['east']}];"
+    query = (f"[out:json][timeout:{round(timeout_s * 0.75)}][bbox:{b['south']},{b['west']},{b['north']},{b['east']}];"
              '(nwr[natural~"^(scrub|heath|wetland|wood|water)$"];nwr[landuse];way[waterway~"^(river|riverbank)$"];'
              "way[building];way[highway];nwr[aeroway];"
              'nwr[amenity=place_of_worship];nwr[historic];nwr[tourism~"^(viewpoint|attraction)$"];'
-             'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];);out geom;')
-    osm = _overpass(query)
+             'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];way[natural=coastline];);out geom;')
+    osm = _overpass(query, attempts, timeout_s, wait_s)
+    if "runtime error" in osm.get("remark", ""):  # Overpass gave up part-way: an incomplete map must not be cached
+        raise ValueError(osm["remark"])
     PLACES_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(osm), encoding="utf-8")
     return osm
 
 
-def _overpass(query: str, attempts: int = 4) -> dict:
+def _overpass(query: str, attempts: int, timeout_s: float, wait_s: float) -> dict:
     """Public Overpass servers often answer 429/502/504 when busy: retry with backoff, alternating two instances."""
     for attempt in range(attempts):
         try:
-            response = httpx.post(OVERPASS_URLS[attempt % len(OVERPASS_URLS)], data={"data": query}, timeout=120,
+            response = httpx.post(OVERPASS_URLS[attempt % len(OVERPASS_URLS)], data={"data": query}, timeout=timeout_s,
                                   headers={"User-Agent": "lastseen-scenario-builder/0.1"})
             response.raise_for_status()
             return response.json()
         except (httpx.HTTPError, ValueError):
             if attempt == attempts - 1:
                 raise
-            time.sleep(10 * (attempt + 1))
+            time.sleep(wait_s * (attempt + 1))
     raise AssertionError("unreachable")
 
 

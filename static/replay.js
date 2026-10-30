@@ -42,8 +42,14 @@ async function loadRunList(selectId) {
   const runs = await api("/api/runs");
   $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
-  $("run").value = runs.some((r) => r.id === selectId) ? selectId : runs[0].id;
+  if (selectId?.startsWith("at-")) addVisitorRace(selectId);
+  $("run").value = [...$("run").options].some((o) => o.value === selectId) ? selectId : runs[0].id;
   await loadRun($("run").value);
+}
+
+function addVisitorRace(id) {
+  // A visitor's race isn't on the public list; it is added for whoever has its id (their own page, or a shared link).
+  if (![...$("run").options].some((o) => o.value === id)) $("run").add(new Option("Your place", id), 0);
 }
 
 async function loadRun(id) {
@@ -53,11 +59,13 @@ async function loadRun(id) {
   $("status").classList.add("hidden");
   const { rows, cols } = run.map;
   state.run = run;
+  if (id.startsWith("at-")) $("run").selectedOptions[0].textContent = `Your place · ${run.place.title}, 1 drone`;
   state.scale = Math.max(1, Math.floor(600 / Math.max(rows, cols)));
   state.base = drawBaseMap(run.map, state.scale);
   state.aerial = null;
-  $("aerial-toggle").classList.toggle("hidden", !run.place);
-  if (run.place) loadAerial(run).catch(() => showStatus("Aerial imagery unavailable; showing terrain classes."));
+  const aerial = Boolean(run.place) && run.place.aerial !== false; // visitors' places outside Switzerland have none
+  $("aerial-toggle").classList.toggle("hidden", !aerial);
+  if (aerial) loadAerial(run).catch(() => showStatus("Aerial imagery unavailable; showing terrain classes."));
   state.lanes = Object.entries(run.lanes).map(([name, lane]) => prepareLane(name, lane, run.map));
   state.endT = Math.max(...state.lanes.map((l) => l.endT));
   $("time").max = state.endT;
@@ -310,7 +318,9 @@ function buildLaneDom() {
   $("imagery").innerHTML = state.run.imagery
     ? "Each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size (under trees, canopy also hides her at an assumed rate). Every planner draws from the same photos, so they share the same luck. Flagged: alarms a reviewer checks."
     : "Detections are sampled from the measured table (no photo pool on this server).";
-  if (state.run.place) {
+  if (state.run.place?.aerial === false) {
+    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap. ${escapeHtml(state.run.place.credit)}.`;
+  } else if (state.run.place) {
     $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
   }
   $("legend").innerHTML = [

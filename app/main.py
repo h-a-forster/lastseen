@@ -21,8 +21,9 @@ from app.agent import brief  # noqa: E402
 from app.meta_api import ModelCallError, SpendCapReached  # noqa: E402
 from app.perception import pool as photo_pool  # noqa: E402
 from app.perception import triage  # noqa: E402
-from app.sar import replay  # noqa: E402
+from app.sar import replay, terrain  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
+from app.sar.cues import Report  # noqa: E402
 from app.sar.interface import FleetSpec  # noqa: E402
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -58,9 +59,12 @@ class RaceRequest(BaseModel):
 
 @app.get("/api/runs")
 def list_runs():
-    """Recorded races, featured first and then newest first, with when each planner found the person."""
+    """Recorded races, featured first and then newest first, with when each planner found the person. Races on a
+    visitor's own place aren't listed; the visitor's page opens them by id."""
     runs = []
     for path in sorted(replay.RUNS_DIR.glob("*.json"), key=_list_order):
+        if path.stem.startswith(terrain.VISITOR_PREFIX):
+            continue
         mtime = path.stat().st_mtime
         if _summaries.get(path.name, (None,))[0] != mtime:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -167,6 +171,36 @@ async def read_brief(req: BriefRequest, request: Request):
         raise HTTPException(422, f"unknown place: {req.place}")
     _check_paid(request)
     return await _live(brief.read_brief, req.place, req.text, spark_backend="open" if req.open_weights else "meta")
+
+
+class PlaceRace(BaseModel):
+    lat: float = Field(ge=-60, le=72)
+    lon: float = Field(ge=-180, le=180)
+    witness: str | None = Field(None, max_length=300)  # the visitor's own witness report, read live by Spark
+    witness_minute: int = Field(45, ge=10, le=180)
+
+
+@app.post("/api/place-race")
+async def place_race(req: PlaceRace, request: Request):
+    """A one-drone race on a place the visitor picks: the map from OpenStreetMap, the reports read live by Muse Spark
+    (a paid call, so it counts towards the hourly limit)."""
+    if len(list(replay.RUNS_DIR.glob("*.json"))) >= MAX_STORED_RUNS:
+        raise HTTPException(507, "storage for recorded races is full")
+    _check_paid(request)
+    try:
+        path = await _live(_place_race, req)
+    except terrain.MapDataUnavailable as e:
+        raise HTTPException(503, str(e))
+    return {"id": path.stem}
+
+
+def _place_race(req: PlaceRace) -> Path:
+    name = terrain.visitor_place(req.lat, req.lon)
+    text = (req.witness or "").strip()
+    witness = Report(req.witness_minute * 60.0, text) if text else None
+    seed = replay.watchable_seed(name, terrain.visitor_seed(name))
+    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name,
+                                   witness=witness))
 
 
 class Question(BaseModel):
