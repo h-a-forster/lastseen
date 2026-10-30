@@ -73,6 +73,16 @@ def test_spend_cap_stops_new_calls(gateway):
     assert json.loads(meta_api.LEDGER.read_text())["usd"] > 0
 
 
+def test_a_host_counts_its_whole_ledger_towards_the_cap(gateway):
+    calls = serve(gateway, [200])
+    meta_api.LEDGER.write_text(json.dumps({"usd": 0.6}) + "\n" + json.dumps({"usd": 0.5}) + "\n")  # before a restart
+    gateway.setenv("USD_CAP", "1")
+    gateway.setenv("USD_CAP_INCLUDES_LEDGER", "1")
+    with pytest.raises(meta_api.SpendCapReached):
+        ask()
+    assert calls == []
+
+
 def test_sam_boxes_are_parsed_with_confidence_and_billed_per_image(gateway):
     text = ("<0f>0<|box;x1=12;y1=40;x2=30;y2=71;w=1000;h=1000;c=0.83|><|mask;x=0;y=0;c=0.83;data=1,2,!!|>\n"
             "<0f>1<|box;x1=500.5;y1=7;x2=520;y2=33;w=1000;h=1000;c=0.12|><|mask;x=0;y=0;c=0.12;data=1,2,!!|>")
