@@ -47,6 +47,13 @@ async function openPlaceRace(id) {
   play();
 }
 
+document.getElementById("place-coords").onchange = (e) => {
+  const point = parsePoint(e.target.value);
+  if (!point) return;
+  showPoint(point);
+  place.map?.setView(point, 13);
+};
+
 document.getElementById("place-form").onsubmit = async (e) => {
   e.preventDefault();
   const point = parsePoint(document.getElementById("place-coords").value);

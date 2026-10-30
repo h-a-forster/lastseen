@@ -65,6 +65,11 @@ def test_photo_checks_are_off_by_default_and_never_spend_on_bad_input_or_past_th
     assert calls == [(64, 48)] * (main.PAID_PER_HOUR - 1)
 
 
+def test_browsers_check_for_a_newer_page_on_every_visit():
+    for path in ("/", "/style.css", "/place.js"):
+        assert client.get(path).headers["cache-control"] == "no-cache"
+
+
 def test_health_tells_the_page_whether_live_model_calls_are_on(monkeypatch):
     assert client.get("/api/health").json()["live_models"] is False
     monkeypatch.setattr(main, "LIVE_MODELS", True)

@@ -154,8 +154,8 @@
         <div class="brief-grid">
           <figure class="brief-map">
             <ul class="map-key" aria-label="Map key">
-              <li><i class="k-heat"></i>Where she is likely to be</li>
-              <li><i class="k-route"></i>The drone's first battery: lanes over the likeliest block</li>
+              <li><i class="k-heat"></i>Where she is likely to be (brighter: likelier)</li>
+              <li><i class="k-route"></i>The drone's planned route for its first battery</li>
             </ul>
             <div class="frame" data-frame="brief">
               <canvas id="brief-map"></canvas>
@@ -224,20 +224,20 @@
             <span class="sheet-no" aria-hidden="true">4</span>
             <div>
               <h2 id="place-title">Search a place you know</h2>
-              <p class="sheet-sub">Click a point on land. LastSeen builds a 3&nbsp;km search area around it from OpenStreetMap, a simulated person walks away from that point, and both planners search for her with one drone. The race opens in section 1.</p>
+              <p class="sheet-sub">Click the map below where someone was last seen. LastSeen turns the 3&nbsp;km around it into a search area and races both planners there with one drone; the race plays in section 1.</p>
             </div>
           </div>
         </div>
-        <p class="place-note">The map comes from OpenStreetMap's public servers, which limit how often they can be asked: if they're busy, wait a minute and try again. Coasts aren't supported yet (OpenStreetMap doesn't map the sea as an area), places with little map detail are refused, and outside Switzerland there is no aerial photo, only the map's terrain. It usually takes about a minute.</p>
+        <p class="place-note">Takes about a minute. The map data comes from OpenStreetMap's free servers, which limit how often they can be asked: if they're busy, try again shortly. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
         <div class="place-grid">
           <div id="place-map" class="place-map" aria-label="Map: click to choose where she was last seen"></div>
           <form id="place-form" class="place-form">
             <label for="place-coords">Last seen at</label>
             <input id="place-coords" autocomplete="off" placeholder="Click the map, or type 47.365, 7.155" />
-            <label for="place-witness">A witness report of your own (optional)</label>
+            <label for="place-witness">Witness report (optional)</label>
             <textarea id="place-witness" maxlength="300" rows="3" placeholder="e.g. A cyclist saw an older woman by the church about twenty minutes ago."></textarea>
-            <p class="place-hint">She walks on her own, so your witness may be wrong, as real ones often are. Leave it empty and the simulator writes its own.</p>
-            <label for="place-minute">The report comes in after (minutes)</label>
+            <p class="place-hint">The simulated person doesn't follow it, so it can be wrong, as real reports often are. Leave it empty for a generated one.</p>
+            <label for="place-minute">Report arrives after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="45" />
             <button data-live class="hidden btn btn-ink" type="submit">Search here</button>
             <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
