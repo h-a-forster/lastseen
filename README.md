@@ -9,6 +9,19 @@ When an older person with dementia walks away from home, a volunteer with a dron
 photos come back, each with a person a few dozen pixels wide, or nobody. And every new witness report changes where
 the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
 
+## How a search runs
+The volunteer types or says what the family told them and launches the drone. From then on the search runs itself:
+- the drone flies each battery's search on autopilot at 100 m;
+- each photo goes to SAM 3.1 and Muse Spark as it is taken, and only the alarms reach a person, as close-ups;
+- each witness report goes to Muse Spark, and the drone's next leg is planned from the updated map, mid-flight if
+  needed;
+- when the battery runs low the drone flies home, the volunteer swaps it, and the search carries on.
+
+The volunteer stays in command and the ground team confirms any find. The simulator runs this loop end to end. On a
+real drone, two links aren't built yet: sending each mission straight to the autopilot (today it exports as a
+QGroundControl mission, which loads but hasn't been flown), and getting photos off the drone during flight (a drone
+with a live photo link, or a small onboard computer).
+
 **Try it live:** the hosted demo is the website link in this repository's About panel (the first visit takes a few seconds to wake the server).
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
@@ -30,9 +43,9 @@ drone photo of a person her size](docs/img/race.jpg)
 - **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down,
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
   hill"). Spark also grades each witness the way a search manager would (do they know her, did they see it
-  themselves, does anyone back it up?); the grades are shown, not used to change weights. The drone gets a first block
-  to fly, downloadable as a QGroundControl mission (it loads and displays in QGroundControl; it hasn't been flown on a
-  real drone).
+  themselves, does anyone back it up?); the grades are shown, not used to change weights. LastSeen plans the drone's first
+  battery, downloadable as a QGroundControl mission (it loads and displays in QGroundControl; it hasn't been flown on
+  a real drone).
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
@@ -68,8 +81,9 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 ## Before anyone relies on it
 - The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
   [docs/evaluation.md](docs/evaluation.md#known-limits).
-- The exported mission loads in QGroundControl but hasn't been flown; a volunteer checks and flies every mission.
-- Next: a test flight over open ground, and a trial with a volunteer search team on a training exercise.
+- The exported mission loads in QGroundControl but hasn't been flown, and the two links to a real drone above aren't
+  built. Without a live photo link, a find waits until the drone lands to swap batteries, up to 25 minutes later.
+- Next: those two links, a test flight over open ground, and a trial with a volunteer search team on a training exercise.
 
 ## Run it
 ```bash
