@@ -52,7 +52,8 @@ the reports with Muse Spark Open, against 53% with Muse Spark (paired difference
 +1.5; 5 of 200 scenarios changed). All 327 readings passed our checks, which matter more here because Baseten
 doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
 budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
-Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). Open weights mean a search team
+Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the hosted page, "Use open
+weights" reads a brief with Muse Spark Open. Open weights mean a search team
 isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 
 ## How we know whether it works
