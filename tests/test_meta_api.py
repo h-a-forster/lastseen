@@ -94,3 +94,20 @@ def test_sam_boxes_are_parsed_with_confidence_and_billed_per_image(gateway):
     assert [s.box for s in segments] == [(12, 40, 30, 71), (500.5, 7, 520, 33)]
     assert [s.confidence for s in segments] == [0.83, 0.12]
     assert usd == pytest.approx(0.0025) and not cached
+
+
+def test_open_backend_sends_spark_calls_to_baseten_with_its_own_key(gateway):
+    calls = serve(gateway, [200])
+    gateway.setenv("SPARK_BACKEND", "open")
+    gateway.setenv("BASETEN_API_KEY", "baseten-key")
+    answer = ask()
+    assert calls == ["https://inference.baseten.co/v1/chat/completions"]
+    assert answer.model == meta_api.SPARK_OPEN and answer.data == {"a": 1}
+
+
+def test_unknown_spark_backend_is_refused_before_any_call(gateway):
+    calls = serve(gateway, [200])
+    gateway.setenv("SPARK_BACKEND", "opne")
+    with pytest.raises(meta_api.ModelCallError):
+        ask()
+    assert calls == []
