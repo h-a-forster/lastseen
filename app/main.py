@@ -42,6 +42,7 @@ RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", 
                  "ours+spark", "hedge", "hedge+spark"}
 # One model job at a time (a race, or a photo check). Both set MODEL_MODE for the process, so they must not overlap.
 _model_lock = threading.Lock()
+_map_lock = threading.Lock()  # one OpenStreetMap download at a time, without holding up model calls
 MAX_STORED_RUNS = 200  # about 1 MB each
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 # Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
@@ -188,14 +189,20 @@ async def place_race(req: PlaceRace, request: Request):
         raise HTTPException(507, "storage for recorded races is full")
     _check_paid(request)
     try:
-        path = await _live(_place_race, req)
+        name = await run_in_threadpool(_download_place, req.lat, req.lon)
     except terrain.MapDataUnavailable as e:
         raise HTTPException(503, str(e))
-    return {"id": path.stem}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {"id": (await _live(_place_race, name, req)).stem}
 
 
-def _place_race(req: PlaceRace) -> Path:
-    name = terrain.visitor_place(req.lat, req.lon)
+def _download_place(lat: float, lon: float) -> str:
+    with _map_lock:
+        return terrain.visitor_place(lat, lon)
+
+
+def _place_race(name: str, req: PlaceRace) -> Path:
     text = (req.witness or "").strip()
     witness = Report(req.witness_minute * 60.0, text) if text else None
     seed = replay.watchable_seed(name, terrain.visitor_seed(name))

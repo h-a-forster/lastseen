@@ -105,7 +105,7 @@ async function toggleRecording() {
     B("brief-mic").textContent = "Stop recording";
     B("brief-status").textContent = "Recording... say who is missing, where they were last seen and what witnesses said.";
   } catch (err) {
-    B("brief-status").textContent = `No microphone: ${err.message}`;
+    B("brief-status").textContent = `Couldn't use the microphone (${err.message}); type the brief instead.`;
   }
 }
 
