@@ -33,7 +33,7 @@ The simulator runs this loop end to end. What isn't built is LastSeen's connecti
 mission exports as a QGroundControl file (it loads, but hasn't been flown) instead of going over the radio link, and
 nothing receives photos from a drone yet.
 
-**Try it live:** the hosted demo is the website link in this repository's About panel (the first visit takes a few seconds to wake the server).
+**Try it:** run it locally (see [Run it](#run-it)); a hosted demo will be linked here for judging.
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
@@ -83,7 +83,7 @@ the reports with Muse Spark Open, against 53% with Muse Spark (paired difference
 +1.5; 5 of 200 scenarios changed). All 327 readings passed our checks, which matter more here because Baseten
 doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
 budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
-Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the hosted page, "Use open
+Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the page, "Use open
 weights" reads a brief with Muse Spark Open. Open weights mean a search team
 isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 
