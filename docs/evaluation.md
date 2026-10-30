@@ -27,27 +27,27 @@ lawnmower, spiral, concentric and sector.
 - Imagery mode: every photo with the person in it is decided by a recorded SAM 3.1 + Muse Spark answer on a real drone
   photo of a person that size (`app/perception/pool.py`); the detection table is `data/pod_table.json` as committed at
   the freeze.
-- 3 drones at 100 m, 25 min per battery, 3 min turnaround at base, 4 hours of search.
+- **One drone** (the primary setting), and three drones (secondary), at 100 m, 25 min per battery, 3 min turnaround
+  at base, 4 hours of search.
 - Spark readings are fetched live once under a $4 cap, then replayed from the cache for every planner. Readings that
   fail are counted and reported; those runs carry on without hypotheses.
 
 ## Endpoints
-**Primary**, for each of the two comparisons: share of scenarios where the person is found within **2 hours**, with
-Spark minus without Spark, paired by scenario, with a 95% paired-bootstrap interval (2,000 resamples, generator seed
+**Primary**, for each of the two comparisons, with **one drone**: share of scenarios where the person is found within
+**2 hours**, with Spark minus without Spark, paired by scenario, with a 95% paired-bootstrap interval (2,000 resamples, generator seed
 0). Two hours because survival falls with time and because that is where a reading can still change where the drones
 go.
 
 **Secondary** (reported, not used for the headline):
 - found within 1 hour and within 4 hours, same comparisons;
+- **three drones:** both comparisons at 1, 2 and 4 hours, with three drones instead of one (the second command below);
 - time-to-find curves (Kaplan-Meier) and median time to find;
 - every planner against the spiral at 1, 2 and 4 hours;
 - per search: photos taken, alarms raised for a reviewer, photos with the person in them that raised no alarm;
 - per person found: drone flight hours, photos and alarms; and the share of drone time spent flying;
 - the primary endpoint split by whether the sighting report was correct, wrong, or absent;
-- **a lost drone:** found within 2 hours when one drone fails at a seeded time in the first 2 hours (the second
-  command below);
-- **one drone:** both comparisons, found within 1, 2 and 4 hours, with a single drone instead of three (the third
-  command below), as many volunteer teams have.
+- **a lost drone:** with three drones, found within 2 hours when one drone fails at a seeded time in the first 2
+  hours (the third command below).
 
 ## How results will be worded
 - **"Helps"** only if the primary interval excludes zero.
@@ -60,13 +60,13 @@ go.
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
   --planners lawnmower,spiral,concentric,sector,spiral+spark,ours,ours+spark,hedge,hedge+spark \
-  --reference spiral --usd-cap 4 --json docs/results/final.json
+  --reference spiral --drones 1 --usd-cap 4 --json docs/results/final.json
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --lose-drone --usd-cap 4 \
+  --planners lawnmower,spiral,concentric,sector,spiral+spark,ours,ours+spark,hedge,hedge+spark \
+  --reference spiral --drones 3 --usd-cap 4 --json docs/results/final-three-drones.json
+uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
+  --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --drones 3 --lose-drone --usd-cap 4 \
   --json docs/results/final-lost-drone.json
-uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners spiral,spiral+spark,ours,ours+spark,hedge,hedge+spark --reference spiral --drones 1 --usd-cap 4 \
-  --json docs/results/final-one-drone.json
 ```
 The bench prints both primary comparisons itself (every `<name>+spark` run next to `<name>`), with the split by
 sighting report. Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's
@@ -96,8 +96,8 @@ find times and which report details were true, so every number above can be reco
 ## Changes on 30 Oct (before any held-out seed was run)
 - **The team's planner is now `hedge`.** On 200 development seeds the map planner `ours` with Spark matched the
   spiral at 2 hours but found fewer people in the first hour. `hedge` flies the spiral until a sighting, then sends
-  one drone after Spark's reading with `ours`: 71% found within 2 hours against the spiral's 68%, and no worse than
-  the spiral whether the sighting was right, wrong or absent.
-- **One drone added as a secondary endpoint.** With three drones on a 3 km map, most people the spiral misses within
-  2 hours have already walked off the map, so the order of search changes little. One drone is the common case for a
-  volunteer team, and the case where the order matters.
+  one drone after Spark's reading with `ours`: with three drones, 71% found within 2 hours against the spiral's 68%,
+  and no worse than the spiral whether the sighting was right, wrong or absent; with one drone, 53% against 48%.
+- **The primary setting is now one drone; three drones become a secondary endpoint.** With three drones on a 3 km
+  map, most people the spiral misses within 2 hours have already walked off the map, so the order of search changes
+  little. One drone is the common case for a volunteer team, and the case where the order of search matters.
