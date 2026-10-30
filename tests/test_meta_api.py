@@ -19,6 +19,7 @@ def gateway(tmp_path, monkeypatch):
     monkeypatch.setattr(meta_api.time, "sleep", lambda s: None)
     monkeypatch.setenv("MODEL_API_KEY", "test-key")
     monkeypatch.setenv("MODEL_MODE", "live")
+    monkeypatch.setenv("USD_CAP", "10")  # whatever the shell has exported
     return monkeypatch
 
 

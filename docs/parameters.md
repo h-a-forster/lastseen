@@ -21,7 +21,7 @@ unlike the statistics the planners were given.
 | Speed | 10 m/s | Typical cruise for sharp survey stills |
 | Usable flight time | 25 min per battery, 3 min swap | Rated times of 40-45 min, minus real-world loss and a landing reserve |
 | Photo overlap | 10% along track | Search needs coverage, not stitched maps, so less than mapping's 60-80% |
-| Drones | 3 | Volunteer teams fly 1-3. Swept 1-4 |
+| Drones | 1 (the primary evaluation); 3 in the development tables below unless stated | Volunteer teams fly 1-3. Swept 1-4 |
 | Search time | 4 hours | One operational period |
 | Drone failure (`--lose-drone`) | One drone, at a time drawn uniformly from 15-120 min | **Assumption**, a stress test rather than a measured failure rate; the same failure for every planner |
 | Restart block (`spiral+spark`) | The square one battery can sweep (about 1.4 km at 100 m) | Choice: the area a team would cover first around a new datum; not tuned |

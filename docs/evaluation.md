@@ -55,6 +55,9 @@ go.
 - **"No evidence of a gain"** otherwise, and said as plainly as a gain would be.
 - The share of scenarios where the person had already left the mapped area when the search started (the ceiling) is
   printed with every table.
+- If comparison 1 helps and comparison 2 does not, the result reads: keeping a map and sending a drone after Spark's
+  reading helps; restarting a fixed pattern on the same reading does not. On development seeds (one drone, imagery
+  mode) that is the pattern: +6.5 points [+3, +10.5] and +2 [-2, +6]. Written 30 Oct, before the final run.
 
 ## Commands
 ```
@@ -96,8 +99,9 @@ find times and which report details were true, so every number above can be reco
 ## Changes on 30 Oct (before any held-out seed was run)
 - **The team's planner is now `hedge`.** On 200 development seeds the map planner `ours` with Spark matched the
   spiral at 2 hours but found fewer people in the first hour. `hedge` flies the spiral until a sighting, then sends
-  one drone after Spark's reading with `ours`: with three drones, 71% found within 2 hours against the spiral's 68%,
-  and no worse than the spiral whether the sighting was right, wrong or absent; with one drone, 53% against 48%.
+  one drone after Spark's reading with `ours`. Found within 2 hours, imagery mode: with one drone 53% against the
+  spiral's 46% (+6.5 points paired, 95% interval +3 to +10.5); with three drones 66% against 64% (+2, +0.5 to +4); no
+  worse than the spiral whether the sighting was right, wrong or absent.
 - **The primary setting is now one drone; three drones become a secondary endpoint.** With three drones on a 3 km
   map, most people the spiral misses within 2 hours have already walked off the map, so the order of search changes
   little. One drone is the common case for a volunteer team, and the case where the order of search matters.

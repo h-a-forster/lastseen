@@ -33,7 +33,7 @@ async function showBrief(result) {
     `<button data-sortie="${i}" class="rounded px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs" style="border-left:4px solid ${SORTIE_COLOURS[i % SORTIE_COLOURS.length]}">Drone ${s.drone}: download mission (.plan)</button>`).join(" ");
   B("brief-sorties").querySelectorAll("button").forEach((b) => (b.onclick = () => downloadPlan(result.sorties[+b.dataset.sortie])));
   B("brief-status").textContent = `Muse Spark read the brief${result.cached ? " (replayed from cache)" : ""} · $${result.usd.toFixed(4)}. ` +
-    "Each drone's first block comes from the probability-map planner; the missions are for QGroundControl and untested on a real drone.";
+    "The first block comes from the probability-map planner; the mission is for QGroundControl and untested on a real drone.";
   B("brief-credit").textContent = `${result.place.title}. Aerial imagery © swisstopo · ${result.place.credit}.`;
 }
 

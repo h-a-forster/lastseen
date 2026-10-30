@@ -11,11 +11,11 @@ the drone should go. LastSeen uses Meta's models for both, and tests every claim
 
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
-  on 227 labelled people in real drone photos (95% interval 70-86%).
+  on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
 - **About 150 close-ups instead of 660 photos** for a reviewer in a 4-hour, one-drone search.
-- **53% found within 2 hours instead of 48%** with the expanding square alone: Muse Spark reads the witness reports,
+- **53% found within 2 hours instead of 46%** with the expanding square alone: Muse Spark reads the witness reports,
   and when someone reports a sighting the drone breaks off its square to follow Spark's reading (one drone, 200
-  development scenarios; when the sighting was wrong, it did as well as the square). The held-out result, run once
+  development scenarios in photo mode, as the final run; when the sighting was wrong, it did as well as the square). The held-out result, run once
   after the feature freeze, goes in [docs/evaluation.md](docs/evaluation.md) whatever it shows.
 
 ## What it does
@@ -23,7 +23,7 @@ the drone should go. LastSeen uses Meta's models for both, and tests every claim
   checks each proposal on a close-up. A reviewer checks a few alarms instead of every photo.
 - **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down,
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
-  hill"). Each drone gets a first block to fly, downloadable as a QGroundControl mission.
+  hill"). The drone gets a first block to fly, downloadable as a QGroundControl mission.
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
@@ -72,11 +72,11 @@ drone at base) and optionally `retask` (a new route for a drone in the air when 
 expanding square until a witness reports a sighting, then sends one drone after Spark's reading of it with the map
 planner `ours` (`app/planner/__init__.py`); `app/sar/planners/greedy.py` is a complete single-file example. Then:
 ```bash
-uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 --workers 8
-uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200   # with Spark's reading of the reports (paid once, then cached)
-uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200   # vs a spiral that restarts on Spark's readings
-uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 1         # one drone
-uv run python -m app.sar.bench --planners spiral,hedge+spark --lose-drone       # one drone fails in the first 2 h
+uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 --drones 1 --workers 8
+uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200 --drones 1 --imagery   # with Spark's reading (paid once, then cached)
+uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200 --drones 1      # vs a spiral that restarts on Spark's readings
+uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3                        # three drones
+uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3 --lose-drone           # one of three fails in the first 2 h
 ```
 
 ## Layout

@@ -4,3 +4,5 @@
 __pycache__
 tmp
 node_modules
+data/cache
+data/datasets
