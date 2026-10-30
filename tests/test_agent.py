@@ -6,6 +6,7 @@ import pytest
 
 from app.agent.interpret import MIN_REST, check
 from app.agent.layers import Shape, shape_mask
+from app.agent.witnesses import checked
 from app.meta_api import Answer
 from app.sar.grid import Grid, Terrain
 from app.sar.scenario import SearchMap
@@ -236,3 +237,14 @@ def test_a_new_reading_retasks_drones_in_the_air_once():
                    and math.dist(edge.grid.centre_m(e["cells"][0], e["cells"][2]), far) < 300)
 
     assert first_photo_near_the_spot(SpiralHearingASighting()) < first_photo_near_the_spot(WithoutRetask()) - 300
+
+
+def test_witness_grades_must_quote_the_brief_and_use_our_labels():
+    brief = "A neighbour saw her walking along the river. Her daughter says she used to walk to the chapel."
+    grade = dict(who="neighbour", knows_her=False, claim="walking along the river", basis="saw it",
+                 backed_up=False, reliability="fair", why="one sighting")
+    data = {"witnesses": [grade | {"quote": "walking along the river"},
+                          grade | {"who": "postman", "quote": "seen at the station"},  # not in the brief
+                          grade | {"who": "daughter", "quote": "used to walk to the chapel", "reliability": "certain"}]}
+    assert [w["who"] for w in checked(data, brief)] == ["neighbour"]
+
