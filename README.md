@@ -2,12 +2,14 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier
 
-Drone search and rescue for a volunteer with one drone: where to fly next, and whether the missing person is in the
-photos.
+Search and rescue already runs on probability, but what witnesses say still reaches the search map by hand, or not
+at all: the standard search pattern ignores it. LastSeen closes that gap. Muse Spark turns every report into weighted,
+checked scenarios in seconds, the drone re-plans from them and flies the search itself, and SAM 3.1 and Muse Spark
+check every photo for a person a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in
+command.
 
-When an older person with dementia walks away from home, a volunteer with a drone faces two problems. Hundreds of
-photos come back, each with a person a few dozen pixels wide, or nobody. And every new witness report changes where
-the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
+It is built for searches where minutes matter most, such as an older person with dementia who has walked away from
+home, with one volunteer and one drone. Every claim is tested on a simulator built for it.
 
 ## How a search runs
 The volunteer types or says what the family told them and launches the drone. From then on the search runs itself:

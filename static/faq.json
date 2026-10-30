@@ -1,6 +1,8 @@
 [
   {"id": "what", "q": "What is LastSeen?",
-   "a": "A search assistant for a volunteer with one drone looking for a missing person. Meta's models turn what witnesses say into a map of where the person probably is, tell the drone where to look next, and check its photos for a person who may be only a few dozen pixels wide."},
+   "a": "A search system that brings what witnesses say into search planning. Muse Spark turns each report into weighted, checked scenarios on the map, the drone re-plans and flies the search itself, and SAM 3.1 and Muse Spark check every photo for a person who may be only a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in command."},
+  {"id": "new", "q": "What is new about it? How is it different?",
+   "a": "Search planning already uses probability: published statistics on how far people go, and search managers who weigh scenarios by hand. The standard search pattern ignores witnesses altogether. What is new: LastSeen reads every report as it comes in, turns it into weighted scenarios with weight kept on 'the witness is wrong', and the drone re-plans from them in seconds. The model decides what the words mean; code decides the numbers and checks every place it names."},
   {"id": "who", "q": "Who is it for?",
    "a": "Volunteer search teams, often one person with one drone, searching for someone who has walked away, such as an older person with dementia. These are searches where every minute matters and nobody can watch hundreds of photos closely."},
   {"id": "real", "q": "Is this a real search? Is Margaret real?",
