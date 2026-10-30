@@ -16,7 +16,9 @@ Two comparisons are fixed in advance. Each gets its own interval and its own wor
    newest reading makes most likely; `spiral` ignores the reports. This tests Spark's reading without depending on
    how good the planner is.
 
-For context: the planner with Spark against `spiral+spark` (does keeping a map beat restarting a fixed pattern on the
+For context: the planner with Spark against `spiral+witness`, a careful volunteer without LastSeen who restarts the
+square on the spot the witness named, read exactly from the report (does Spark do better than taking the witness at
+their word?); the planner with Spark against `spiral+spark` (does keeping a map beat restarting a fixed pattern on the
 same readings?), the map planner on its own with and without Spark (`ours`, `ours+spark`), and the fixed patterns
 lawnmower, spiral, concentric and sector.
 
@@ -62,10 +64,10 @@ go.
 ## Commands
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners lawnmower,spiral,concentric,sector,spiral+spark,ours,ours+spark,hedge,hedge+spark \
+  --planners lawnmower,spiral,concentric,sector,spiral+witness,spiral+spark,ours,ours+spark,hedge,hedge+spark \
   --reference spiral --drones 1 --usd-cap 4 --json docs/results/final.json
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
-  --planners lawnmower,spiral,concentric,sector,spiral+spark,ours,ours+spark,hedge,hedge+spark \
+  --planners lawnmower,spiral,concentric,sector,spiral+witness,spiral+spark,ours,ours+spark,hedge,hedge+spark \
   --reference spiral --drones 3 --usd-cap 4 --json docs/results/final-three-drones.json
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
   --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --drones 3 --lose-drone --usd-cap 4 \
@@ -84,8 +86,11 @@ find times and which report details were true, so every number above can be reco
 - A leg can clip the corner of a no-fly cell by under 1.25 m (the route check samples every 1/20 of a cell).
 - The witness reports are written from templates, so hand-written rules for those exact templates get most of
   Spark's gain on them (one drone, development seeds, imagery mode: 51% found within 2 h with rules, 53% with
-  Spark, 46% with the square alone). Spark's edge is the free speech and named places of a real brief, which rules
-  can't read.
+  Spark, 46% with the square alone). A careful volunteer who restarts the square on the spot the witness named
+  (`spiral+witness`) also gets 51% (+4.5 points over the square, 95% interval +2 to +7.5); the team's planner with
+  Spark is +2 points over that volunteer (-0.5 to +5), half found by 98 against 110 min. On these reports most of the
+  gain is acting on a sighting at all. Spark's edge is the free speech and named places of a real brief, which the
+  templates don't test.
 
 ## Changes on 29 Oct (before any held-out seed was run)
 - **Height 60 m → 100 m.** The altitude sweep on development seeds (`docs/parameters.md`) found more people within
@@ -111,3 +116,4 @@ find times and which report details were true, so every number above can be reco
 - **The primary setting is now one drone; three drones become a secondary endpoint.** With three drones on a 3 km
   map, most people the spiral misses within 2 hours have already walked off the map, so the order of search changes
   little. One drone is the common case for a volunteer team, and the case where the order of search matters.
+- **Added `spiral+witness`** for context: what a careful volunteer without LastSeen would do with the same sighting.

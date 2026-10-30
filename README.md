@@ -38,11 +38,16 @@ drone photo of a person her size](docs/img/race.jpg)
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
   on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
-- **About 150 close-ups instead of 660 photos** for a reviewer in a 4-hour, one-drone search.
+- **About 150 close-ups instead of 660 photos** for a reviewer in a 4-hour, one-drone search. A mountain-rescue team
+  reports 5 to 45 seconds to look through one full photo ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)),
+  so 660 photos are about 1 to 8 hours of looking; a close-up is one spot to accept or reject (not timed yet).
 - **53% found within 2 hours instead of 46%** with the expanding square alone: Muse Spark reads the witness reports,
   and when someone reports a sighting the drone breaks off its square to follow Spark's reading (one drone, 200
-  development scenarios in photo mode, as the final run; when the sighting was wrong, it did as well as the square). The held-out result, run once
-  after the feature freeze, goes in [docs/evaluation.md](docs/evaluation.md) whatever it shows.
+  development scenarios in photo mode, as the final run; when the sighting was wrong, it did as well as the square).
+  A careful volunteer who restarts the square where the witness said gets 51%: on the simulator's simple reports,
+  most of the gain is acting on a sighting at all, and Spark's reading is built for real, messy speech, which they
+  don't test. The held-out result, run once after the feature freeze, goes in
+  [docs/evaluation.md](docs/evaluation.md) whatever it shows.
 
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
@@ -124,6 +129,7 @@ uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 -
 uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200 --drones 1 --imagery   # with Spark's reading (paid once, then cached)
 SPARK_BACKEND=open uv run python -m app.sar.bench --planners spiral,hedge+spark --seeds 200 --drones 1 --imagery   # on Muse Spark Open
 uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200 --drones 1      # vs a spiral that restarts on Spark's readings
+uv run python -m app.sar.bench --planners spiral,spiral+witness,hedge+spark --seeds 200 --drones 1 --imagery   # vs a volunteer who restarts where the witness said
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3                        # three drones
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3 --lose-drone           # one of three fails in the first 2 h
 ```
