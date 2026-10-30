@@ -3,115 +3,223 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LastSeen</title>
+  <title>LastSeen: drone search and rescue on Meta's models</title>
+  <meta name="description" content="One volunteer, one drone. Muse Spark reads what witnesses say into a search plan on a real map; SAM 3.1 and Muse Spark check every drone photo for a missing person." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' fill='none' stroke='%23DA291C' stroke-width='2.4'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,300..800;1,62..125,300..800&display=swap" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <style>
-    canvas { image-rendering: pixelated; }
-    input[type=range] { accent-color: #f59e0b; }
-  </style>
+  <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-  <header class="border-b border-slate-800">
-    <div class="max-w-[1500px] mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-      <div>
-        <h1 class="font-semibold text-lg tracking-tight">LastSeen</h1>
-        <p class="text-xs text-slate-400">Where should the drones fly next, and is she in this photo? The same search, flown by different planners.</p>
-      </div>
-      <div class="flex flex-wrap items-center gap-2 ml-auto text-sm min-w-0 max-w-full">
-        <label for="run" class="text-slate-400">Scenario</label>
-        <select id="run" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 min-w-0 max-w-full sm:max-w-md"></select>
-        <form id="new-race" class="flex items-center gap-2">
-          <input id="seed" type="number" min="0" max="899999" placeholder="seed" aria-label="Scenario seed"
-                 class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1" />
-          <button class="rounded bg-slate-800 hover:bg-slate-700 px-3 py-1">Record race</button>
-        </form>
-      </div>
+<body class="sv">
+  <a class="skip" href="#race">Skip to the search replay</a>
+
+  <header class="masthead">
+    <div class="wrap masthead-row">
+      <a class="brand" href="#top" aria-label="LastSeen, top of page">
+        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" /></svg>
+        LastSeen
+      </a>
+      <nav class="sheet-nav" aria-label="Sections">
+        <a href="#race">Watch a search</a>
+        <a href="#brief">Start a search</a>
+        <a href="#triage">Check a photo</a>
+      </nav>
+      <a class="repo" href="https://github.com/h-a-forster/lastseen">Code on GitHub</a>
     </div>
   </header>
 
-  <main class="max-w-[1500px] mx-auto px-4 py-4 grid gap-4 lg:grid-cols-[1fr_360px]">
-    <section>
-      <p id="result-line" class="hidden mb-3 text-sm font-medium text-green-400"></p>
-      <div id="lanes" class="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"></div>
-
-      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-        <button id="play" class="w-20 rounded bg-amber-500 text-slate-950 font-medium px-3 py-1.5">Play</button>
-        <span id="clock" class="font-mono tabular-nums w-28">0:00</span>
-        <input id="time" type="range" min="0" max="14400" step="5" value="0" class="flex-1 min-w-[200px]"
-               aria-label="Search time" />
-        <select id="speed" class="bg-slate-900 border border-slate-700 rounded px-2 py-1" aria-label="Playback speed">
-          <option value="60">60×</option>
-          <option value="120">120×</option>
-          <option value="300" selected>300×</option>
-          <option value="900">900×</option>
-        </select>
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <h1 id="hero-title">Where should the drone fly next, and is she in this photo?</h1>
+        <p class="lede">LastSeen is search and rescue for one volunteer with one drone. <strong>Muse Spark</strong> reads what the family and witnesses say into weighted explanations on a real map. <strong>SAM&nbsp;3.1</strong> and Muse Spark check every drone photo for a person a few dozen pixels wide.</p>
       </div>
-      <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-300">
-        <label><input id="show-heat" type="checkbox" checked /> Planner's probability map</label>
-        <label><input id="show-searched" type="checkbox" checked /> Photographed ground</label>
-        <label><input id="show-truth" type="checkbox" /> Reveal where the person really was</label>
-        <label id="aerial-toggle" class="hidden"><input id="show-aerial" type="checkbox" checked /> Aerial photo</label>
-      </div>
-      <div id="legend" class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400"></div>
-      <p id="imagery" class="mt-2 text-xs text-slate-400 max-w-3xl"></p>
     </section>
 
-    <aside class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 lg:max-h-[calc(100vh-110px)] overflow-y-auto">
-      <h2 class="text-sm font-semibold text-slate-300 mb-2">What the team knows</h2>
-      <ol id="feed" class="space-y-3 text-sm"></ol>
-    </aside>
+    <!-- Sheet 1: the replay race -->
+    <section id="race" class="sheet" aria-labelledby="race-title">
+      <div class="wrap">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="sheet-no" aria-hidden="true">1</span>
+            <div>
+              <h2 id="race-title">Watch a search</h2>
+              <p class="sheet-sub">The same search flown by two planners, side by side on a real valley. The missing person is hidden until the end.</p>
+            </div>
+          </div>
+          <p class="watch"><strong>What to watch.</strong> The yellow dot is the drone. The expanding square keeps to its pattern. When a witness reports a sighting, the team planner breaks off to hunt where Muse Spark's reading points. A green ring marks the find; the feed shows what the team knew at that moment.</p>
+        </div>
+
+        <p id="result-line" class="hidden result-line" role="status"></p>
+
+        <div class="race-grid">
+          <div class="race-main">
+            <div id="lanes" class="lanes"></div>
+
+            <div class="playbar">
+              <button id="play" class="btn btn-ink play">Play</button>
+              <span id="clock" class="clock">0:00</span>
+              <input id="time" type="range" min="0" max="14400" step="5" value="0" aria-label="Search time" />
+              <select id="speed" aria-label="Playback speed">
+                <option value="60">60×</option>
+                <option value="120">120×</option>
+                <option value="300" selected>300×</option>
+                <option value="900">900×</option>
+              </select>
+            </div>
+            <fieldset class="layers">
+              <legend class="sr-only">Map layers</legend>
+              <label><input id="show-heat" type="checkbox" checked /> Planner's probability map</label>
+              <label><input id="show-searched" type="checkbox" checked /> Photographed ground</label>
+              <label><input id="show-truth" type="checkbox" /> Reveal where the person really was</label>
+              <label id="aerial-toggle" class="hidden"><input id="show-aerial" type="checkbox" checked /> Aerial photo</label>
+            </fieldset>
+            <div class="scenario other-races">
+              <label for="run">Other races</label>
+              <select id="run"></select>
+              <form id="new-race" class="new-race">
+                <input id="seed" type="number" min="0" max="899999" placeholder="seed" aria-label="Scenario seed" />
+                <button type="submit" class="btn btn-quiet">Record race</button>
+              </form>
+            </div>
+          </div>
+
+          <aside class="feed" aria-labelledby="feed-title">
+            <h3 id="feed-title">What the team knows</h3>
+            <p class="feed-sub">Witness reports, and Muse Spark's reading of them. Newest first.</p>
+            <ol id="feed" aria-live="polite"></ol>
+          </aside>
+        </div>
+
+        <div class="margin-notes">
+          <div>
+            <h4>Legend</h4>
+            <div id="legend" class="legend"></div>
+          </div>
+          <div>
+            <h4>Notes</h4>
+            <p id="imagery" class="notes"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="facts-title">
+      <div class="wrap band-grid">
+        <div>
+          <h2 id="facts-title">Measured, not assumed</h2>
+          <p class="band-sub">Detection was measured on real drone photos; the search result on a simulator that never shows the planner where she is.</p>
+        </div>
+        <dl class="facts">
+          <div class="fact">
+            <dt>79%</dt>
+            <dd>of people about 44&nbsp;px wide (a drone at 100&nbsp;m) found in a single photo, measured on 227 people in real drone photos.</dd>
+          </div>
+          <div class="fact">
+            <dt>~150</dt>
+            <dd>close-ups instead of 660 photos for a reviewer in a 4-hour one-drone search.</dd>
+          </div>
+          <div class="fact">
+            <dt>53%</dt>
+            <dd>found within 2 hours instead of 46% with the expanding square alone (one drone, 200 development scenarios).</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Sheet 2: the brief -->
+    <section id="brief" class="sheet" aria-labelledby="brief-title">
+      <div class="wrap">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="sheet-no" aria-hidden="true">2</span>
+            <div>
+              <h2 id="brief-title">Start a search here</h2>
+              <p class="sheet-sub">Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down, Muse Spark turns it into explanations of where she might be, using the named places on the map, and the drone gets a first block to fly.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="brief-grid">
+          <figure class="brief-map">
+            <div class="frame" data-frame="brief">
+              <canvas id="brief-map"></canvas>
+            </div>
+            <label class="toggle"><input id="brief-spark" type="checkbox" checked /> With Muse Spark's reading (untick for statistics only)</label>
+          </figure>
+
+          <div class="brief-side">
+            <label for="brief-text" class="field-label">The brief</label>
+            <textarea id="brief-text" rows="5" maxlength="2000"></textarea>
+            <p data-live-off class="hidden offline">Live model calls are off on this server; the example below is a recorded answer.</p>
+            <div data-live class="hidden actions">
+              <button id="brief-mic" class="btn btn-quiet">Speak the brief</button>
+              <button id="brief-read" class="btn btn-ink">Read with Muse Spark</button>
+            </div>
+            <p id="brief-status" class="status-text"></p>
+            <h3 class="list-title">Muse Spark's explanations</h3>
+            <ol id="brief-hypotheses" class="hypotheses"></ol>
+            <div id="brief-sorties" class="sorties"></div>
+            <p id="brief-credit" class="credit"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sheet 3: the photo check -->
+    <section id="triage" class="sheet" aria-labelledby="triage-title">
+      <div class="wrap">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <span class="sheet-no" aria-hidden="true">3</span>
+            <div>
+              <h2 id="triage-title">Is anyone in this photo?</h2>
+              <p class="sheet-sub">SAM 3.1 proposes possible people in each 1000&nbsp;px tile, and Muse Spark checks each proposal on a close-up. A reviewer checks the alarms instead of the whole photo, and can overrule Spark.</p>
+            </div>
+          </div>
+          <div class="scenario">
+            <p data-live-off class="hidden offline">Live model calls are off on this server; the example below is a recorded answer.</p>
+            <label data-live class="hidden btn btn-quiet file-btn">Check your own photo
+              <input id="triage-file" type="file" accept="image/jpeg,image/png" class="sr-only" /></label>
+          </div>
+        </div>
+
+        <p id="triage-summary" class="triage-summary"></p>
+        <div class="triage-grid">
+          <figure class="plate">
+            <div id="triage-photo" class="relative"></div>
+            <figcaption id="triage-credit" class="credit"></figcaption>
+          </figure>
+          <div>
+            <h3 class="list-title">Close-ups for the reviewer</h3>
+            <ol id="triage-list" class="closeups"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <section id="brief" class="max-w-[1500px] mx-auto px-4 pb-4">
-    <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 class="text-sm font-semibold text-slate-300">Start a search here</h2>
-        <p class="text-xs text-slate-400 max-w-3xl">Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down, Muse Spark turns it into hypotheses about where the person is, using the named places on the map, and the drone gets a first block to fly.</p>
+  <footer class="colophon">
+    <div class="wrap colophon-grid">
+      <div>
+        <p class="brand small"><svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" /></svg> LastSeen</p>
+        <p>Built during the Meta Global AI Developer Hackathon, 27 Oct to 4 Nov 2026, for the problem statement “Push the Frontier”. Models: Muse Spark, SAM 3.1, Muse Voice Transcribe.</p>
+        <p><a href="https://github.com/h-a-forster/lastseen">github.com/h-a-forster/lastseen</a></p>
       </div>
-      <div class="mt-2 grid gap-3 lg:grid-cols-[600px_1fr]">
-        <div>
-          <canvas id="brief-map" class="w-full max-w-[600px] rounded"></canvas>
-          <label class="text-sm text-slate-300"><input id="brief-spark" type="checkbox" checked /> With Spark's reading (untick: statistics only)</label>
-        </div>
-        <div class="space-y-2">
-          <textarea id="brief-text" rows="4" maxlength="2000" aria-label="Brief"
-                    class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm"></textarea>
-          <p data-live-off class="hidden text-xs text-amber-300">Live model calls are off on this server; the example below is a recorded answer.</p>
-          <div data-live class="hidden flex flex-wrap gap-2">
-            <button id="brief-mic" class="rounded bg-slate-800 hover:bg-slate-700 px-3 py-1 text-sm">Speak the brief</button>
-            <button id="brief-read" class="rounded bg-amber-500 text-slate-950 font-medium px-3 py-1 text-sm">Read with Muse Spark</button>
-          </div>
-          <p id="brief-status" class="text-xs text-slate-400"></p>
-          <ol id="brief-hypotheses" class="space-y-2 text-sm"></ol>
-          <div id="brief-sorties" class="flex flex-wrap gap-2"></div>
-          <p id="brief-credit" class="text-xs text-slate-500"></p>
-        </div>
+      <div>
+        <h4>Sources</h4>
+        <p>Drone photos: HERIDAL database (University of Split), CC BY 3.0. Aerial imagery © swisstopo. Map data © OpenStreetMap contributors (ODbL).</p>
       </div>
     </div>
-  </section>
+  </footer>
 
-  <section id="triage" class="max-w-[1500px] mx-auto px-4 pb-8">
-    <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3">
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 class="text-sm font-semibold text-slate-300">Is anyone in this photo?</h2>
-        <p class="text-xs text-slate-400 max-w-3xl">SAM 3.1 proposes possible people in each 1000 px tile, and Muse Spark checks each proposal on a close-up. A reviewer checks the alarms instead of the whole photo, and can overrule Spark.</p>
-        <p data-live-off class="hidden ml-auto text-xs text-amber-300">Live model calls are off on this server; the example below is a recorded answer.</p>
-        <label data-live class="hidden ml-auto text-sm rounded bg-slate-800 hover:bg-slate-700 px-3 py-1 cursor-pointer">Check your own photo
-          <input id="triage-file" type="file" accept="image/jpeg,image/png" class="hidden" /></label>
-      </div>
-      <p id="triage-summary" class="text-sm mt-2"></p>
-      <div class="mt-2 grid gap-3 lg:grid-cols-[1fr_360px]">
-        <div id="triage-photo" class="relative"></div>
-        <ol id="triage-list" class="space-y-2 text-sm"></ol>
-      </div>
-      <p id="triage-credit" class="mt-2 text-xs text-slate-400"></p>
-    </div>
-  </section>
-
-  <div id="status" class="fixed bottom-3 left-1/2 -translate-x-1/2 hidden rounded bg-slate-800 px-4 py-2 text-sm"></div>
+  <div id="status" class="hidden toast" role="status"></div>
 
   <script src="/replay.js"></script>
   <script src="/triage.js"></script>
   <script src="/brief.js"></script>
+  <script src="/sheet.js"></script>
 </body>
 </html>
