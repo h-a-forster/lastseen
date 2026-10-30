@@ -40,7 +40,7 @@ async function api(path, options) {
 
 async function loadRunList(selectId) {
   const runs = await api("/api/runs");
-  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] + " · " : ""}${r.category} #${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}: ${Object.keys(r.found_s).map(label).join(" vs ")}</option>`).join("");
+  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] : "Made-up terrain"} · case ${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
   if (selectId?.startsWith("at-")) addVisitorRace(selectId);
   $("run").value = [...$("run").options].some((o) => o.value === selectId) ? selectId : runs[0].id;
@@ -323,7 +323,7 @@ function buildLaneDom() {
     lane.photoEl = el.querySelector("[data-photo]");
   });
   $("imagery").innerHTML = state.run.imagery
-    ? "Each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size (under trees, canopy also hides her at an assumed rate). Every planner draws from the same photos, so they share the same luck. Flagged: alarms a reviewer checks."
+    ? "Each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size (under trees, canopy also hides her at an assumed rate). Every planner draws from the same photos, so they share the same luck. Alarms: spots a reviewer checks."
     : "Detections are sampled from the measured table (no photo pool on this server).";
   if (state.run.place?.aerial === false) {
     $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap. ${escapeHtml(state.run.place.credit)}.`;
@@ -342,14 +342,14 @@ function buildLaneDom() {
 function updateLaneText(lane, t) {
   const found = lane.found && t >= lane.found.t_s;
   const ended = !lane.found && t >= lane.endT;
-  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photo${lane.photoIndex === 1 ? "" : "s"} · ${lane.alarmCount} flagged`;
+  lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photo${lane.photoIndex === 1 ? "" : "s"} · ${lane.alarmCount} alarm${lane.alarmCount === 1 ? "" : "s"}`;
   lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
   const sortie = lastAt(lane.notes.filter((n) => ["sortie", "restart", "hunt"].includes(n.kind)), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
   const hit = found && lane.sightings.find((s) => s.found);
   if (Boolean(hit) !== lane.shownPhoto) {
     lane.shownPhoto = Boolean(hit);
-    lane.photoEl.innerHTML = hit ? `${photoHtml(hit)}<p class="text-xs text-slate-400 mt-1">${sightingText(hit)} · ${lane.photoIndex} photos taken, ${lane.alarmCount} flagged for review</p>` : "";
+    lane.photoEl.innerHTML = hit ? `${photoHtml(hit)}<p class="text-xs text-slate-400 mt-1">${sightingText(hit)} · ${lane.photoIndex} photos taken, ${lane.alarmCount} alarms for review</p>` : "";
   }
 }
 

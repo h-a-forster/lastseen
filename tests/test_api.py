@@ -39,7 +39,9 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
 
     monkeypatch.setattr(main.replay, "RUNS_DIR", tmp_path)
     monkeypatch.setattr(main, "_summaries", {})
-    monkeypatch.setattr(main.terrain, "visitor_place", lambda lat, lon: "at-47365n-7155e")
+    model_lock_held = []
+    monkeypatch.setattr(main.terrain, "visitor_place",
+                        lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
     monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first: 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
@@ -48,6 +50,7 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     assert args == (7, ["spiral", "hedge+spark"]) and kwargs["witness"].text == "Seen by the church."
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone
+    assert model_lock_held == [False]  # the minute-long map download doesn't make other visitors' model calls wait
 
 
 def test_photo_checks_are_off_by_default_and_never_spend_on_bad_input_or_past_the_hourly_limit(monkeypatch):
