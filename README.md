@@ -10,7 +10,8 @@ photos come back, each with a person a few dozen pixels wide, or nobody. And eve
 the drone should go. LastSeen uses Meta's models for both, and tests every claim on a simulator built for it.
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
-to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48 in a real drone photo](docs/img/race.jpg)
+to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
+drone photo of a person her size](docs/img/race.jpg)
 
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
