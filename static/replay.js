@@ -345,6 +345,9 @@ function feedItems() {
       if (note.kind === "restart" || note.kind === "hunt") items.push({ t_s: note.t_s, html: `<p class="text-sky-300">${label(lane.name)}: ${note.text}</p>` });
     }
     if (lane.found) items.push({ t_s: lane.found.t_s, html: `<p class="text-green-400 font-medium">${label(lane.name)}: person found</p>` });
+    for (const note of lane.notes.filter((n) => n.kind === "handover")) {
+      items.push({ t_s: note.t_s, html: `<p class="text-xs text-slate-400">Handover to the ground team, written by Muse Spark from checked facts:</p><blockquote class="handover">${escapeHtml(note.text)}</blockquote>` });
+    }
     if ($("show-truth").checked) {
       for (const s of lane.sightings.filter((s) => !s.found)) {
         items.push({ t_s: s.t_s, html: `<p class="text-xs uppercase tracking-wide text-rose-300">${label(lane.name)}: drone ${s.drone + 1} photographed her, no alarm</p>

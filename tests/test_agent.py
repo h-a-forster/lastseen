@@ -6,8 +6,9 @@ import pytest
 
 from app.agent.interpret import MIN_REST, check
 from app.agent.layers import Shape, shape_mask
+from app.agent import handover
 from app.agent.witnesses import checked
-from app.meta_api import Answer
+from app.meta_api import Answer, ModelCallError
 from app.sar.grid import Grid, Terrain
 from app.sar.scenario import SearchMap
 
@@ -247,4 +248,21 @@ def test_witness_grades_must_quote_the_brief_and_use_our_labels():
                           grade | {"who": "postman", "quote": "seen at the station"},  # not in the brief
                           grade | {"who": "daughter", "quote": "used to walk to the chapel", "reliability": "certain"}]}
     assert [w["who"] for w in checked(data, brief)] == ["neighbour"]
+
+
+def test_handover_facts_come_from_the_race_and_the_message_may_only_repeat_them():
+    terrain = "0" * 16
+    run = {"map": {"rows": 4, "cols": 4, "cell_m": 100.0, "terrain": terrain[:5] + "2" + terrain[6:],
+                   "trails": "0" * 15 + "1", "ipp": [3, 1]},
+           "lanes": {}}
+    lane = {"events": [{"type": "sighting", "found": True, "spark": "person in red"},
+                       {"type": "found", "t_s": 6480.0, "drone": 0, "y_m": 150.0, "x_m": 150.0}]}
+    found = handover.facts(run, lane)
+    assert found == {"found_after": "1:48", "drone": 1, "distance_from_last_seen": "200 m",
+                     "direction_from_last_seen": "north", "ground": "forest", "nearest_path": "280 m away",
+                     "photo_shows": "person in red"}
+    handover.check("Drone 1 at 1:48: person in red, 200 m north, in forest, path 280 m away.", found)
+    for bad in ("Drone 1: person 250 m north.", "Drone one: person 200 m north."):
+        with pytest.raises(ModelCallError):
+            handover.check(bad, found)
 
