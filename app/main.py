@@ -12,7 +12,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from fastapi.concurrency import run_in_threadpool  # noqa: E402
-from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
@@ -274,5 +274,15 @@ async def _live(fn, *args, spark_backend: str = "meta"):
         _model_lock.release()
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """The page's files, which browsers must check for a newer version on every visit (a cheap 304 when unchanged).
+    The hosted image dates every file 1970, so without this a browser would keep an old copy for years."""
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 # Serves static/index.html at "/". Keep this last so /api routes win.
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+app.mount("/", RevalidatedStaticFiles(directory=STATIC_DIR, html=True), name="static")
