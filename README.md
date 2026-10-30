@@ -44,6 +44,15 @@ drone photo of a person her size](docs/img/race.jpg)
 | SAM 3.1 | Finds people in drone photos (text prompt "person", boxes with confidence) |
 | Muse Spark | Checks each SAM proposal on a close-up; reads briefs and witness reports into hypotheses, as strict JSON whose quotes and numbers code then checks |
 | Muse Voice Transcribe | Turns a spoken brief into text |
+| Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
+
+**Open weights.** With `SPARK_BACKEND=open`, every Spark call goes to Muse Spark Open, Meta's open-weight model, on
+Baseten. On the same 200 development scenarios (one drone, photo mode), the team planner found 52% within 2 h reading
+the reports with Muse Spark Open, against 53% with Muse Spark (paired difference -0.5 points, 95% interval -2.5 to
++1.5; 5 of 200 scenarios changed). Baseten doesn't enforce the JSON schema for this model, so our checks rejected 5 of
+its 319 readings and those runs carried on without hypotheses. On the photo check's test tiles, SAM 3.1 + Muse Spark
+Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). Open weights mean a search team
+isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 
 ## How we know whether it works
 - **Detection is measured, not assumed.** SAM 3.1 + Spark ran on 660 labelled people in the HERIDAL test photos and on
@@ -83,6 +92,7 @@ planner `ours` (`app/planner/__init__.py`); `app/sar/planners/greedy.py` is a co
 ```bash
 uv run python -m app.sar.bench --planners hedge,ours,spiral,greedy --seeds 200 --drones 1 --workers 8
 uv run python -m app.sar.bench --planners hedge,hedge+spark --seeds 200 --drones 1 --imagery   # with Spark's reading (paid once, then cached)
+SPARK_BACKEND=open uv run python -m app.sar.bench --planners spiral,hedge+spark --seeds 200 --drones 1 --imagery   # on Muse Spark Open
 uv run python -m app.sar.bench --planners hedge+spark,spiral+spark --seeds 200 --drones 1      # vs a spiral that restarts on Spark's readings
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3                        # three drones
 uv run python -m app.sar.bench --planners spiral,hedge+spark --drones 3 --lose-drone           # one of three fails in the first 2 h
