@@ -61,6 +61,36 @@ go.
   reading helps; restarting a fixed pattern on the same reading does not. On development seeds (one drone, imagery
   mode) that is the pattern: +6.5 points [+3, +10.5] and +2 [-2, +6]. Written 30 Oct, before the final run.
 
+## Result (run once on 31 Oct 2026, from commit `a8987bb`)
+One drone, found within 2 hours, 200 held-out scenarios; the person was inside the mapped area at the start in 92%
+(the ceiling). Full output: [results/final.txt](results/final.txt) and [results/final.json](results/final.json).
+
+| | found within 2 h | half found by |
+|---|---|---|
+| expanding square (`spiral`; also `hedge` without Spark) | 44.5% | 197 min |
+| volunteer restarting the square where the witness said (`spiral+witness`) | 49% | 133 min |
+| expanding square restarted on Spark's reading (`spiral+spark`) | 51.5% | 106 min |
+| the team's planner with Spark (`hedge+spark`) | 51% | 112 min |
+
+1. **With and without Spark, the team's planner: helps.** +6.5 points, 95% interval +3 to +10.5. By sighting
+   report: right +18 (n=74), wrong 0 (n=27), none 0 (n=99).
+2. **With and without Spark, expanding square: helps.** +7 points, +3 to +11. By sighting report: right +8 (n=74),
+   wrong +4 (n=27), none +7 (n=99).
+
+Both comparisons help, so the pattern written down on 30 Oct (the planner helps, restarting the square does not) did
+not hold: on these scenarios the gain comes from Spark's reading, and keeping a map did no better than restarting
+the square on the same reading (team planner with Spark minus `spiral+spark`: -0.5 points, -5 to +3.5). Against the
+careful volunteer, the team's planner with Spark was +2 points (-0.5 to +4.5), within the noise. The square restarted
+on Spark's reading gains even with no sighting, because Spark's reading of the brief moves where the square starts.
+
+Secondary, found within 2 hours ([results/final-three-drones.txt](results/final-three-drones.txt),
+[results/final-lost-drone.txt](results/final-lost-drone.txt)):
+- **Three drones:** the team's planner with Spark 67% against the square's 65% (+2 points, 0 to +4.5); the square
+  restarted on Spark's reading 65.5% (+0.5, -4.5 to +5). Three drones cover the square fast enough that the reading
+  matters less.
+- **One of three drones lost:** the team's planner with Spark 65.5% against 64.5% (+1, -1.5 to +3.5).
+- Spark's readings of the 200 briefs and sightings cost $2.03, fetched once and replayed for every planner.
+
 ## Commands
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \

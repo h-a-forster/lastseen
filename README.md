@@ -51,14 +51,17 @@ drone photo of a person her size](static/race.jpg)
   team reports 5 to 45 seconds to look through one full photo
   ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,200 photos are about 2 to 15 hours of looking; a
   close-up is one spot to accept or reject (not timed yet).
-- **53% found within 2 hours instead of 46%** with the expanding square alone: Muse Spark reads the witness reports,
-  and when someone reports a sighting the drone breaks off its square to follow Spark's reading (one drone, 200
-  development scenarios in photo mode, as the final run; when the sighting was wrong, it did as well as the square).
-  A careful volunteer who restarts the square where the witness said gets 51%: on the simulator's simple reports,
-  most of the gain is acting on a sighting at all. Reworded the way people talk ("a 20-minute walk", "NE-ish",
-  witnesses who aren't sure), the same searches found 52% (-1.5 points, 95% interval -3.5 to 0), though Spark's
-  readings put a little less weight near the spot the witness named. The held-out result, run once after the feature freeze, goes in
-  [docs/evaluation.md](docs/evaluation.md) whatever it shows.
+- **51% found within 2 hours instead of 44.5%** with the expanding square alone, on 200 held-out scenarios fixed in
+  advance and run once (one drone, photo mode; +6.5 points, 95% interval +3 to +10.5). Muse Spark reads the witness
+  reports, and when someone reports a sighting the drone breaks off its square to follow Spark's reading. Half were
+  found by 1 h 52 instead of 3 h 17; when the sighting was wrong, it did as well as the square. Spark's reading also
+  helped the plain square: restarting it on Spark's newest reading found 51.5% (+7 points, +3 to +11), so the gain
+  comes from the reading, and keeping a map did no better than restarting the square on it. A careful volunteer who
+  restarts the square where the witness said got 49%: on the simulator's simple reports, much of the gain is acting
+  on a sighting at all. On development scenarios, reports reworded the way people talk ("a 20-minute walk", "NE-ish",
+  witnesses who aren't sure) found 52% against 53% (-1.5 points, 95% interval -3.5 to 0), though Spark's readings put
+  a little less weight near the spot the witness named. Every number, and the plan written before the run:
+  [docs/evaluation.md](docs/evaluation.md).
 
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
