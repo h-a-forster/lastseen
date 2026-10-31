@@ -82,7 +82,7 @@
   {"id": "handover", "q": "What happens when the drone finds someone?",
    "a": "Muse Spark writes a short handover for the ground team from facts code works out: where she is in coordinates, distance and direction from where she was last seen, the ground there, the nearest path, and what the photo shows. Code rejects it if any number or compass direction in it isn't in those facts. The handovers shown were written for the recorded races, not live."},
   {"id": "open", "q": "Does it need the Meta API, or can it run on open weights?",
-   "a": "Every Muse Spark job can run on Muse Spark Open, Meta's open-weight model, served by Baseten. On 200 development scenarios it found 52% within 2 hours against 53% with Muse Spark, and it found 177 people in the test photos against 179. On this page, 'Use open weights' reads a brief with it."},
+   "a": "Every Muse Spark job can run on Muse Spark Open, Meta's open-weight model, served by Baseten. On the 200 test scenarios it also beat the standard pattern on its own: half found by 2 h 05 instead of 3 h 17, and 49.5% within 2 hours against 44.5%. In the test photos it found 177 people against Muse Spark's 179. On this page, 'Use open weights' reads a brief with it."},
   {"id": "cost", "q": "What does it cost to run?",
    "a": "At today's prices, checking one photo from a 20-megapixel drone camera (24 tiles) costs about 7 cents, so the 1,200 photos of 4 hours of one-drone flying cost about $90. Reading a brief or a new report costs under a cent."},
   {"id": "multi", "q": "What about more than one drone?",

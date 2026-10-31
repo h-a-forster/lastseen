@@ -87,13 +87,14 @@ Why these: SAM 3.1 finds people from the single word "person", with no training 
 instead of training anything (660 labelled people). Muse Spark answers as strict JSON against a schema, so every
 quote, number and place it gives is checked by code before it touches the map, and the witness grades and the
 ground-team handover need judgement a rule can't make. Muse Voice Transcribe lets a volunteer with cold hands talk
-instead of type. Muse Spark Open means a team isn't tied to one hosted API: the same jobs, with about the same result
-(52% vs 53% found within 2 h, below).
+instead of type. Muse Spark Open means a team isn't tied to one hosted API: on its own it also beats the standard pattern, half
+found by 2 h 05 instead of 3 h 17 (below).
 
 **Open weights.** With `SPARK_BACKEND=open`, every Spark call goes to Muse Spark Open, Meta's open-weight model, on
-Baseten. On the same 200 development scenarios (one drone, photo mode), the team planner found 52% within 2 h reading
-the reports with Muse Spark Open, against 53% with Muse Spark (paired difference -0.5 points, 95% interval -2.5 to
-+1.5; 5 of 200 scenarios changed). All 327 readings passed our checks, which matter more here because Baseten
+Baseten. On the 200 held-out scenarios (one drone, photo mode), the team planner reading the reports with Muse Spark
+Open found half by 2 h 05 instead of 3 h 17 with the expanding square, and 49.5% within 2 h against 44.5% (+5
+points, 95% interval +1 to +9); the square restarted on its reading found 51.5%, the same as with Muse Spark. This
+run was added after the evaluation plan ([results](docs/results/final-open-weights.txt)). All 301 readings came back without an error, and our checks matter more here because Baseten
 doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
 budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
 Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the page, "Use open
