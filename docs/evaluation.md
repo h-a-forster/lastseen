@@ -93,6 +93,12 @@ Secondary, found within 2 hours ([results/final-three-drones.txt](results/final-
 - **One of three drones lost:** the team's planner with Spark 65.5% against 64.5% (+1, -1.5 to +3.5).
 - Spark's readings of the 200 briefs and sightings cost $2.03, fetched once and replayed for every planner.
 
+Added after this plan (not fixed in advance), the same 200 scenarios read by **Muse Spark Open**, the open-weight
+model, on Baseten ([results/final-open-weights.txt](results/final-open-weights.txt)): the team's planner with it
+found 49.5% within 2 hours against the square's 44.5% (+5 points, +1 to +9), half by 126 minutes instead of 197; the
+square restarted on its reading found 51.5%, as with Muse Spark. Against Muse Spark, same planner: -1.5 points (-4 to
++0.5). The readings cost $1.65 of Baseten credit.
+
 ## Commands
 ```
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
