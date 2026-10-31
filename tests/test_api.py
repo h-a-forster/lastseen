@@ -42,7 +42,7 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     model_lock_held = []
     monkeypatch.setattr(main.terrain, "visitor_place",
                         lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
-    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first: 7)
+    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first, witness_s: 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
     run_id = client.post("/api/place-race", json=body | {"witness": "  Seen by the church. "}).json()["id"]

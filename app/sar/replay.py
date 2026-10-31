@@ -74,16 +74,24 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     }
 
 
-def watchable_seed(place: str, first: int, tries: int = 5, quiet_s: float = 2700.0) -> int:
-    """For a visitor's place: the first of `tries` walks from seed `first` that the expanding square hasn't found within
-    `quiet_s`, so the race has a search to watch (`first` if none). Photos are decided as in the race; no model calls."""
+def watchable_seed(place: str | None, first: int, witness_s: float | None = None, tries: int = 5) -> int:
+    """For a visitor's place: the first of `tries` walks from seed `first` that has a sighting (the visitor's own at
+    `witness_s`, or a generated one) which the expanding square hasn't found her before, so the race shows the planners
+    split (`first` if none). Up to the sighting both planners fly the same square, so the pick favours neither. Photos
+    are decided as in the race; no model calls."""
     photos = photo_pool.shared()
     for seed in range(first, first + tries):
         scenario = build(seed, place, "dementia")
-        if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=quiet_s,
-               photos=photos).run().found_s is None:
+        sighting_s = witness_s if witness_s is not None else _sighting_s(scenario, seed)
+        if sighting_s is not None and Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s,
+                                          photos=photos).run().found_s is None:
             return seed
     return first
+
+
+def _sighting_s(scenario: Scenario, seed: int) -> float | None:
+    reports, _cues = reports_for(scenario, seed)
+    return reports[1].t_s if len(reports) > 1 else None
 
 
 def map_json(scenario: Scenario) -> dict:

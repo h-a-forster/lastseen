@@ -281,6 +281,19 @@ def test_a_visitors_witness_replaces_the_generated_sighting_and_gets_its_own_rac
     assert own["id"].startswith(plain["id"] + "-witness-")
 
 
+def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monkeypatch):
+    from app.sar import replay
+    from app.sar.interface import FleetSpec
+    from app.sar.planners.fixed_paths import ExpandingSquare
+
+    monkeypatch.setattr(replay.photo_pool, "shared", lambda: None)  # detection from the table, as in CI
+    seed = replay.watchable_seed(None, 1)
+    scenario = terrain.build(seed, None, "dementia")
+    sighting_s = replay._sighting_s(scenario, seed)
+    assert sighting_s is not None  # walk 2 has none: both planners would fly the same square all race
+    assert Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s).run().found_s is None
+
+
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():
     from app.sar.detection import DetectionModel
     from app.sar.recorder import Recorder

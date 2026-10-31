@@ -104,7 +104,7 @@
   {"id": "team", "q": "Who built it? How many people are on the team?",
    "a": "A team of two, during the Meta Global AI Developer Hackathon, 27 October to 4 November 2026."},
   {"id": "your-place", "q": "Can I try it on a place I know?",
-   "a": "Yes, in section 4: click a point on land. LastSeen downloads the 3 km around it from OpenStreetMap, picks a simulated walk the plain square doesn't find in the first 45 minutes (so there is a search to watch), and races the square against the team planner with one drone. You can add your own witness report; she walks on her own, so it may be wrong. Coasts and places with little map detail are refused, and OpenStreetMap's servers are sometimes busy."},
+   "a": "Yes, in section 4: click a point on land. LastSeen downloads the 3 km around it from OpenStreetMap, picks a simulated walk with a sighting that the plain square hasn't found her before (until the sighting both planners fly the same square, so the pick favours neither), and races the square against the team planner with one drone. You can add your own witness report; she walks on her own, so it may be wrong. Coasts and places with little map detail are refused, and OpenStreetMap's servers are sometimes busy."},
   {"id": "use-now", "q": "Can I use it on a real search today?",
    "a": "No. It is a tested prototype: not yet connected to a real drone, and not yet tried by a search team. It shows how the search would work, not a tool to rely on."},
   {"id": "ask-box", "q": "How does this question box work?",

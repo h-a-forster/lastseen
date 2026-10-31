@@ -116,8 +116,8 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
   [docs/evaluation.md](docs/evaluation.md#known-limits).
 - Mission heights are 100 m above the take-off point, and the simulator doesn't model terrain height; over hills a
   real mission needs terrain-following heights (QGroundControl can adjust them).
-- LastSeen isn't connected to a real drone yet: missions export as QGroundControl files (they load but haven't been
-  flown), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
+- LastSeen isn't connected to a real drone yet: missions export as QGroundControl files for PX4 autopilots (they load
+  but haven't been flown), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
   battery swap, up to 25 minutes later.
 - Next: connecting to a real drone's radio link, a test flight over open ground, and a trial with a volunteer search team on a training exercise.
 

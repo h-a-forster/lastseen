@@ -80,8 +80,7 @@ class SearchPlanner:
             self._current_rate[drone.id] = rate
             self._notes.append({
                 "kind": "sortie", "drone": drone.id,
-                "text": (f"Drone {drone.id + 1}: {len(blocks)}-block tour with "
-                         f"{rate * 60:.1%} chance of finding per minute of flight"),
+                "text": f"Drone {drone.id + 1} searches the {_likeliest(len(blocks))} it can reach on this battery",
             })
         return at_altitude(route, self.fleet.alt_m)
 
@@ -109,8 +108,7 @@ class SearchPlanner:
 
         self._notes.append({
             "kind": "sortie", "drone": drone.id,
-            "text": (f"Drone {drone.id + 1} retasked mid-flight: new reading -> {len(blocks)}-block tour "
-                     f"worth {rate * 60:.1%} per minute"),
+            "text": f"Drone {drone.id + 1} changes course mid-flight to the {_likeliest(len(blocks))} after the new reading",
         })
         return at_altitude(route, self.fleet.alt_m)
 
@@ -215,6 +213,10 @@ def _neighbour_keys(tour: list[_Cand], by_key: dict[BlockKey, _Cand]) -> set[Blo
                 if k in by_key:
                     keys.add(k)
     return keys
+
+
+def _likeliest(blocks: int) -> str:
+    return "likeliest block" if blocks == 1 else f"{blocks} likeliest blocks"
 
 
 def _same_blocks(a: list[Block], b: list[Block] | None) -> bool:
