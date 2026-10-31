@@ -217,14 +217,19 @@ class Question(BaseModel):
 @app.post("/api/ask")
 async def ask(req: Question, request: Request):
     """The help box: a written FAQ answer at once when the question is close to one; otherwise Muse Spark Open picks
-    written answers (a paid call, so it counts towards the hourly limit). Without live models, the closest entries."""
+    written answers (a paid call, so it counts towards the hourly limit). Without live models, or while another
+    visitor's model job runs or the hourly limit is reached, the closest entries."""
     entry = faq.instant(req.question)
     if entry:
         return {"answers": [entry], "matched_by": "words", "usd": 0, "suggestions": []}
-    if not LIVE_MODELS:
-        return {"answers": [], "matched_by": "none", "usd": 0, "suggestions": [e for _s, e in faq.closest(req.question)]}
-    _check_paid(request)
-    return await _live(faq.route, req.question, spark_backend="open")
+    if LIVE_MODELS:
+        try:
+            _check_paid(request)
+            return await _live(faq.route, req.question, spark_backend="open")
+        except HTTPException as e:
+            if e.status_code != 429:
+                raise
+    return {"answers": [], "matched_by": "none", "usd": 0, "suggestions": [e for _s, e in faq.closest(req.question)]}
 
 
 @app.post("/api/transcribe")

@@ -8,8 +8,11 @@ LastSeen flies a search drone for a missing person and decides where it looks. P
 what witnesses say reaches the search map by hand, or not at all. LastSeen closes that gap. Muse Spark turns every
 report into weighted, checked scenarios in seconds. The drone re-plans from them and flies the search itself,
 breaking off its pattern mid-flight to follow a sighting. SAM 3.1 and Muse Spark check every photo for a person a few
-dozen pixels wide, so a reviewer sees about 270 close-ups instead of 1,200 photos. One volunteer launches it, swaps
+dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photos. One volunteer launches it, swaps
 batteries and stays in command.
+
+**In simulation, on 200 searches fixed in advance, half the missing people were found by 1 h 52 instead of 3 h 17**
+with the standard expanding square ([how we measured](docs/evaluation.md)). It hasn't flown a real drone yet.
 
 It is built for searches where minutes matter most: an older person with dementia who has walked away from home,
 with one volunteer and one drone. Six in ten people living with dementia wander at least once
@@ -44,12 +47,13 @@ drone photo of a person her size](static/race.jpg)
 
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
-  on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
+  on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos: `ci95_photos` in
+  `data/pod_table.json`).
 - **3 of the 4 "false alarms"** SAM 3.1 + Muse Spark raised on 320 tiles of empty ground were real people the
   dataset's labellers had missed, so the measured false-alarm rate (about 1 per 100 tiles) is pessimistic.
-- **About 270 close-ups instead of 1,200 photos** for a reviewer in 4 hours of one-drone flying. A mountain-rescue
+- **About 280 close-ups instead of 1,250 photos** for a reviewer in 4 hours of one-drone flying. A mountain-rescue
   team reports 5 to 45 seconds to look through one full photo
-  ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,200 photos are about 2 to 15 hours of looking; a
+  ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,250 photos are about 2 to 16 hours of looking; a
   close-up is one spot to accept or reject (not timed yet).
 - **Half found by 1 h 52 instead of 3 h 17**, an hour and 25 minutes sooner than the expanding square alone, and
   **51% found within 2 hours instead of 44.5%** (+6.5 points, 95% interval +3 to +10.5). Measured on 200 held-out
@@ -110,7 +114,7 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
-- **69 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+- **70 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
   answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it

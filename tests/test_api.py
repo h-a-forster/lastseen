@@ -121,6 +121,11 @@ def test_the_help_box_only_ever_returns_written_answers(monkeypatch):
     assert main.faq.instant("what does spark do")["id"] == "spark"  # not the longer question that also names Spark
     offline = client.post("/api/ask", json={"question": "Tell me a joke"}).json()
     assert offline["answers"] == [] and len(offline["suggestions"]) == 3
+    monkeypatch.setattr(main, "LIVE_MODELS", True)
+    monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
+    with main._model_lock:  # another visitor's race holds the model for a minute: still the closest written answers
+        busy = client.post("/api/ask", json={"question": "Tell me a joke"})
+    assert busy.status_code == 200 and len(busy.json()["suggestions"]) == 3
     answer = main.meta_api.Answer({"ids": ["open", "made-up", "open"]}, 0.001, False, "m")
     monkeypatch.setattr(main.faq, "spark_json", lambda *a, **k: answer)
     assert [e["id"] for e in main.faq.route("Can it run without signal?")["answers"]] == ["open"]
