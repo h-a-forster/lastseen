@@ -88,7 +88,8 @@ find times and which report details were true, so every number above can be reco
   Spark's gain on them (one drone, development seeds, imagery mode: 51% found within 2 h with rules, 53% with
   Spark, 46% with the square alone). A careful volunteer who restarts the square on the spot the witness named
   (`spiral+witness`) also gets 51% (+4.5 points over the square, 95% interval +2 to +7.5); the team's planner with
-  Spark is +2 points over that volunteer (-0.5 to +5), half found by 98 against 110 min. On these reports most of the
+  Spark is +2 points over that volunteer (-0.5 to +5), half found by 98 against 110 min (the square alone:
+  178 min). On these reports most of the
   gain is acting on a sighting at all. A one-off check (script not in the repo) reworded the same facts the way people
   talk (distances in miles or minutes' walk, "NE-ish", witnesses who aren't sure; design and pass marks written down
   before the run): the team's planner with Spark found 52% within 2 h against 53% on the templates (-1.5 points,

@@ -205,7 +205,7 @@ def _download_place(lat: float, lon: float) -> str:
 def _place_race(name: str, req: PlaceRace) -> Path:
     text = (req.witness or "").strip()
     witness = Report(req.witness_minute * 60.0, text) if text else None
-    seed = replay.watchable_seed(name, terrain.visitor_seed(name))
+    seed = replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None)
     return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name,
                                    witness=witness))
 
