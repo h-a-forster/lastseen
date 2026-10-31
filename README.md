@@ -1,19 +1,22 @@
 # LastSeen
 
-> Meta Global AI Developer Hackathon 2026 · Push the Frontier
+> Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 27 Oct - 4 Nov 2026
 
-Search at sea is planned with Bayesian software; on land, teams are taught probability methods but practitioners
-report rarely applying them in full, and planning a drone search is still "more art than science"
-([MIT Technology Review, 2024](https://www.technologyreview.com/2024/05/30/1092988/ai-directed-drones-could-help-find-lost-hikers-faster/)).
-What witnesses say reaches the search map by hand, or not at all: a fixed search pattern only uses it when someone
-moves the pattern by hand. LastSeen closes that gap. Muse
-Spark turns every report into weighted, checked scenarios in seconds; when a witness reports a sighting, the drone
-breaks off to search where the reading points, and it flies the search itself. SAM 3.1 and Muse Spark check every
-photo for a person a few dozen pixels wide. One volunteer launches it, swaps batteries and stays in
-command.
+LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
+"more art than science"
+([MIT Technology Review, 2024](https://www.technologyreview.com/2024/05/30/1092988/ai-directed-drones-could-help-find-lost-hikers-faster/)):
+what witnesses say reaches the search map by hand, or not at all. LastSeen closes that gap. Muse Spark turns every
+report into weighted, checked scenarios in seconds. The drone re-plans from them and flies the search itself,
+breaking off its pattern mid-flight to follow a sighting. SAM 3.1 and Muse Spark check every photo for a person a few
+dozen pixels wide, so a reviewer sees about 270 close-ups instead of 1,200 photos. One volunteer launches it, swaps
+batteries and stays in command.
 
-It is built for searches where minutes matter most, such as an older person with dementia who has walked away from
-home, with one volunteer and one drone. Every claim is tested on a simulator built for it.
+It is built for searches where minutes matter most: an older person with dementia who has walked away from home,
+with one volunteer and one drone. Six in ten people living with dementia wander at least once
+([Alzheimer's Association](https://www.alz.org/help-support/caregiving/stages-behaviors/wandering)); in the published
+records 95% of those found within 24 hours are alive, against 60% after 48 hours, and only 1% answer when searchers
+call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia.pdf)). Every search-time claim is
+tested on a simulator built for it.
 
 ## How a search runs
 The volunteer types or says what the family told them and launches the drone. From then on the search runs itself:
@@ -23,8 +26,8 @@ The volunteer types or says what the family told them and launches the drone. Fr
   needed;
 - when the battery runs low the drone flies home, the volunteer swaps it, and the search carries on.
 
-The volunteer stays in command, as the law requires, and the ground team confirms any find. The drone keeps its radio link to the base
-throughout, which is how a new leg reaches it mid-flight. LastSeen also expects each photo back as it is taken: in
+The volunteer stays in command, as the law requires, and the ground team confirms any find. LastSeen is designed
+around the radio link a drone keeps with its base, which is how a new leg reaches it mid-flight. LastSeen also expects each photo back as it is taken: in
 the simulator's flight plan that is one photo of about 5 MB every 10 seconds, around 4 Mbit/s. Some enterprise drones
 can send photos during flight, and on others a small onboard computer with a 4G modem can. Where photos only come off
 after landing, a find waits for the battery swap, up to 25 minutes.
@@ -37,11 +40,13 @@ nothing receives photos from a drone yet.
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
-drone photo of a person her size](docs/img/race.jpg)
+drone photo of a person her size](static/race.jpg)
 
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
   on 227 labelled people in real drone photos (95% interval 70-86%, resampling whole photos).
+- **3 of the 4 "false alarms"** SAM 3.1 + Muse Spark raised on 320 tiles of empty ground were real people the
+  dataset's labellers had missed, so the measured false-alarm rate (about 1 per 100 tiles) is pessimistic.
 - **About 270 close-ups instead of 1,200 photos** for a reviewer in 4 hours of one-drone flying. A mountain-rescue
   team reports 5 to 45 seconds to look through one full photo
   ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,200 photos are about 2 to 15 hours of looking; a
@@ -77,6 +82,13 @@ drone photo of a person her size](docs/img/race.jpg)
 | Muse Voice Transcribe | Turns a spoken brief into text |
 | Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
 
+Why these: SAM 3.1 finds people from the single word "person", with no training on our photos, so we measured it
+instead of training anything (660 labelled people). Muse Spark answers as strict JSON against a schema, so every
+quote, number and place it gives is checked by code before it touches the map, and the witness grades and the
+ground-team handover need judgement a rule can't make. Muse Voice Transcribe lets a volunteer with cold hands talk
+instead of type. Muse Spark Open means a team isn't tied to one hosted API: the same jobs, with about the same result
+(52% vs 53% found within 2 h, below).
+
 **Open weights.** With `SPARK_BACKEND=open`, every Spark call goes to Muse Spark Open, Meta's open-weight model, on
 Baseten. On the same 200 development scenarios (one drone, photo mode), the team planner found 52% within 2 h reading
 the reports with Muse Spark Open, against 53% with Muse Spark (paired difference -0.5 points, 95% interval -2.5 to
@@ -84,7 +96,8 @@ the reports with Muse Spark Open, against 53% with Muse Spark (paired difference
 doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
 budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
 Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the page, "Use open
-weights" reads a brief with Muse Spark Open. Open weights mean a search team
+weights" reads a brief with Muse Spark Open, and the question box runs on Muse Spark Open for every visitor: it may
+only return the ids of written answers, so an open-weight model routes the questions and never writes the text. Open weights mean a search team
 isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
 
 ## How we know whether it works
@@ -95,6 +108,8 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
+- **69 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+  answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it
 - The searches are simulated: the map and photos are real, the hidden person's walk is not. Limits are listed in
@@ -113,7 +128,8 @@ cp .env.example .env          # add MODEL_API_KEY for live model calls
 uv run uvicorn app.main:app --reload
 uv run pytest
 ```
-Open http://localhost:8000 (with `RECORD_RACES=1` the page can also record a race for any development seed, from
+Open http://localhost:8000. A fresh clone has no recorded races or page examples yet (they're built from the
+downloaded dataset, below), so until then the page shows the place search and the questions (with `RECORD_RACES=1` the page can also record a race for any development seed, from
 cached readings only). The simulator and bench need no key:
 ```bash
 uv run python -m app.sar.bench --planners lawnmower,spiral,greedy --seeds 40 --workers 4
@@ -157,7 +173,7 @@ docs/             evaluation plan, parameters, team workflow
 - Drone photos: HERIDAL database (University of Split), repacked by P. Pyrrö, Aalto University
   (doi:10.5281/zenodo.5662350), CC BY 3.0.
 - Map data © OpenStreetMap contributors (ODbL). Aerial imagery © swisstopo, loaded by the browser from swisstopo
-  (and in `docs/img/race.jpg`).
+  (and in `static/race.jpg`).
 - Lost-person statistics: Koester, *Lost Person Behavior* (ISRID data); Hashimoto et al. (2022); sources per number
   in `data/lost_person_stats.json`.
 
