@@ -73,7 +73,7 @@ document.getElementById("place-form").onsubmit = async (e) => {
                              witness_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
     });
     clearInterval(timer);
-    placeSay("Done: the race is playing in section 1.");
+    placeSay("Done: the race is playing in section 1. Reveal where she really was there, then try a sighting of your own.");
     await openPlaceRace(id);
   } catch (err) {
     clearInterval(timer);
