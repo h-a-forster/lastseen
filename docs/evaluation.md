@@ -92,10 +92,13 @@ Secondary, found within 2 hours ([results/final-three-drones.txt](results/final-
   matters less.
 - **One of three drones lost:** the team's planner with Spark 65.5% against 64.5% (+1, -1.5 to +3.5).
 - Spark's readings of the 200 briefs and sightings cost $2.03, fetched once and replayed for every planner.
+- **What a reviewer checks** in a 4-hour one-drone search: per flight hour the team's planner with Spark took 339
+  photos and raised 76.5 alarms (`per_find` in final.json: photos and alarms over drone hours), in the air 92% of
+  the time, so about 1,250 photos and 280 close-ups.
 
 Added after this plan (not fixed in advance), the same 200 scenarios read by **Muse Spark Open**, the open-weight
 model, on Baseten ([results/final-open-weights.txt](results/final-open-weights.txt)): the team's planner with it
-found 49.5% within 2 hours against the square's 44.5% (+5 points, +1 to +9), half by 126 minutes instead of 197; the
+found 49.5% within 2 hours against the square's 44.5% (+5 points, +1 to +9), half by 125.5 minutes (2 h 05) instead of 197; the
 square restarted on its reading found 51.5%, as with Muse Spark. Against Muse Spark, same planner: -1.5 points (-4 to
 +0.5). The readings cost $1.65 of Baseten credit.
 
@@ -110,6 +113,9 @@ uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category 
 uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery --workers 8 \
   --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --drones 3 --lose-drone --usd-cap 4 \
   --json docs/results/final-lost-drone.json
+SPARK_BACKEND=open uv run python -m app.sar.bench --set heldout --offset 30 --seeds 200 --category dementia --imagery \
+  --workers 8 --planners spiral,spiral+spark,hedge,hedge+spark --reference spiral --drones 1 --usd-cap 4 \
+  --json docs/results/final-open-weights.json
 ```
 The bench prints both primary comparisons itself (every `<name>+spark` run next to `<name>`), with the split by
 sighting report. Results are committed to `docs/results/` with the commit they were produced from. The JSON holds every scenario's

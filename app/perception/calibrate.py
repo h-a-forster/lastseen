@@ -26,16 +26,32 @@ TERRAIN_FACTOR = {"OPEN": 1.0, "SCRUB": 1.0, "WATER": 1.0, "BUILT": 1.0, "FOREST
 
 
 def recall_by_size(records: list[dict]) -> list[dict]:
-    found, total = np.zeros(len(SIZE_BINS_PX) - 1, int), np.zeros(len(SIZE_BINS_PX) - 1, int)
+    bins = len(SIZE_BINS_PX) - 1
+    found, total = np.zeros(bins, int), np.zeros(bins, int)
+    by_photo: dict[str, np.ndarray] = {}  # per photo and bin: [found, people], for the photo-resampled interval
     for r in records:
         alarms = [c["box"] for c in r["candidates"] if c["spark"] and c["spark"]["person"]]
+        counts = by_photo.setdefault(r["photo"], np.zeros((bins, 2), int))
         for p in r["people"]:
             b = np.searchsorted(SIZE_BINS_PX, max(p[2] - p[0], p[3] - p[1]), side="right") - 1
+            hit = any(hits(a, p) for a in alarms)
             total[b] += 1
-            found[b] += any(hits(a, p) for a in alarms)
+            found[b] += hit
+            counts[b] += (hit, 1)
+    photos = np.stack([by_photo[k] for k in sorted(by_photo)])
     return [{"px": [SIZE_BINS_PX[i], SIZE_BINS_PX[i + 1]], "found": int(found[i]), "people": int(total[i]),
-             "recall": found[i] / total[i], "ci95": list(wilson(int(found[i]), int(total[i])))}
-            for i in range(len(found)) if total[i] >= 5]
+             "recall": found[i] / total[i], "ci95": list(wilson(int(found[i]), int(total[i]))),
+             "ci95_photos": photo_interval(photos[:, i])}
+            for i in range(bins) if total[i] >= 5]
+
+
+def photo_interval(counts: np.ndarray, resamples: int = 10000) -> list[float]:
+    """95% bootstrap interval for recall that resamples whole photos, since people in one photo share light and
+    ground (Wilson treats them as independent, so its interval is too narrow). `counts` is [found, people] per photo."""
+    counts = counts[counts[:, 1] > 0]
+    idx = np.random.default_rng(0).integers(0, len(counts), (resamples, len(counts)))
+    recall = counts[idx, 0].sum(1) / counts[idx, 1].sum(1)
+    return [float(q) for q in np.percentile(recall, [2.5, 97.5])]
 
 
 def pod_curve(bins: list[dict]) -> dict[str, list[float]]:

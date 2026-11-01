@@ -3,8 +3,8 @@
 Read [README.md](README.md) first, and [docs/TEAM.md](docs/TEAM.md) for the git workflow.
 
 ## Rules
-- Meta's models are the product: SAM 3.1, Muse Spark and Muse Voice Transcribe via the Meta Model API. Don't add other
-  model providers.
+- Meta's models are the product: SAM 3.1, Muse Spark and Muse Voice Transcribe via the Meta Model API, and Muse Spark
+  Open (Meta's open weights) on Baseten. Don't add other model providers.
 - Only use code, data and assets we have the rights to. Never commit `.env`, API keys, downloaded datasets or raw API
   responses (`data/` keeps them local; see `.gitignore`).
 - Work on a branch and open a pull request; `main` is protected.
