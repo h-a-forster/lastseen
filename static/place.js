@@ -70,8 +70,7 @@ document.getElementById("place-form").onsubmit = async (e) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lat: point[0], lon: point[1], heading: document.getElementById("place-heading").value || null,
-                             witness: document.getElementById("place-witness").value.trim() || null,
-                             witness_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
+                             report_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
     });
     clearInterval(timer);
     placeSay("Done: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.");

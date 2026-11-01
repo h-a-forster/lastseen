@@ -44,13 +44,14 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     monkeypatch.setattr(main.terrain, "visitor_place",
                         lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
     picked = []
-    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first, witness_s, heading_deg: picked.append(heading_deg) or 7)
+    monkeypatch.setattr(main.replay, "watchable_seed",
+                        lambda name, first, sighting_s, heading_deg: picked.append((sighting_s, heading_deg)) or 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
-    run_id = client.post("/api/place-race", json=body | {"witness": "  Seen by the church. ", "heading": "south-east"}).json()["id"]
+    run_id = client.post("/api/place-race", json=body | {"report_minute": 30, "heading": "south-east"}).json()["id"]
     (args, kwargs), = raced
-    assert args == (7, ["spiral", "hedge+spark"]) and kwargs["witness"].text == "Seen by the church."
-    assert picked == [135.0] and kwargs["subject"] == "the test subject"
+    assert args == (7, ["spiral", "hedge+spark"]) and kwargs["sighting_s"] == 1800.0
+    assert picked == [(1800.0, 135.0)] and kwargs["subject"] == "the test subject"
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone
     assert model_lock_held == [False]  # the minute-long map download doesn't make other visitors' model calls wait

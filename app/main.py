@@ -27,7 +27,7 @@ from app.perception import pool as photo_pool  # noqa: E402
 from app.perception import triage  # noqa: E402
 from app.sar import replay, terrain  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
-from app.sar.cues import COMPASS, Report  # noqa: E402
+from app.sar.cues import COMPASS  # noqa: E402
 from app.sar.interface import FleetSpec  # noqa: E402
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -181,8 +181,7 @@ async def read_brief(req: BriefRequest, request: Request):
 class PlaceRace(BaseModel):
     lat: float = Field(ge=-60, le=72)
     lon: float = Field(ge=-180, le=180)
-    witness: str | None = Field(None, max_length=300)  # the visitor's own witness report, read live by Spark
-    witness_minute: int = Field(45, ge=10, le=180)
+    report_minute: int = Field(45, ge=10, le=180)  # when a witness phones in where they saw her (right, by design)
     # where the test subject is from the start point when the witness calls (cues.COMPASS); None: the simulator picks
     heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
 
@@ -200,12 +199,11 @@ async def place_race(req: PlaceRace, request: Request):
         raise HTTPException(503, str(e))
     except ValueError as e:
         raise HTTPException(422, str(e))
-    witness = _visitor_witness(req)
     try:
-        seed = await run_in_threadpool(_pick_walk, name, req, witness)
+        seed = await run_in_threadpool(_pick_walk, name, req)
     except ValueError as e:  # no walk from here goes the chosen way
         raise HTTPException(422, str(e))
-    return {"id": (await _live(_place_race, name, seed, witness)).stem}
+    return {"id": (await _live(_place_race, name, seed, req.report_minute * 60.0)).stem}
 
 
 def _download_place(lat: float, lon: float) -> str:
@@ -213,19 +211,14 @@ def _download_place(lat: float, lon: float) -> str:
         return terrain.visitor_place(lat, lon)
 
 
-def _visitor_witness(req: PlaceRace) -> Report | None:
-    text = (req.witness or "").strip()
-    return Report(req.witness_minute * 60.0, text) if text else None
-
-
-def _pick_walk(name: str, req: PlaceRace, witness: Report | None) -> int:
+def _pick_walk(name: str, req: PlaceRace) -> int:
     heading = None if req.heading is None else COMPASS.index(req.heading) * 45.0
-    return replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None,
+    return replay.watchable_seed(name, terrain.visitor_seed(name), sighting_s=req.report_minute * 60.0,
                                  heading_deg=heading)
 
 
-def _place_race(name: str, seed: int, witness: Report | None) -> Path:
-    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name, witness=witness,
+def _place_race(name: str, seed: int, sighting_s: float) -> Path:
+    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name, sighting_s=sighting_s,
                                    subject="the test subject"))
 
 
