@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -5,6 +6,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -15,6 +17,8 @@ from fastapi.concurrency import run_in_threadpool  # noqa: E402
 from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
+from starlette.datastructures import Headers  # noqa: E402
+from starlette.staticfiles import NotModifiedResponse  # noqa: E402
 
 from app import faq, meta_api  # noqa: E402
 from app.agent import brief  # noqa: E402
@@ -23,7 +27,7 @@ from app.perception import pool as photo_pool  # noqa: E402
 from app.perception import triage  # noqa: E402
 from app.sar import replay, terrain  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
-from app.sar.cues import Report  # noqa: E402
+from app.sar.cues import COMPASS  # noqa: E402
 from app.sar.interface import FleetSpec  # noqa: E402
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -177,8 +181,9 @@ async def read_brief(req: BriefRequest, request: Request):
 class PlaceRace(BaseModel):
     lat: float = Field(ge=-60, le=72)
     lon: float = Field(ge=-180, le=180)
-    witness: str | None = Field(None, max_length=300)  # the visitor's own witness report, read live by Spark
-    witness_minute: int = Field(45, ge=10, le=180)
+    report_minute: int = Field(45, ge=10, le=180)  # when a witness phones in where they saw her (right, by design)
+    # where the test subject is from the start point when the witness calls (cues.COMPASS); None: the simulator picks
+    heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
 
 
 @app.post("/api/place-race")
@@ -194,7 +199,11 @@ async def place_race(req: PlaceRace, request: Request):
         raise HTTPException(503, str(e))
     except ValueError as e:
         raise HTTPException(422, str(e))
-    return {"id": (await _live(_place_race, name, req)).stem}
+    try:
+        seed = await run_in_threadpool(_pick_walk, name, req)
+    except ValueError as e:  # no walk from here goes the chosen way
+        raise HTTPException(422, str(e))
+    return {"id": (await _live(_place_race, name, seed, req.report_minute * 60.0)).stem}
 
 
 def _download_place(lat: float, lon: float) -> str:
@@ -202,12 +211,15 @@ def _download_place(lat: float, lon: float) -> str:
         return terrain.visitor_place(lat, lon)
 
 
-def _place_race(name: str, req: PlaceRace) -> Path:
-    text = (req.witness or "").strip()
-    witness = Report(req.witness_minute * 60.0, text) if text else None
-    seed = replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None)
-    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name,
-                                   witness=witness))
+def _pick_walk(name: str, req: PlaceRace) -> int:
+    heading = None if req.heading is None else COMPASS.index(req.heading) * 45.0
+    return replay.watchable_seed(name, terrain.visitor_seed(name), sighting_s=req.report_minute * 60.0,
+                                 heading_deg=heading)
+
+
+def _place_race(name: str, seed: int, sighting_s: float) -> Path:
+    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name, sighting_s=sighting_s,
+                                   subject="the test subject"))
 
 
 class Question(BaseModel):
@@ -293,6 +305,15 @@ class RevalidatedStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope) -> Response:
         response = await super().get_response(path, scope)
         response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    def file_response(self, full_path, stat_result, scope, status_code: int = 200) -> Response:
+        """Tag each file by its content: with every file dated 1970, the default tag (date and size) would call an edit
+        that keeps the size unchanged."""
+        etag = hashlib.md5(Path(full_path).read_bytes(), usedforsecurity=False).hexdigest()
+        response = FileResponse(full_path, status_code=status_code, stat_result=stat_result, headers={"etag": f'"{etag}"'})
+        if self.is_not_modified(response.headers, Headers(scope=scope)):
+            return NotModifiedResponse(response.headers)
         return response
 
 

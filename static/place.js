@@ -1,4 +1,4 @@
-// Search a place you know: pick a point, and the server builds the map from OpenStreetMap and records a race there.
+// Try it on any place: pick a point, and the server builds the map from OpenStreetMap and records a race there.
 
 const PLACE_SIDE_M = 3000;
 const place = { map: null, marker: null, square: null };
@@ -30,7 +30,7 @@ function initPlaceMap() {
     document.getElementById("place-map").textContent = "The map didn't load; type coordinates instead.";
     return;
   }
-  place.map = L.map("place-map", { scrollWheelZoom: false }).setView([47.365, 7.155], 11);
+  place.map = L.map("place-map").setView([47.365, 7.155], 11);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 17,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -69,11 +69,11 @@ document.getElementById("place-form").onsubmit = async (e) => {
     const { id } = await api("/api/place-race", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat: point[0], lon: point[1], witness: document.getElementById("place-witness").value.trim() || null,
-                             witness_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
+      body: JSON.stringify({ lat: point[0], lon: point[1], heading: document.getElementById("place-heading").value || null,
+                             report_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
     });
     clearInterval(timer);
-    placeSay("Done: the race is playing in section 1.");
+    placeSay("Done: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.");
     await openPlaceRace(id);
   } catch (err) {
     clearInterval(timer);

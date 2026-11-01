@@ -124,3 +124,10 @@ def test_an_answer_cut_off_is_asked_again_with_a_bigger_budget(gateway):
     gateway.setattr(meta_api.httpx, "post", post)
     assert ask().data == {"a": 1} and budgets == [6000, 12000]
 
+
+
+def test_a_word_the_transcript_says_twice_in_a_row_is_kept_once(gateway):
+    transcript = "A neighbor saw her heading heading east. She walks to the chapel up on the hill hill."
+    gateway.setattr(meta_api, "_cached_or_call", lambda *a, **k: {"response": {"transcript": transcript}, "usd": 0.0,
+                                                                   "cached": True})
+    assert meta_api.transcribe(b"RIFF")[0] == "A neighbor saw her heading east. She walks to the chapel up on the hill."

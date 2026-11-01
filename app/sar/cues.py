@@ -45,25 +45,40 @@ class Cue:
     detail: dict  # what the text claims, in numbers: bearing_deg, distance_km, minutes_ago, fit
 
 
-def reports_for(scenario: Scenario, seed: int) -> tuple[list[Report], list[Cue]]:
-    """The brief and any later reports for a scenario. Fixed by the seed, independent of the planner."""
+def reports_for(scenario: Scenario, seed: int, subject: str | None = None) -> tuple[list[Report], list[Cue]]:
+    """The brief and any later reports for a scenario. Fixed by the seed, independent of the planner. `subject`
+    replaces the person's name (a visitor's test search says "the test subject")."""
     rng = np.random.default_rng([seed, 2])
     name, age = _NAMES.get(scenario.map.category, ("Alex", 50))
+    name = subject or name
     heading = _heading_cue(scenario, rng)
     fitness = _fitness_cue(scenario, rng)
-    brief = (f"{name}, {age}, {_situation(scenario.map.category)} "
+    brief = (f"{name[0].upper()}{name[1:]}, {age}, {_situation(scenario.map.category)} "
              f"A neighbour saw {name} set off towards the {_compass(heading.detail['bearing_deg'])}. "
              f"Family say {name} {'is fit and walks a lot' if fitness.detail['fit'] else 'walks slowly and tires quickly'}.")
     reports, cues = [Report(0.0, brief)], [heading, fitness]
     if rng.random() < SIGHTING_SHARE:
         sighting = _sighting_cue(scenario, rng)
-        d = sighting.detail
-        where = ("close to the house" if d["distance_km"] < 0.2
-                 else f"roughly {d['distance_km']:.1f} km {_compass(d['bearing_deg'])} of the house")
-        reports.append(Report(sighting.t_s, f"A dog walker reports seeing someone matching {name}'s description about "
-                                            f"{d['minutes_ago']} minutes ago, {where}, {d['place']}."))
+        reports.append(Report(sighting.t_s, _sighting_text(name, sighting.detail)))
         cues.append(sighting)
     return reports, cues
+
+
+def true_sighting(scenario: Scenario, seed: int, t_s: float, subject: str | None = None) -> tuple[Report, Cue]:
+    """A sighting reported at search time `t_s` that is right: where the person was 10-40 minutes earlier (fixed by
+    the seed). For a visitor's test search, where the witness is right by design."""
+    age_s = min(np.random.default_rng([seed, 3]).uniform(*SIGHTING_AGE_S), t_s)
+    y, x = scenario.track[int((t_s - age_s) // RECORD_S)]
+    cue = Cue("sighting", True, t_s, _sighting_detail(scenario, y, x, age_s))
+    name = subject or _NAMES.get(scenario.map.category, ("Alex", 50))[0]
+    return Report(t_s, _sighting_text(name, cue.detail)), cue
+
+
+def _sighting_text(name: str, d: dict) -> str:
+    where = ("close to the house" if d["distance_km"] < 0.2
+             else f"roughly {d['distance_km']:.1f} km {_compass(d['bearing_deg'])} of the house")
+    return (f"A dog walker reports seeing someone matching {name}'s description about {d['minutes_ago']} minutes ago, "
+            f"{where}, {d['place']}.")
 
 
 def _situation(category: str) -> str:
@@ -99,10 +114,15 @@ def _sighting_cue(scenario: Scenario, rng: np.random.Generator) -> Cue:
     else:  # someone else: a plausible spot 0.3-2 km from the house
         bearing, dist = rng.uniform(0, 2 * np.pi), rng.uniform(300, 2000)
         y, x = start[0] - dist * math.cos(bearing), start[1] + dist * math.sin(bearing)
+    return Cue("sighting", true, t_s, _sighting_detail(scenario, y, x, age_s))
+
+
+def _sighting_detail(scenario: Scenario, y: float, x: float, age_s: float) -> dict:
+    """What a witness says about a spot seen `age_s` ago: bearing and distance from the house, and the ground."""
+    start = np.array(scenario.map.grid.centre_m(*scenario.map.ipp))
     dy, dx = y - start[0], x - start[1]
-    detail = {"bearing_deg": round(_bearing(dy, dx) / 45) * 45 % 360, "distance_km": round(math.hypot(dy, dx) / 1000, 1),
-              "minutes_ago": int(round(age_s / 300) * 5), "place": _place(scenario, y, x)}
-    return Cue("sighting", true, t_s, detail)
+    return {"bearing_deg": round(_bearing(dy, dx) / 45) * 45 % 360, "distance_km": round(math.hypot(dy, dx) / 1000, 1),
+            "minutes_ago": int(round(age_s / 300) * 5), "place": _place(scenario, y, x)}
 
 
 def _place(scenario: Scenario, y: float, x: float) -> str:

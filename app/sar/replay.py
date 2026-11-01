@@ -15,6 +15,7 @@ One scenario is an illustration, not evidence: the benchmark (`app.sar.bench`) i
 import argparse
 import dataclasses
 import json
+import math
 import os
 import re
 import zlib
@@ -23,7 +24,7 @@ from pathlib import Path
 from app.perception import pool as photo_pool
 from app.perception.heridal import CREDIT
 from app.sar.bench import fleet_for, make_planner
-from app.sar.cues import Cue, Report, reports_for
+from app.sar.cues import Cue, reports_for, true_sighting
 from app.sar.interface import FleetSpec
 from app.sar.planners.fixed_paths import ExpandingSquare
 from app.sar.recorder import Recorder
@@ -35,16 +36,20 @@ from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
 MAX_LANES = 3
+HEADING_TRIES = 60  # walks tried for one that goes the way a visitor chose (terrain makes some directions rare)
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
-         drones: int = 3, place: str | None = None, lose_drone: bool = False, witness: Report | None = None) -> dict:
-    """Every planner flies the same hidden walk. A `witness` report replaces the generated sighting, if any: it is a
-    visitor's own, so whether it is right is unknown and the truth panel says nothing about it."""
+         drones: int = 3, place: str | None = None, lose_drone: bool = False, sighting_s: float | None = None,
+         subject: str | None = None) -> dict:
+    """Every planner flies the same hidden walk. With `sighting_s` (a visitor's test search), a sighting that is right
+    arrives at that search time instead of the generated one, if any. `subject` replaces the person's name in the
+    reports."""
     scenario = build(seed, place, category, size)
-    reports, cues = reports_for(scenario, seed)
-    if witness is not None:
-        reports, cues = [reports[0], witness], [c for c in cues if c.kind != "sighting"]
+    reports, cues = reports_for(scenario, seed, subject)
+    if sighting_s is not None:
+        sighting, cue = true_sighting(scenario, seed, sighting_s, subject)
+        reports, cues = [reports[0], sighting], [c for c in cues if c.kind != "sighting"] + [cue]
     fleet = FleetSpec(drones=drones)
     losses = drone_losses(seed, drones) if lose_drone else None
     photos = photo_pool.shared()
@@ -56,7 +61,7 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
         lanes[name] = {"result": dataclasses.asdict(result), "events": recorder.events}
     return {
         "id": run_id(seed, category, planner_names, place, drones) + ("-lost" if lose_drone else "")
-              + (f"-witness-{zlib.crc32(f'{witness.t_s}{witness.text}'.encode()):08x}" if witness else ""),
+              + (f"-sighting-{sighting_s / 60:.0f}min" if sighting_s is not None else ""),
         "seed": seed,
         "category": category,
         "place": None if place is None else {"name": place, "title": PLACES[place].title,
@@ -74,19 +79,39 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     }
 
 
-def watchable_seed(place: str | None, first: int, witness_s: float | None = None, tries: int = 5) -> int:
-    """For a visitor's place: the first of `tries` walks from seed `first` that has a sighting (the visitor's own at
-    `witness_s`, or a generated one) which the expanding square hasn't found her before, so the race shows the planners
-    split (`first` if none). Up to the sighting both planners fly the same square, so the pick favours neither. Photos
-    are decided as in the race; no model calls."""
+def watchable_seed(place: str | None, first: int, sighting_s: float | None = None, tries: int = 5,
+                   heading_deg: float | None = None) -> int:
+    """For a visitor's place: the first of `tries` walks from seed `first` with a sighting (at `sighting_s`, or the
+    generated one) while she is still in the mapped area, which the expanding square hasn't found her
+    before, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
+    favours neither. Photos are decided as in the race; no model calls.
+    With `heading_deg`, only walks that have her within 22.5 degrees of that bearing from the start point at the
+    sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks.
+    Falls back to a walk that meets the place and direction tests, then to `first`; ValueError if a chosen direction
+    has no walk at all."""
     photos = photo_pool.shared()
-    for seed in range(first, first + tries):
+    fallback = None
+    for seed in range(first, first + (tries if heading_deg is None else HEADING_TRIES)):
         scenario = build(seed, place, "dementia")
-        sighting_s = witness_s if witness_s is not None else _sighting_s(scenario, seed)
-        if sighting_s is not None and Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s,
-                                          photos=photos).run().found_s is None:
+        seen_s = sighting_s if sighting_s is not None else _sighting_s(scenario, seed)
+        if seen_s is None or scenario.subject_at(seen_s) is None:
+            continue
+        if heading_deg is not None and abs((bearing_at(scenario, seen_s) - heading_deg + 180) % 360 - 180) > 22.5:
+            continue
+        fallback = seed if fallback is None else fallback
+        if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=seen_s,
+               photos=photos).run().found_s is None:
             return seed
-    return first
+    if fallback is None and heading_deg is not None:
+        raise ValueError("none of the simulated walks from here goes that way; try another direction")
+    return first if fallback is None else fallback
+
+
+def bearing_at(scenario: Scenario, t_s: float) -> float:
+    """Compass bearing (degrees, 0 = north) from the start point to where the person is at search time `t_s`."""
+    y, x = scenario.track[min(int(t_s // RECORD_S), len(scenario.track) - 1)]
+    start_y, start_x = scenario.map.grid.centre_m(*scenario.map.ipp)
+    return math.degrees(math.atan2(x - start_x, start_y - y)) % 360  # rows grow southwards
 
 
 def _sighting_s(scenario: Scenario, seed: int) -> float | None:

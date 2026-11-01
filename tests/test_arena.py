@@ -270,15 +270,17 @@ def test_a_visitors_place_is_refused_on_coasts_water_or_sparse_maps_and_when_osm
     terrain.search_map.cache_clear()
 
 
-def test_a_visitors_witness_replaces_the_generated_sighting_and_gets_its_own_race():
+def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_own_race():
     from app.sar import replay
-    from app.sar.cues import Report
 
     plain = replay.race(2, ["spiral"], hours=0.2, drones=1)
-    own = replay.race(2, ["spiral"], hours=0.2, drones=1, witness=Report(1800.0, "Seen by the church."))
-    assert [r["text"] for r in own["reports"]] == [plain["reports"][0]["text"], "Seen by the church."]
-    assert not any(c["kind"] == "sighting" for c in own["truth"]["cues"])  # nobody knows if the visitor's witness is right
-    assert own["id"].startswith(plain["id"] + "-witness-")
+    test = replay.race(2, ["spiral"], hours=0.2, drones=1, sighting_s=1800.0, subject="the test subject")
+    brief, sighting = (r["text"] for r in test["reports"])
+    assert brief.startswith("The test subject, 81,") and "Margaret" not in brief + sighting
+    assert "Margaret" in plain["reports"][0]["text"]
+    cue, = (c for c in test["truth"]["cues"] if c["kind"] == "sighting")
+    assert cue["true"] and cue["t_s"] == 1800.0  # a visitor's test search: the witness is right, when they chose
+    assert test["id"].startswith(plain["id"] + "-sighting-")
 
 
 def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monkeypatch):
@@ -292,6 +294,11 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
     sighting_s = replay._sighting_s(scenario, seed)
     assert sighting_s is not None  # walk 2 has none: both planners would fly the same square all race
     assert Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s).run().found_s is None
+    for bearing in (90.0, 315.0):  # a visitor's chosen direction: she is that way, on the map, when the witness calls
+        chosen = replay.watchable_seed(None, 1, sighting_s=2700.0, heading_deg=bearing)
+        walk = terrain.build(chosen, None, "dementia")
+        assert walk.subject_at(2700.0) is not None
+        assert abs((replay.bearing_at(walk, 2700.0) - bearing + 180) % 360 - 180) <= 22.5
 
 
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():

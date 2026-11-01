@@ -31,6 +31,7 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     monkeypatch.setattr(main, "LIVE_MODELS", True)
     monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
     assert client.post("/api/place-race", json={"lat": 89.0, "lon": 7.0}).status_code == 422
+    assert client.post("/api/place-race", json=body | {"heading": "up"}).status_code == 422
 
     def busy(lat, lon):
         raise main.terrain.MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute")
@@ -42,12 +43,15 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     model_lock_held = []
     monkeypatch.setattr(main.terrain, "visitor_place",
                         lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
-    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first, witness_s: 7)
+    picked = []
+    monkeypatch.setattr(main.replay, "watchable_seed",
+                        lambda name, first, sighting_s, heading_deg: picked.append((sighting_s, heading_deg)) or 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
-    run_id = client.post("/api/place-race", json=body | {"witness": "  Seen by the church. "}).json()["id"]
+    run_id = client.post("/api/place-race", json=body | {"report_minute": 30, "heading": "south-east"}).json()["id"]
     (args, kwargs), = raced
-    assert args == (7, ["spiral", "hedge+spark"]) and kwargs["witness"].text == "Seen by the church."
+    assert args == (7, ["spiral", "hedge+spark"]) and kwargs["sighting_s"] == 1800.0
+    assert picked == [(1800.0, 135.0)] and kwargs["subject"] == "the test subject"
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone
     assert model_lock_held == [False]  # the minute-long map download doesn't make other visitors' model calls wait
@@ -71,6 +75,17 @@ def test_photo_checks_are_off_by_default_and_never_spend_on_bad_input_or_past_th
 def test_browsers_check_for_a_newer_page_on_every_visit():
     for path in ("/", "/style.css", "/place.js"):
         assert client.get(path).headers["cache-control"] == "no-cache"
+
+
+def test_an_edit_that_keeps_the_size_and_date_is_still_served(tmp_path):
+    page = tmp_path / "page.js"
+    page.write_text("a = 1;")
+    os.utime(page, (0, 0))  # the hosted image dates every file 1970
+    files = TestClient(main.RevalidatedStaticFiles(directory=tmp_path))
+    etag = files.get("/page.js").headers["etag"]
+    page.write_text("a = 2;")
+    os.utime(page, (0, 0))
+    assert files.get("/page.js", headers={"If-None-Match": etag}).text == "a = 2;"
 
 
 def test_health_tells_the_page_whether_live_model_calls_are_on(monkeypatch):

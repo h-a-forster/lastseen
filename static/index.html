@@ -15,7 +15,8 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,300..800;1,62..125,300..800&display=swap" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-  <link rel="stylesheet" href="/style.css" />
+  <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
+  <link rel="stylesheet" href="/style.css?v=2" />
 </head>
 <body class="sv">
   <a class="skip" href="#race">Skip to the search replay</a>
@@ -30,7 +31,7 @@
         <a href="#race">Watch a search</a>
         <a href="#brief">Start a search</a>
         <a href="#triage">Check a photo</a>
-        <a href="#place">Your place</a>
+        <a href="#place">Try it</a>
         <a href="#faq">Questions</a>
       </nav>
       <a class="repo" href="https://github.com/h-a-forster/lastseen">Code on GitHub</a>
@@ -227,23 +228,27 @@
           <div class="sheet-title">
             <span class="sheet-no" aria-hidden="true">4</span>
             <div>
-              <h2 id="place-title">Search a place you know</h2>
-              <p class="sheet-sub">Click the map below where someone was last seen. LastSeen turns the 3&nbsp;km around it into a search area and races both planners there with one drone; the race plays in section 1.</p>
+              <h2 id="place-title">Try it on any place</h2>
+              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose and says where they saw her; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
             </div>
           </div>
         </div>
         <p class="place-note">Takes about a minute. The map data comes from OpenStreetMap's free servers, which limit how often they can be asked: if they're busy, try again shortly. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
         <div class="place-grid">
-          <div id="place-map" class="place-map" aria-label="Map: click to choose where she was last seen"></div>
+          <div id="place-map" class="place-map" aria-label="Map: click to pick the starting point of a test search"></div>
           <form id="place-form" class="place-form">
-            <label for="place-coords">Last seen at</label>
+            <label for="place-coords">Starting point</label>
             <input id="place-coords" autocomplete="off" placeholder="Click the map, or type 47.365, 7.155" />
-            <label for="place-witness">Witness report (optional)</label>
-            <textarea id="place-witness" maxlength="300" rows="3" placeholder="e.g. A cyclist saw an older woman by the church about twenty minutes ago."></textarea>
-            <p class="place-hint">The simulated person doesn't follow it, so it can be wrong, as real reports often are. Leave it empty for a generated one.</p>
-            <label for="place-minute">Report arrives after (minutes)</label>
+            <label for="place-heading">She heads</label>
+            <select id="place-heading">
+              <option value="">Any direction: the simulator picks</option>
+              <option>north</option><option>north-east</option><option>east</option><option>south-east</option>
+              <option>south</option><option>south-west</option><option>west</option><option>north-west</option>
+            </select>
+            <label for="place-minute">The witness calls after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="45" />
-            <button data-live class="hidden btn btn-ink" type="submit">Search here</button>
+            <p class="place-hint">LastSeen picks one of its simulated walks that has her that way from the starting point when the witness calls, and the witness is right. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
+            <button data-live class="hidden btn btn-ink" type="submit">Run a test search</button>
             <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
             <p id="place-status" class="place-status" role="status"></p>
           </form>
@@ -288,12 +293,12 @@
 
   <div id="status" class="hidden toast" role="status"></div>
 
-  <script src="/replay.js"></script>
-  <script src="/triage.js"></script>
-  <script src="/brief.js"></script>
-  <script src="/sheet.js"></script>
+  <script src="/replay.js?v=2"></script>
+  <script src="/triage.js?v=2"></script>
+  <script src="/brief.js?v=2"></script>
+  <script src="/sheet.js?v=2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="/place.js"></script>
-  <script src="/faq.js"></script>
+  <script src="/place.js?v=2"></script>
+  <script src="/faq.js?v=2"></script>
 </body>
 </html>

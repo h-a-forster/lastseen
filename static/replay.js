@@ -56,7 +56,7 @@ async function loadRunList(selectId) {
 
 function addVisitorRace(id) {
   // A visitor's race isn't on the public list; it is added for whoever has its id (their own page, or a shared link).
-  if (![...$("run").options].some((o) => o.value === id)) $("run").add(new Option("Your place", id), 0);
+  if (![...$("run").options].some((o) => o.value === id)) $("run").add(new Option("Your test search", id), 0);
 }
 
 async function loadRun(id) {
@@ -66,7 +66,7 @@ async function loadRun(id) {
   $("status").classList.add("hidden");
   const { rows, cols } = run.map;
   state.run = run;
-  if (id.startsWith("at-")) $("run").selectedOptions[0].textContent = `Your place · ${run.place.title}, 1 drone`;
+  if (id.startsWith("at-")) $("run").selectedOptions[0].textContent = `Your test search · ${run.place.title}, 1 drone`;
   state.scale = Math.max(1, Math.floor(600 / Math.max(rows, cols)));
   state.base = drawBaseMap(run.map, state.scale);
   state.aerial = null;
@@ -429,7 +429,7 @@ function photoHtml(s) {
       <div class="absolute inset-0" style="background:url(/api/tiles/${s.tile}.jpg) no-repeat;background-size:${1000 * k}px;background-position:${-left * k}px ${-top * k}px"></div>
       <div class="absolute border-2 ${colour}" style="left:${(x1 - left) * k - 3}px;top:${(y1 - top) * k - 3}px;width:${(x2 - x1) * k + 6}px;height:${(y2 - y1) * k + 6}px"></div>
     </div>
-    <p class="text-[10px] text-slate-500 mt-0.5">Real drone photo: ${escapeHtml(state.run.photo_credit || "")}</p>`;
+    <p class="text-[11px] text-slate-500 mt-0.5">Stand-in photo, not of this place: a real drone photo of a person her size (${escapeHtml(state.run.photo_credit || "")}). Whether the drone spots her here was decided by SAM 3.1 and Muse Spark on this photo.</p>`;
 }
 
 // ---------- playback ----------
@@ -493,7 +493,7 @@ $("time").oninput = (e) => { pause(); seek(+e.target.value); };
 ["show-heat", "show-searched", "show-truth", "show-aerial"].forEach((id) => ($(id).onchange = render));
 $("run").onchange = (e) => loadRun(e.target.value).catch((err) => showStatus(err.message));
 document.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && e.target.tagName !== "INPUT") { e.preventDefault(); $("play").click(); }
+  if (e.code === "Space" && !e.target.closest("input, textarea, select, button")) { e.preventDefault(); $("play").click(); }
 });
 $("new-race").onsubmit = async (e) => {
   e.preventDefault();
