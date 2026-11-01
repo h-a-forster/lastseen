@@ -50,10 +50,6 @@ class Grid:
     def shape(self) -> tuple[int, int]:
         return (self.rows, self.cols)
 
-    @property
-    def area_km2(self) -> float:
-        return self.rows * self.cols * self.cell_m**2 / 1e6
-
     def cell_of(self, y_m: float, x_m: float) -> tuple[int, int]:
         return (
             min(max(int(y_m // self.cell_m), 0), self.rows - 1),
