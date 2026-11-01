@@ -1,4 +1,4 @@
-// Search a place you know: pick a point, and the server builds the map from OpenStreetMap and records a race there.
+// Try it on any place: pick a point, and the server builds the map from OpenStreetMap and records a race there.
 
 const PLACE_SIDE_M = 3000;
 const place = { map: null, marker: null, square: null };

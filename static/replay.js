@@ -56,7 +56,7 @@ async function loadRunList(selectId) {
 
 function addVisitorRace(id) {
   // A visitor's race isn't on the public list; it is added for whoever has its id (their own page, or a shared link).
-  if (![...$("run").options].some((o) => o.value === id)) $("run").add(new Option("Your place", id), 0);
+  if (![...$("run").options].some((o) => o.value === id)) $("run").add(new Option("Your test search", id), 0);
 }
 
 async function loadRun(id) {
@@ -66,7 +66,7 @@ async function loadRun(id) {
   $("status").classList.add("hidden");
   const { rows, cols } = run.map;
   state.run = run;
-  if (id.startsWith("at-")) $("run").selectedOptions[0].textContent = `Your place · ${run.place.title}, 1 drone`;
+  if (id.startsWith("at-")) $("run").selectedOptions[0].textContent = `Your test search · ${run.place.title}, 1 drone`;
   state.scale = Math.max(1, Math.floor(600 / Math.max(rows, cols)));
   state.base = drawBaseMap(run.map, state.scale);
   state.aerial = null;
