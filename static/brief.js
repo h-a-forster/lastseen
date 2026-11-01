@@ -111,6 +111,15 @@ async function toggleRecording() {
   }
 }
 
+async function typeIn(box, text) {
+  // the transcript arrives in one piece; typing it in word by word shows where the box's text came from
+  const words = text.split(" ");
+  for (let i = 1; i <= words.length; i++) {
+    box.value = words.slice(0, i).join(" ");
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  }
+}
+
 async function transcribe(recording) {
   B("brief-status").textContent = "Muse Voice Transcribe is writing down the brief...";
   try {
@@ -118,7 +127,7 @@ async function transcribe(recording) {
     const response = await fetch("/api/transcribe", { method: "POST", headers: { "Content-Type": "audio/wav" }, body: wav16k(decoded) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
-    B("brief-text").value = body.transcript;
+    await typeIn(B("brief-text"), body.transcript);
     B("brief-status").textContent = "Transcribed. Check the text, then ask Muse Spark to read it.";
   } catch (err) {
     B("brief-text").value ||= brief.typed;

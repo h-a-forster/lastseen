@@ -131,7 +131,12 @@ def transcribe(wav: bytes) -> tuple[str, float, bool]:
     files = {"request": (None, json.dumps(request), "application/json"), "audio": ("audio.wav", wav, "audio/wav")}
     key_fields = {**request, "audio_sha256": hashlib.sha256(wav).hexdigest()}  # the audio goes as a file part
     record = _cached_or_call("/asr/transcribe", key_fields, files=files)
-    return record["response"].get("transcript", ""), record["usd"], record["cached"]
+    return _without_repeats(record["response"].get("transcript", "")), record["usd"], record["cached"]
+
+
+def _without_repeats(text: str) -> str:
+    """The transcripts sometimes say a word twice in a row ("heading heading east"); keep one."""
+    return re.sub(r"\b(\w+)(\s+\1\b)+", r"\1", text, flags=re.IGNORECASE)
 
 
 def _segment(fields: str) -> Segment:
