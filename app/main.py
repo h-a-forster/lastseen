@@ -6,6 +6,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -26,7 +27,7 @@ from app.perception import pool as photo_pool  # noqa: E402
 from app.perception import triage  # noqa: E402
 from app.sar import replay, terrain  # noqa: E402
 from app.sar.bench import SEED_SETS  # noqa: E402
-from app.sar.cues import Report  # noqa: E402
+from app.sar.cues import COMPASS, Report  # noqa: E402
 from app.sar.interface import FleetSpec  # noqa: E402
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -182,6 +183,8 @@ class PlaceRace(BaseModel):
     lon: float = Field(ge=-180, le=180)
     witness: str | None = Field(None, max_length=300)  # the visitor's own witness report, read live by Spark
     witness_minute: int = Field(45, ge=10, le=180)
+    # which way the test subject sets off (cues.COMPASS); None lets the simulator pick
+    heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
 
 
 @app.post("/api/place-race")
@@ -197,7 +200,12 @@ async def place_race(req: PlaceRace, request: Request):
         raise HTTPException(503, str(e))
     except ValueError as e:
         raise HTTPException(422, str(e))
-    return {"id": (await _live(_place_race, name, req)).stem}
+    witness = _visitor_witness(req)
+    try:
+        seed = await run_in_threadpool(_pick_walk, name, req, witness)
+    except ValueError as e:  # no walk from here sets off the chosen way
+        raise HTTPException(422, str(e))
+    return {"id": (await _live(_place_race, name, seed, witness)).stem}
 
 
 def _download_place(lat: float, lon: float) -> str:
@@ -205,12 +213,20 @@ def _download_place(lat: float, lon: float) -> str:
         return terrain.visitor_place(lat, lon)
 
 
-def _place_race(name: str, req: PlaceRace) -> Path:
+def _visitor_witness(req: PlaceRace) -> Report | None:
     text = (req.witness or "").strip()
-    witness = Report(req.witness_minute * 60.0, text) if text else None
-    seed = replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None)
-    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name,
-                                   witness=witness))
+    return Report(req.witness_minute * 60.0, text) if text else None
+
+
+def _pick_walk(name: str, req: PlaceRace, witness: Report | None) -> int:
+    set_off = None if req.heading is None else COMPASS.index(req.heading) * 45.0
+    return replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None,
+                                 set_off_deg=set_off)
+
+
+def _place_race(name: str, seed: int, witness: Report | None) -> Path:
+    return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name, witness=witness,
+                                   subject="the test subject"))
 
 
 class Question(BaseModel):

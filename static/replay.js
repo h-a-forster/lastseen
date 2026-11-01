@@ -429,7 +429,7 @@ function photoHtml(s) {
       <div class="absolute inset-0" style="background:url(/api/tiles/${s.tile}.jpg) no-repeat;background-size:${1000 * k}px;background-position:${-left * k}px ${-top * k}px"></div>
       <div class="absolute border-2 ${colour}" style="left:${(x1 - left) * k - 3}px;top:${(y1 - top) * k - 3}px;width:${(x2 - x1) * k + 6}px;height:${(y2 - y1) * k + 6}px"></div>
     </div>
-    <p class="text-[10px] text-slate-500 mt-0.5">Real drone photo: ${escapeHtml(state.run.photo_credit || "")}</p>`;
+    <p class="text-[11px] text-slate-500 mt-0.5">Stand-in photo, not of this place: a real drone photo of a person her size (${escapeHtml(state.run.photo_credit || "")}). Whether the drone spots her here was decided by SAM 3.1 and Muse Spark on this photo.</p>`;
 }
 
 // ---------- playback ----------

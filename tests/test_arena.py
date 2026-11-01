@@ -277,6 +277,8 @@ def test_a_visitors_witness_replaces_the_generated_sighting_and_gets_its_own_rac
     plain = replay.race(2, ["spiral"], hours=0.2, drones=1)
     own = replay.race(2, ["spiral"], hours=0.2, drones=1, witness=Report(1800.0, "Seen by the church."))
     assert [r["text"] for r in own["reports"]] == [plain["reports"][0]["text"], "Seen by the church."]
+    test = replay.race(2, ["spiral"], hours=0.2, drones=1, subject="the test subject")["reports"][0]["text"]
+    assert test.startswith("The test subject, 81,") and "Margaret" not in test and "Margaret" in plain["reports"][0]["text"]
     assert not any(c["kind"] == "sighting" for c in own["truth"]["cues"])  # nobody knows if the visitor's witness is right
     assert own["id"].startswith(plain["id"] + "-witness-")
 
@@ -292,6 +294,9 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
     sighting_s = replay._sighting_s(scenario, seed)
     assert sighting_s is not None  # walk 2 has none: both planners would fly the same square all race
     assert Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s).run().found_s is None
+    for bearing in (90.0, 315.0):  # a visitor's chosen direction: a walk that sets off that way
+        chosen = terrain.build(replay.watchable_seed(None, 1, set_off_deg=bearing), None, "dementia")
+        assert abs((replay.set_off_bearing(chosen) - bearing + 180) % 360 - 180) <= 22.5
 
 
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():

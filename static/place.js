@@ -69,11 +69,12 @@ document.getElementById("place-form").onsubmit = async (e) => {
     const { id } = await api("/api/place-race", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat: point[0], lon: point[1], witness: document.getElementById("place-witness").value.trim() || null,
+      body: JSON.stringify({ lat: point[0], lon: point[1], heading: document.getElementById("place-heading").value || null,
+                             witness: document.getElementById("place-witness").value.trim() || null,
                              witness_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 45)) }),
     });
     clearInterval(timer);
-    placeSay("Done: the race is playing in section 1. Reveal where she really was there, then try a sighting of your own.");
+    placeSay("Done: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.");
     await openPlaceRace(id);
   } catch (err) {
     clearInterval(timer);

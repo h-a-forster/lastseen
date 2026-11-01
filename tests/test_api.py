@@ -31,6 +31,7 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     monkeypatch.setattr(main, "LIVE_MODELS", True)
     monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
     assert client.post("/api/place-race", json={"lat": 89.0, "lon": 7.0}).status_code == 422
+    assert client.post("/api/place-race", json=body | {"heading": "up"}).status_code == 422
 
     def busy(lat, lon):
         raise main.terrain.MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute")
@@ -42,12 +43,14 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     model_lock_held = []
     monkeypatch.setattr(main.terrain, "visitor_place",
                         lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
-    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first, witness_s: 7)
+    picked = []
+    monkeypatch.setattr(main.replay, "watchable_seed", lambda name, first, witness_s, set_off_deg: picked.append(set_off_deg) or 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
-    run_id = client.post("/api/place-race", json=body | {"witness": "  Seen by the church. "}).json()["id"]
+    run_id = client.post("/api/place-race", json=body | {"witness": "  Seen by the church. ", "heading": "south-east"}).json()["id"]
     (args, kwargs), = raced
     assert args == (7, ["spiral", "hedge+spark"]) and kwargs["witness"].text == "Seen by the church."
+    assert picked == [135.0] and kwargs["subject"] == "the test subject"
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone
     assert model_lock_held == [False]  # the minute-long map download doesn't make other visitors' model calls wait

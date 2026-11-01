@@ -45,13 +45,15 @@ class Cue:
     detail: dict  # what the text claims, in numbers: bearing_deg, distance_km, minutes_ago, fit
 
 
-def reports_for(scenario: Scenario, seed: int) -> tuple[list[Report], list[Cue]]:
-    """The brief and any later reports for a scenario. Fixed by the seed, independent of the planner."""
+def reports_for(scenario: Scenario, seed: int, subject: str | None = None) -> tuple[list[Report], list[Cue]]:
+    """The brief and any later reports for a scenario. Fixed by the seed, independent of the planner. `subject`
+    replaces the person's name (a visitor's test search says "the test subject")."""
     rng = np.random.default_rng([seed, 2])
     name, age = _NAMES.get(scenario.map.category, ("Alex", 50))
+    name = subject or name
     heading = _heading_cue(scenario, rng)
     fitness = _fitness_cue(scenario, rng)
-    brief = (f"{name}, {age}, {_situation(scenario.map.category)} "
+    brief = (f"{name[0].upper()}{name[1:]}, {age}, {_situation(scenario.map.category)} "
              f"A neighbour saw {name} set off towards the {_compass(heading.detail['bearing_deg'])}. "
              f"Family say {name} {'is fit and walks a lot' if fitness.detail['fit'] else 'walks slowly and tires quickly'}.")
     reports, cues = [Report(0.0, brief)], [heading, fitness]

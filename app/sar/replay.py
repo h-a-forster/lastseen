@@ -15,6 +15,7 @@ One scenario is an illustration, not evidence: the benchmark (`app.sar.bench`) i
 import argparse
 import dataclasses
 import json
+import math
 import os
 import re
 import zlib
@@ -35,14 +36,17 @@ from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
 MAX_LANES = 3
+HEADING_TRIES = 40  # walks tried for one that sets off the way a visitor chose (about 1 in 8 does)
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
-         drones: int = 3, place: str | None = None, lose_drone: bool = False, witness: Report | None = None) -> dict:
+         drones: int = 3, place: str | None = None, lose_drone: bool = False, witness: Report | None = None,
+         subject: str | None = None) -> dict:
     """Every planner flies the same hidden walk. A `witness` report replaces the generated sighting, if any: it is a
-    visitor's own, so whether it is right is unknown and the truth panel says nothing about it."""
+    visitor's own, so whether it is right is unknown and the truth panel says nothing about it. `subject` replaces the
+    person's name in the reports."""
     scenario = build(seed, place, category, size)
-    reports, cues = reports_for(scenario, seed)
+    reports, cues = reports_for(scenario, seed, subject)
     if witness is not None:
         reports, cues = [reports[0], witness], [c for c in cues if c.kind != "sighting"]
     fleet = FleetSpec(drones=drones)
@@ -74,19 +78,33 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     }
 
 
-def watchable_seed(place: str | None, first: int, witness_s: float | None = None, tries: int = 5) -> int:
+def watchable_seed(place: str | None, first: int, witness_s: float | None = None, tries: int = 5,
+                   set_off_deg: float | None = None) -> int:
     """For a visitor's place: the first of `tries` walks from seed `first` that has a sighting (the visitor's own at
     `witness_s`, or a generated one) which the expanding square hasn't found her before, so the race shows the planners
-    split (`first` if none). Up to the sighting both planners fly the same square, so the pick favours neither. Photos
-    are decided as in the race; no model calls."""
+    split (else the first walk tried). Up to the sighting both planners fly the same square, so the pick favours
+    neither. Photos are decided as in the race; no model calls.
+    With `set_off_deg`, only walks that set off within 22.5 degrees of that bearing count, from up to HEADING_TRIES:
+    the walker is unchanged, this only picks among its walks. ValueError if none sets off that way."""
     photos = photo_pool.shared()
-    for seed in range(first, first + tries):
+    fallback = None
+    for seed in range(first, first + (tries if set_off_deg is None else HEADING_TRIES)):
         scenario = build(seed, place, "dementia")
+        if set_off_deg is not None and abs((set_off_bearing(scenario) - set_off_deg + 180) % 360 - 180) > 22.5:
+            continue
+        fallback = seed if fallback is None else fallback
         sighting_s = witness_s if witness_s is not None else _sighting_s(scenario, seed)
         if sighting_s is not None and Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s,
                                           photos=photos).run().found_s is None:
             return seed
-    return first
+    if fallback is None:
+        raise ValueError("none of the simulated walks from here sets off that way; try another direction")
+    return fallback
+
+
+def set_off_bearing(scenario: Scenario) -> float:
+    """Compass bearing (degrees, 0 = north) of the direction the person set off in."""
+    return math.degrees(math.atan2(math.cos(scenario.start_heading), -math.sin(scenario.start_heading))) % 360
 
 
 def _sighting_s(scenario: Scenario, seed: int) -> float | None:

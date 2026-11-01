@@ -229,7 +229,7 @@
             <span class="sheet-no" aria-hidden="true">4</span>
             <div>
               <h2 id="place-title">Try it on any place</h2>
-              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated person walks off from it, and both planners race to find her with one drone. Write the witness report yourself and watch Muse Spark read it. The race plays in section 1.</p>
+              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. Play the witness yourself and watch Muse Spark read your report. The race plays in section 1.</p>
             </div>
           </div>
         </div>
@@ -239,9 +239,15 @@
           <form id="place-form" class="place-form">
             <label for="place-coords">Starting point</label>
             <input id="place-coords" autocomplete="off" placeholder="Click the map, or type 47.365, 7.155" />
+            <label for="place-heading">She sets off towards</label>
+            <select id="place-heading">
+              <option value="">Any direction: the simulator picks</option>
+              <option>north</option><option>north-east</option><option>east</option><option>south-east</option>
+              <option>south</option><option>south-west</option><option>west</option><option>north-west</option>
+            </select>
             <label for="place-witness">Your witness report (optional)</label>
-            <textarea id="place-witness" maxlength="300" rows="3" placeholder="e.g. A cyclist saw an older woman by the church about twenty minutes ago."></textarea>
-            <p class="place-hint">She walks her own way, so a guess is usually wrong, as real reports often are; leave it empty for a generated one. From the same point and minute she always walks the same way: run it once, tick "Reveal where the person really was" in section 1, then write a sighting that's right, or wrong on purpose, and run it again to see how Muse Spark and the drone react.</p>
+            <textarea id="place-witness" maxlength="300" rows="3" placeholder="e.g. A cyclist saw an older woman heading east along the river about twenty minutes ago."></textarea>
+            <p class="place-hint">LastSeen picks one of its simulated walks that sets off that way; paths, rivers and slopes still steer her after that. Write what a witness might phone in, right or wrong on purpose (a wrong sighting shows how LastSeen hedges), or leave it empty and a simulated witness reports where she really was, right 3 times in 4. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
             <label for="place-minute">Report arrives after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="45" />
             <button data-live class="hidden btn btn-ink" type="submit">Run a test search</button>
