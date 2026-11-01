@@ -183,7 +183,7 @@ class PlaceRace(BaseModel):
     lon: float = Field(ge=-180, le=180)
     witness: str | None = Field(None, max_length=300)  # the visitor's own witness report, read live by Spark
     witness_minute: int = Field(45, ge=10, le=180)
-    # which way the test subject sets off (cues.COMPASS); None lets the simulator pick
+    # where the test subject is from the start point when the witness calls (cues.COMPASS); None: the simulator picks
     heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
 
 
@@ -203,7 +203,7 @@ async def place_race(req: PlaceRace, request: Request):
     witness = _visitor_witness(req)
     try:
         seed = await run_in_threadpool(_pick_walk, name, req, witness)
-    except ValueError as e:  # no walk from here sets off the chosen way
+    except ValueError as e:  # no walk from here goes the chosen way
         raise HTTPException(422, str(e))
     return {"id": (await _live(_place_race, name, seed, witness)).stem}
 
@@ -219,9 +219,9 @@ def _visitor_witness(req: PlaceRace) -> Report | None:
 
 
 def _pick_walk(name: str, req: PlaceRace, witness: Report | None) -> int:
-    set_off = None if req.heading is None else COMPASS.index(req.heading) * 45.0
+    heading = None if req.heading is None else COMPASS.index(req.heading) * 45.0
     return replay.watchable_seed(name, terrain.visitor_seed(name), witness_s=witness.t_s if witness else None,
-                                 set_off_deg=set_off)
+                                 heading_deg=heading)
 
 
 def _place_race(name: str, seed: int, witness: Report | None) -> Path:

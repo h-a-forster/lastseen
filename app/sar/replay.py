@@ -36,7 +36,7 @@ from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
 MAX_LANES = 3
-HEADING_TRIES = 40  # walks tried for one that sets off the way a visitor chose (about 1 in 8 does)
+HEADING_TRIES = 60  # walks tried for one that goes the way a visitor chose (terrain makes some directions rare)
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
@@ -79,32 +79,38 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
 
 
 def watchable_seed(place: str | None, first: int, witness_s: float | None = None, tries: int = 5,
-                   set_off_deg: float | None = None) -> int:
-    """For a visitor's place: the first of `tries` walks from seed `first` that has a sighting (the visitor's own at
-    `witness_s`, or a generated one) which the expanding square hasn't found her before, so the race shows the planners
-    split (else the first walk tried). Up to the sighting both planners fly the same square, so the pick favours
-    neither. Photos are decided as in the race; no model calls.
-    With `set_off_deg`, only walks that set off within 22.5 degrees of that bearing count, from up to HEADING_TRIES:
-    the walker is unchanged, this only picks among its walks. ValueError if none sets off that way."""
+                   heading_deg: float | None = None) -> int:
+    """For a visitor's place: the first of `tries` walks from seed `first` with a sighting (the visitor's own at
+    `witness_s`, or a generated one) while she is still in the mapped area, which the expanding square hasn't found her
+    before, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
+    favours neither. Photos are decided as in the race; no model calls.
+    With `heading_deg`, only walks that have her within 22.5 degrees of that bearing from the start point at the
+    sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks.
+    Falls back to a walk that meets the place and direction tests, then to `first`; ValueError if a chosen direction
+    has no walk at all."""
     photos = photo_pool.shared()
     fallback = None
-    for seed in range(first, first + (tries if set_off_deg is None else HEADING_TRIES)):
+    for seed in range(first, first + (tries if heading_deg is None else HEADING_TRIES)):
         scenario = build(seed, place, "dementia")
-        if set_off_deg is not None and abs((set_off_bearing(scenario) - set_off_deg + 180) % 360 - 180) > 22.5:
+        sighting_s = witness_s if witness_s is not None else _sighting_s(scenario, seed)
+        if sighting_s is None or scenario.subject_at(sighting_s) is None:
+            continue
+        if heading_deg is not None and abs((bearing_at(scenario, sighting_s) - heading_deg + 180) % 360 - 180) > 22.5:
             continue
         fallback = seed if fallback is None else fallback
-        sighting_s = witness_s if witness_s is not None else _sighting_s(scenario, seed)
-        if sighting_s is not None and Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s,
-                                          photos=photos).run().found_s is None:
+        if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=sighting_s,
+               photos=photos).run().found_s is None:
             return seed
-    if fallback is None:
-        raise ValueError("none of the simulated walks from here sets off that way; try another direction")
-    return fallback
+    if fallback is None and heading_deg is not None:
+        raise ValueError("none of the simulated walks from here goes that way; try another direction")
+    return first if fallback is None else fallback
 
 
-def set_off_bearing(scenario: Scenario) -> float:
-    """Compass bearing (degrees, 0 = north) of the direction the person set off in."""
-    return math.degrees(math.atan2(math.cos(scenario.start_heading), -math.sin(scenario.start_heading))) % 360
+def bearing_at(scenario: Scenario, t_s: float) -> float:
+    """Compass bearing (degrees, 0 = north) from the start point to where the person is at search time `t_s`."""
+    y, x = scenario.track[min(int(t_s // RECORD_S), len(scenario.track) - 1)]
+    start_y, start_x = scenario.map.grid.centre_m(*scenario.map.ipp)
+    return math.degrees(math.atan2(x - start_x, start_y - y)) % 360  # rows grow southwards
 
 
 def _sighting_s(scenario: Scenario, seed: int) -> float | None:
