@@ -102,6 +102,8 @@ async function toggleRecording() {
       await transcribe(new Blob(chunks));
     };
     brief.recorder.start();
+    brief.typed = B("brief-text").value;  // the box shows only what was said; put this back if transcription fails
+    B("brief-text").value = "";
     B("brief-mic").textContent = "Stop recording";
     B("brief-status").textContent = "Recording... say who is missing, where they were last seen and what witnesses said.";
   } catch (err) {
@@ -119,6 +121,7 @@ async function transcribe(recording) {
     B("brief-text").value = body.transcript;
     B("brief-status").textContent = "Transcribed. Check the text, then ask Muse Spark to read it.";
   } catch (err) {
+    B("brief-text").value ||= brief.typed;
     B("brief-status").textContent = `Could not transcribe: ${err.message}`;
   }
 }

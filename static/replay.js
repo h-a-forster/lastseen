@@ -493,7 +493,7 @@ $("time").oninput = (e) => { pause(); seek(+e.target.value); };
 ["show-heat", "show-searched", "show-truth", "show-aerial"].forEach((id) => ($(id).onchange = render));
 $("run").onchange = (e) => loadRun(e.target.value).catch((err) => showStatus(err.message));
 document.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && e.target.tagName !== "INPUT") { e.preventDefault(); $("play").click(); }
+  if (e.code === "Space" && !e.target.closest("input, textarea, select, button")) { e.preventDefault(); $("play").click(); }
 });
 $("new-race").onsubmit = async (e) => {
   e.preventDefault();

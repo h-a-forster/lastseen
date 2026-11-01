@@ -30,7 +30,7 @@ function initPlaceMap() {
     document.getElementById("place-map").textContent = "The map didn't load; type coordinates instead.";
     return;
   }
-  place.map = L.map("place-map", { scrollWheelZoom: false }).setView([47.365, 7.155], 11);
+  place.map = L.map("place-map").setView([47.365, 7.155], 11);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 17,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

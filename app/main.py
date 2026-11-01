@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -15,6 +16,8 @@ from fastapi.concurrency import run_in_threadpool  # noqa: E402
 from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
+from starlette.datastructures import Headers  # noqa: E402
+from starlette.staticfiles import NotModifiedResponse  # noqa: E402
 
 from app import faq, meta_api  # noqa: E402
 from app.agent import brief  # noqa: E402
@@ -293,6 +296,15 @@ class RevalidatedStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope) -> Response:
         response = await super().get_response(path, scope)
         response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    def file_response(self, full_path, stat_result, scope, status_code: int = 200) -> Response:
+        """Tag each file by its content: with every file dated 1970, the default tag (date and size) would call an edit
+        that keeps the size unchanged."""
+        etag = hashlib.md5(Path(full_path).read_bytes(), usedforsecurity=False).hexdigest()
+        response = FileResponse(full_path, status_code=status_code, stat_result=stat_result, headers={"etag": f'"{etag}"'})
+        if self.is_not_modified(response.headers, Headers(scope=scope)):
+            return NotModifiedResponse(response.headers)
         return response
 
 

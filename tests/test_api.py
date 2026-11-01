@@ -73,6 +73,17 @@ def test_browsers_check_for_a_newer_page_on_every_visit():
         assert client.get(path).headers["cache-control"] == "no-cache"
 
 
+def test_an_edit_that_keeps_the_size_and_date_is_still_served(tmp_path):
+    page = tmp_path / "page.js"
+    page.write_text("a = 1;")
+    os.utime(page, (0, 0))  # the hosted image dates every file 1970
+    files = TestClient(main.RevalidatedStaticFiles(directory=tmp_path))
+    etag = files.get("/page.js").headers["etag"]
+    page.write_text("a = 2;")
+    os.utime(page, (0, 0))
+    assert files.get("/page.js", headers={"If-None-Match": etag}).text == "a = 2;"
+
+
 def test_health_tells_the_page_whether_live_model_calls_are_on(monkeypatch):
     assert client.get("/api/health").json()["live_models"] is False
     monkeypatch.setattr(main, "LIVE_MODELS", True)
