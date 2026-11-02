@@ -16,9 +16,10 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=2" />
+  <link rel="stylesheet" href="/style.css?v=3" />
 </head>
-<body class="sv">
+<body class="sv" data-tint="sage">
+  <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
   <a class="skip" href="#race">Skip to the search replay</a>
 
   <header class="masthead">
@@ -39,7 +40,7 @@
   </header>
 
   <main id="top">
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero" data-tint="sage" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
         <h1 id="hero-title">From what witnesses say to where the drone searches, in seconds.</h1>
         <p class="lede">LastSeen flies a search drone for a missing person and decides where it looks. Today, what witnesses say reaches the search map by hand, or not at all. LastSeen closes that gap: <strong>Muse Spark</strong> turns every report into weighted, checked scenarios in seconds, and the drone re-plans from them and flies the search itself, breaking off mid-flight to follow a sighting. <strong>SAM&nbsp;3.1</strong> and Muse Spark check every photo for a person a few dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photos. One volunteer launches it, swaps batteries and stays in command. Tested in simulation on 200 searches fixed in advance, with detection measured on real drone photos; the search below runs over a real Swiss valley.</p>
@@ -47,7 +48,7 @@
     </section>
 
     <!-- Sheet 1: the replay race -->
-    <section id="race" class="sheet" aria-labelledby="race-title">
+    <section id="race" class="sheet" data-tint="slate" aria-labelledby="race-title">
       <div class="wrap">
         <div class="sheet-head">
           <div class="sheet-title">
@@ -78,8 +79,8 @@
               <input id="time" type="range" min="0" max="14400" step="5" value="0" aria-label="Search time" />
               <select id="speed" aria-label="Playback speed">
                 <option value="60">60×</option>
-                <option value="120">120×</option>
-                <option value="300" selected>300×</option>
+                <option value="120" selected>120×</option>
+                <option value="300">300×</option>
                 <option value="900">900×</option>
               </select>
             </div>
@@ -144,7 +145,7 @@
     </section>
 
     <!-- Sheet 2: the brief -->
-    <section id="brief" class="sheet" aria-labelledby="brief-title">
+    <section id="brief" class="sheet" data-tint="sand" aria-labelledby="brief-title">
       <div class="wrap">
         <div class="sheet-head">
           <div class="sheet-title">
@@ -190,7 +191,7 @@
     </section>
 
     <!-- Sheet 3: the photo check -->
-    <section id="triage" class="sheet" aria-labelledby="triage-title">
+    <section id="triage" class="sheet" data-tint="clay" aria-labelledby="triage-title">
       <div class="wrap">
         <div class="sheet-head">
           <div class="sheet-title">
@@ -222,7 +223,7 @@
     </section>
 
     <!-- Sheet 4: a race on a place the visitor picks -->
-    <section id="place" class="sheet" aria-labelledby="place-title">
+    <section id="place" class="sheet" data-tint="moss" aria-labelledby="place-title">
       <div class="wrap">
         <div class="sheet-head">
           <div class="sheet-title">
@@ -257,7 +258,7 @@
     </section>
 
     <!-- Questions: written answers, and a box that finds the right one -->
-    <section id="faq" class="sheet" aria-labelledby="faq-title">
+    <section id="faq" class="sheet" data-tint="sage" aria-labelledby="faq-title">
       <div class="wrap faq-wrap">
         <div class="sheet-head">
           <div class="sheet-title">
@@ -299,6 +300,7 @@
   <script src="/sheet.js?v=2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="/place.js?v=2"></script>
-  <script src="/faq.js?v=3"></script>
+  <script src="/faq.js?v=4"></script>
+  <script src="/backdrop.js?v=1"></script>
 </body>
 </html>
