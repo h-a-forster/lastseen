@@ -22,7 +22,7 @@
 /* ---------- base ---------- */
 
 .sv {
-  background: var(--paper);
+  background: var(--sheet-paper);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 16px;
@@ -41,9 +41,33 @@
 .skip { position: absolute; left: 12px; top: -48px; background: var(--ink); color: var(--paper) !important; padding: 8px 12px; z-index: 30; border-radius: var(--r-control); }
 .skip:focus { top: 12px; }
 
+/* ---------- backdrop ---------- */
+
+/* One fixed sheet of contour lines behind the page. As each section reaches the middle of the screen, the paper
+   and the lines fade to that section's tint (backdrop.js), like turning to the next map sheet. */
+.sv {
+  --sheet-paper: #cdd3c9; transition: background-color 1.2s ease;
+  --surface: color-mix(in srgb, var(--sheet-paper), white 35%); --well: color-mix(in srgb, var(--sheet-paper), var(--ink) 7%);
+}
+.sv[data-tint="slate"] { --sheet-paper: #c5cfd5; }
+.sv[data-tint="sand"] { --sheet-paper: #d9d1bd; }
+.sv[data-tint="clay"] { --sheet-paper: #d8cac1; }
+.sv[data-tint="moss"] { --sheet-paper: #c9cfb5; }
+.backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.backdrop i { position: absolute; inset: 0; mask: var(--lines) center / cover no-repeat; opacity: 0; transition: opacity 1.2s ease; }
+.backdrop [data-tint="sage"] { --lines: url("contours.svg"); background: #72857a; }
+.backdrop [data-tint="slate"] { --lines: url("contours-2.svg"); background: #5f7a8b; }
+.backdrop [data-tint="sand"] { --lines: url("contours-3.svg"); background: #8c7d58; }
+.backdrop [data-tint="clay"] { --lines: url("contours-4.svg"); background: #8d6e62; }
+.backdrop [data-tint="moss"] { --lines: url("contours-5.svg"); background: #6a784f; }
+.sv[data-tint="sage"] .backdrop [data-tint="sage"], .sv[data-tint="slate"] .backdrop [data-tint="slate"],
+.sv[data-tint="sand"] .backdrop [data-tint="sand"], .sv[data-tint="clay"] .backdrop [data-tint="clay"],
+.sv[data-tint="moss"] .backdrop [data-tint="moss"] { opacity: 0.45; }
+@media (prefers-reduced-motion: reduce) { .sv, .backdrop i { transition: none; } }
+
 /* ---------- masthead ---------- */
 
-.masthead { border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 20; }
+.masthead { border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--sheet-paper) 88%, transparent); backdrop-filter: blur(10px); transition: background-color 1.2s ease; position: sticky; top: 0; z-index: 20; }
 .masthead-row { display: flex; align-items: center; gap: 32px; height: 56px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-stretch: 88%; font-size: 19px; letter-spacing: -0.01em; text-decoration: none !important; }
 .brand-mark { width: 18px; height: 18px; fill: none; stroke: var(--red); stroke-width: 2.6; }
@@ -55,12 +79,6 @@
 /* ---------- hero ---------- */
 
 .hero { position: relative; padding: 36px 0 20px; overflow: hidden; }
-.sv::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: var(--contour);
-  mask: url("contours.svg") center / cover no-repeat;
-  opacity: 0.45;
-}
 .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 56px; align-items: end; }
 .hero h1 {
   font-size: clamp(32px, 3.3vw, 48px); line-height: 1.04; letter-spacing: -0.025em;
@@ -69,7 +87,7 @@
 .lede { font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 56ch; }
 .lede strong { color: var(--ink); font-weight: 600; }
 
-.band { background: var(--well); padding: 40px 0 44px; }
+.band { background: var(--well); transition: background-color 1.2s ease; padding: 40px 0 44px; }
 .band-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
 .band h2 { font-size: 22px; line-height: 1.15; font-weight: 650; font-stretch: 86%; letter-spacing: -0.01em; }
 .band-sub { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 40ch; }
