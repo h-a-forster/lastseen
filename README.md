@@ -23,6 +23,18 @@ records 95% of those found within 24 hours are alive, against 60% after 48 hours
 call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia.pdf)). Every search-time claim is
 tested on a simulator built for it.
 
+## What search experts told us
+We wrote to people who study and fly drone searches. Four answered our questions, and their answers shaped LastSeen:
+- **Witnesses or statistics?** "These two sources of information are not mutually exclusive; rather, they complement
+  each other." (Antonio Miguel Cruz, University of Alberta). LastSeen blends both into one probability map.
+- **Does the map change mid-search?** Jan-Hendrik Ewers (University of Glasgow) told us his drone-search planner
+  "assumes that the underlying [probability map] is static." LastSeen re-plans mid-flight when a report changes it.
+- **How reliable are sightings?** "From my own SAR experience I would say the vast majority [of sightings] have nothing
+  to do with the subject." (Robert J. Koester, dbS Productions). So the team planner hedges: when a sighting was wrong,
+  it still did as well as the standard pattern, and the demo includes a search where the sighting is wrong.
+- **What happens today?** A rescue service that flies search drones described current practice: the drone flies
+  automatically inside an area drawn by hand, and new information means recalling it and redrawing the area.
+
 ## How a search runs
 The volunteer types or says what the family told them and launches the drone. From then on the search runs itself:
 - the drone flies each battery's search on autopilot at 100 m;
