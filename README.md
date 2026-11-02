@@ -5,8 +5,10 @@
 LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
 "more art than science"
 ([MIT Technology Review, 2024](https://www.technologyreview.com/2024/05/30/1092988/ai-directed-drones-could-help-find-lost-hikers-faster/)):
-what witnesses say reaches the search map by hand, or not at all. LastSeen closes that gap. Muse Spark turns every
-report into weighted, checked scenarios in seconds. The drone re-plans from them and flies the search itself,
+what witnesses say reaches the search map by hand, or not at all. Search drones already fly their routes
+automatically, but inside an area someone draws by hand beforehand; when new information comes in mid-search, the
+drone is recalled and the area redrawn. LastSeen closes that gap. Muse Spark turns every report into weighted, checked
+scenarios in seconds. The drone re-plans from them and flies the search itself,
 breaking off its pattern mid-flight to follow a sighting. SAM 3.1 and Muse Spark check every photo for a person a few
 dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photos. One volunteer launches it, swaps
 batteries and stays in command.
