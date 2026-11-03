@@ -1,4 +1,4 @@
-"""The team's planner: multi-block sorties that reuse greedy's map stack but pack the battery."""
+"""The team's map planner flies multi-block sorties on greedy's map stack, using more of each battery."""
 
 import math
 
@@ -17,41 +17,40 @@ from app.sar.scenario import SearchMap, synthetic
 from app.sar.stats import lost_person_stats
 
 
-def _at_base(planner, drone_id: int = 0) -> DroneState:
-    y, x = planner._home
-    return DroneState(drone_id, y, x, planner.fleet.alt_m, planner.fleet.endurance_s, False, ())
+def _at_base(planner: SearchPlanner, drone: int = 0) -> DroneState:
+    return DroneState(drone, *planner._home, planner.fleet.alt_m, planner.fleet.endurance_s, False, ())
 
 
-def test_ours_packs_multiple_adjacent_blocks_into_one_sortie():
-    """Without multi-block packing this fails: a single greedy-style block leaves most of the battery unused."""
+def _ours(m: SearchMap) -> SearchPlanner:
+    planner = SearchPlanner()
+    planner.reset(m, FleetSpec(), DetectionModel.load(), lost_person_stats(), 0)
+    return planner
+
+
+def test_one_sortie_packs_several_adjacent_blocks():
+    """A single greedy-style block would leave most of the battery unused."""
+    planner = _ours(synthetic(3, category="dementia").map)
+    assert planner.plan(0.0, _at_base(planner), ())
+    assert len(planner._claimed[0]) >= 2
+
+
+def test_the_first_sortie_flies_further_than_greedys():
     m = synthetic(3, category="dementia").map
-    ours = SearchPlanner()
-    ours.reset(m, FleetSpec(), DetectionModel.load(), lost_person_stats(), 0)
-    route = ours.plan(0.0, _at_base(ours), ())
-    assert route, "ours must fly"
-    assert len(ours._claimed[0]) >= 2, "sortie should claim a multi-block tour, not one myopic block"
-
-
-def test_ours_sortie_is_longer_than_greedys_on_the_same_map():
-    m = synthetic(3, category="dementia").map
-    fleet, stats, det = FleetSpec(), lost_person_stats(), DetectionModel.load()
-    ours, greedy = SearchPlanner(), ProbabilityGreedy()
-    ours.reset(m, fleet, det, stats, 0)
-    greedy.reset(m, fleet, det, stats, 0)
+    ours, greedy = _ours(m), ProbabilityGreedy()
+    greedy.reset(m, FleetSpec(), DetectionModel.load(), lost_person_stats(), 0)
     home = m.grid.centre_m(*m.base)
-    ours_route = [(y, x) for y, x, _ in ours.plan(0.0, _at_base(ours), ())]
-    greedy_route = [(y, x) for y, x, _ in greedy.plan(0.0, DroneState(0, *home, fleet.alt_m, fleet.endurance_s, False, ()), ())]
+    at_base = DroneState(0, *home, FleetSpec().alt_m, FleetSpec().endurance_s, False, ())
+    ours_route = [w[:2] for w in ours.plan(0.0, _at_base(ours), ())]
+    greedy_route = [w[:2] for w in greedy.plan(0.0, at_base, ())]
     assert path_length([home, *ours_route, home]) > path_length([home, *greedy_route, home])
 
 
-def test_ours_frees_every_block_when_a_drone_is_lost():
-    m = synthetic(3, category="dementia").map
-    ours = SearchPlanner()
-    ours.reset(m, FleetSpec(), DetectionModel.load(), lost_person_stats(), 0)
-    first = ours.plan(0.0, _at_base(ours, 0), ())
-    assert ours.plan(0.0, _at_base(ours, 1), ()) != first
-    ours.observe(DroneLost(10.0, 0, ()))
-    assert ours.plan(10.0, _at_base(ours, 2), ()) == first
+def test_a_lost_drone_frees_all_its_blocks():
+    planner = _ours(synthetic(3, category="dementia").map)
+    first = planner.plan(0.0, _at_base(planner, 0), ())
+    assert planner.plan(0.0, _at_base(planner, 1), ()) != first
+    planner.observe(DroneLost(10.0, 0, ()))
+    assert planner.plan(10.0, _at_base(planner, 2), ()) == first
 
 
 def _flat_map() -> SearchMap:
