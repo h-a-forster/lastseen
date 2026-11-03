@@ -18,7 +18,6 @@ import json
 import math
 import os
 import re
-import zlib
 from pathlib import Path
 
 from app.perception import pool as photo_pool

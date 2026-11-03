@@ -11,7 +11,6 @@ replay concrete, it doesn't validate the table.
 """
 
 import hashlib
-import json
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -120,7 +119,6 @@ def main() -> None:
         bin_shots = [s for s in pool.shots if lo <= s.size_px < hi]
         if bin_shots:
             print(f"  {lo:>3}-{hi:<5g} px: {sum(s.detected for s in bin_shots)}/{len(bin_shots)} found")
-    print(json.dumps({"example_person_px_at_60m": round(person_px(1.65), 1)}))
 
 
 if __name__ == "__main__":
