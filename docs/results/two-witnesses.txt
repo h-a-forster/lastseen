@@ -1,0 +1,10 @@
+MODEL_MODE=replay python -m app.sar.two_witnesses (development seeds 0-199, synthetic maps; main at 6e934a8 plus this script)
+planner                       found 1h              found 2h              found 4h median min         vs spiral (end)  RTL no-fly s plan ms   air  photos  alarms missed  h/find
+spiral               43% [ 34%- 51%]     46% [ 37%- 54%]     55% [ 46%- 63%]        178                            0        0     1.4   93%     663     151    0.5     3.6
+spiral+witness       44% [ 36%- 53%]     54% [ 46%- 63%]     57% [ 48%- 65%]         90         +2% [ -3%, +6%]    0        0     1.1   93%     627     142    0.5     3.2
+hedge+spark          43% [ 34%- 51%]     53% [ 44%- 61%]     62% [ 54%- 70%]        107         +7% [ +2%,+13%]    1        0    12.1   93%     613     140    0.6     2.9
+127 scenarios; subject inside the mapped area at the start in 88% (the ceiling). Brackets: 95% intervals (Wilson; paired bootstrap for differences).
+air: share of drone time spent flying; h/find: drone flight hours per person found; photos / alarms: per search, what a reviewer would check without / with SAM 3.1 + Spark triage; missed: photos with the person in them that found nobody.
+
+Primary, hedge+spark vs the square, found within 2 h: +7.1 points (95% interval +1.6 to +12.6) -> PASS
+Spark failures: 0

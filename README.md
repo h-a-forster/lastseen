@@ -78,6 +78,12 @@ drone photo of a person her size](static/race.jpg)
   found 49%. On development scenarios the gain held when the reports were reworded the way people talk ("a 20-minute
   walk", "NE-ish", witnesses who aren't sure): 52% against 53% with plain sentences. Every number, and the plan
   written before the run: [docs/evaluation.md](docs/evaluation.md).
+- **When witnesses name a place instead, Muse Spark keeps the gain and rules lose it.** On the real valley, with
+  each sighting given as a place ("by the bridge on the Route de Montmelon"), LastSeen found 55% within 2 hours
+  against 40% for the expanding square (+14.6 points, +8.3 to +21.5). Rules written for the simulator's sentences drop
+  to the square's 40%, and a volunteer who knows every named place on the map finds 46%. When two witnesses disagree
+  and only one is right, LastSeen still beats the square by 7 points (+1.6 to +12.6). Both are development checks
+  with pass marks written before the run ([docs/evaluation.md](docs/evaluation.md#named-places-and-witnesses-who-disagree-development-checks-3-nov)).
 
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
