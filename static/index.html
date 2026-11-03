@@ -16,7 +16,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=3" />
+  <link rel="stylesheet" href="/style.css?v=4" />
 </head>
 <body class="sv" data-tint="sage">
   <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
@@ -230,7 +230,7 @@
             <span class="sheet-no" aria-hidden="true">4</span>
             <div>
               <h2 id="place-title">Try it on any place</h2>
-              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose and says where they saw her; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
+              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose and says where they saw her, in the simulator's words or your own; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
             </div>
           </div>
         </div>
@@ -240,15 +240,28 @@
           <form id="place-form" class="place-form">
             <label for="place-coords">Starting point</label>
             <input id="place-coords" autocomplete="off" placeholder="Click the map, or type 47.365, 7.155" />
-            <label for="place-heading">She heads</label>
-            <select id="place-heading">
-              <option value="">Any direction: the simulator picks</option>
-              <option>north</option><option>north-east</option><option>east</option><option>south-east</option>
-              <option>south</option><option>south-west</option><option>west</option><option>north-west</option>
-            </select>
+            <span class="place-label">Where the witness saw her (optional)</span>
+            <div class="place-row">
+              <button id="place-mark" class="btn btn-quiet" type="button" aria-pressed="false">Mark on the map</button>
+              <button id="place-unmark" class="hidden btn btn-quiet" type="button">Clear the mark</button>
+              <span id="place-seen" class="place-hint"></span>
+            </div>
+            <label for="place-witness">What the witness says</label>
+            <textarea id="place-witness" rows="3" maxlength="400" placeholder="A dog walker says he saw an old woman by the bridge about twenty minutes ago."></textarea>
+            <div data-live class="hidden place-row">
+              <button id="place-mic" class="btn btn-quiet" type="button">Speak</button>
+            </div>
+            <div id="place-heading-row" class="place-field">
+              <label for="place-heading">She heads</label>
+              <select id="place-heading">
+                <option value="">Any direction: the simulator picks</option>
+                <option>north</option><option>north-east</option><option>east</option><option>south-east</option>
+                <option>south</option><option>south-west</option><option>west</option><option>north-west</option>
+              </select>
+            </div>
             <label for="place-minute">The witness calls after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="45" />
-            <p class="place-hint">LastSeen picks one of its simulated walks that has her that way from the starting point when the witness calls, and the witness is right. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
+            <p class="place-hint">Either way the witness is right, by design. Without your own, LastSeen picks one of its simulated walks that has her that way from the starting point when the witness calls, and writes the report. With your mark and words, it picks a walk that passed within 300&nbsp;m of the mark 5 to 40 minutes before the call; Muse Spark reads only your words, never the mark. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
             <button data-live class="hidden btn btn-ink" type="submit">Run a test search</button>
             <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
             <p id="place-status" class="place-status" role="status"></p>
@@ -296,10 +309,10 @@
 
   <script src="/replay.js?v=3"></script>
   <script src="/triage.js?v=3"></script>
-  <script src="/brief.js?v=2"></script>
+  <script src="/brief.js?v=3"></script>
   <script src="/sheet.js?v=2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="/place.js?v=2"></script>
+  <script src="/place.js?v=3"></script>
   <script src="/faq.js?v=5"></script>
   <script src="/backdrop.js?v=1"></script>
 </body>

@@ -87,27 +87,29 @@ async function readBrief() {
 }
 
 // ---------- voice: record, convert to 16 kHz mono WAV in the browser, transcribe on the server ----------
+// A mic is { button, box, say(text), what, idle, listening, done }: the button that records into the text box, how to
+// show progress, and its wording. Section 4 (place.js) uses one too.
 
-async function toggleRecording() {
-  if (brief.recorder) return brief.recorder.stop();
+async function toggleRecording(mic) {
+  if (mic.recorder) return mic.recorder.stop();
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const chunks = [];
-    brief.recorder = new MediaRecorder(stream);
-    brief.recorder.ondataavailable = (e) => chunks.push(e.data);
-    brief.recorder.onstop = async () => {
+    mic.recorder = new MediaRecorder(stream);
+    mic.recorder.ondataavailable = (e) => chunks.push(e.data);
+    mic.recorder.onstop = async () => {
       stream.getTracks().forEach((t) => t.stop());
-      brief.recorder = null;
-      B("brief-mic").textContent = "Speak the brief";
-      await transcribe(new Blob(chunks));
+      mic.recorder = null;
+      mic.button.textContent = mic.idle;
+      await transcribe(mic, new Blob(chunks));
     };
-    brief.recorder.start();
-    brief.typed = B("brief-text").value;  // the box shows only what was said; put this back if transcription fails
-    B("brief-text").value = "";
-    B("brief-mic").textContent = "Stop recording";
-    B("brief-status").textContent = "Recording... say who is missing, where they were last seen and what witnesses said.";
+    mic.recorder.start();
+    mic.typed = mic.box.value;  // the box shows only what was said; put this back if transcription fails
+    mic.box.value = "";
+    mic.button.textContent = "Stop recording";
+    mic.say(mic.listening);
   } catch (err) {
-    B("brief-status").textContent = `Couldn't use the microphone (${err.message}); type the brief instead.`;
+    mic.say(`Couldn't use the microphone (${err.message}); type ${mic.what} instead.`);
   }
 }
 
@@ -120,18 +122,18 @@ async function typeIn(box, text) {
   }
 }
 
-async function transcribe(recording) {
-  B("brief-status").textContent = "Muse Voice Transcribe is writing down the brief...";
+async function transcribe(mic, recording) {
+  mic.say(`Muse Voice Transcribe is writing down ${mic.what}...`);
   try {
     const decoded = await new OfflineAudioContext(1, 16000, 16000).decodeAudioData(await recording.arrayBuffer());
     const response = await fetch("/api/transcribe", { method: "POST", headers: { "Content-Type": "audio/wav" }, body: wav16k(decoded) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
-    await typeIn(B("brief-text"), body.transcript);
-    B("brief-status").textContent = "Transcribed. Check the text, then ask Muse Spark to read it.";
+    await typeIn(mic.box, body.transcript);
+    mic.say(mic.done);
   } catch (err) {
-    B("brief-text").value ||= brief.typed;
-    B("brief-status").textContent = `Could not transcribe: ${err.message}`;
+    mic.box.value ||= mic.typed;
+    mic.say(`Could not transcribe: ${err.message}`);
   }
 }
 
@@ -153,6 +155,11 @@ function wav16k(buffer) {
 
 B("brief-read").onclick = readBrief;
 B("brief-open").onchange = (e) => (B("brief-read").textContent = e.target.checked ? "Read with Muse Spark Open" : "Read with Muse Spark");
-B("brief-mic").onclick = toggleRecording;
+const briefMic = {
+  button: B("brief-mic"), box: B("brief-text"), say: (text) => (B("brief-status").textContent = text),
+  what: "the brief", idle: "Speak the brief", done: "Transcribed. Check the text, then ask Muse Spark to read it.",
+  listening: "Recording... say who is missing, where they were last seen and what witnesses said.",
+};
+B("brief-mic").onclick = () => toggleRecording(briefMic);
 B("brief-spark").onchange = (e) => { brief.showSpark = e.target.checked; drawBrief(); };
 showBriefExample().catch(() => B("brief").classList.add("hidden"));

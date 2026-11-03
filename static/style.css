@@ -332,7 +332,10 @@
 .place-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .place-map { height: 420px; border: 1px solid var(--ink); border-radius: var(--r-frame); background: var(--well); }
 .place-form { display: flex; flex-direction: column; gap: 6px; }
-.place-form label { font-size: 13px; font-weight: 600; margin-top: 8px; }
+.place-form label, .place-label { font-size: 13px; font-weight: 600; margin-top: 8px; }
+.place-field { display: flex; flex-direction: column; gap: 6px; }
+.place-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.place-form .place-row button { margin-top: 0; }
 .sv .place-form input, .sv .place-form textarea, .sv .place-form select { font: inherit; font-size: 15px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-control); color: var(--ink); }
 .place-form button { margin-top: 12px; align-self: flex-start; }
 .place-hint { font-size: 12px; color: var(--ink-3); }
