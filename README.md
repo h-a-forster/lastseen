@@ -202,5 +202,11 @@ Commit `be7036a` is a generic FastAPI starter template written beforehand; it co
 The two commits on 26 Oct, kickoff day, are setup only (model API routing, spend guard, team docs, licence). All
 product code was written during the event, from 28 Oct.
 
+Zhe, an accepted participant, wrote parts of the map planner (`app/planner/__init__.py`) and its tests early in the
+week, then withdrew from the hackathon for personal reasons. Following the organisers' guidance, that code has been
+rewritten from a description of what it does, and the project no longer contains any of his code. The rewritten
+planner finds the person at the same time as before in every held-out scenario, so the results above are unchanged.
+His original commits (`2f97915`, `cb5da38`, `67281a6`) remain in the git history.
+
 ## License
 MIT
