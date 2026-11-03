@@ -292,6 +292,8 @@ def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_
     cue, = (c for c in own["truth"]["cues"] if c["kind"] == "sighting")
     assert cue["true"] and cue["detail"] == _sighting_detail(scenario, *spot, 600.0)  # where she really was then
 
+
+
 def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monkeypatch):
     from app.sar import replay
     from app.sar.interface import FleetSpec
