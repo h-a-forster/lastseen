@@ -206,12 +206,13 @@ function render() {
   }
   $("clock").textContent = `${clock(t)} in`;
   $("time").value = t;
-  $("result-line").classList.toggle("hidden", t < state.endT && !$("show-truth").checked);
+  const anyFound = state.lanes.some((lane) => lane.found && t >= lane.found.t_s);
+  $("result-line").classList.toggle("hidden", t < state.endT && !anyFound && !$("show-truth").checked);
   updateFeed();
 }
 
 function resultLine() {
-  // Every lane's find time from the run file, fastest first; shown once playback ends or the truth is revealed.
+  // Every lane's find time from the run file, fastest first; shown from the first find, or when the truth is revealed.
   const finds = state.lanes.map((lane) => [state.run.lanes[lane.name].result.found_s, label(lane.name)])
     .sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity));
   const notFound = `not found in ${clock(state.run.hours * 3600)}`;
@@ -522,13 +523,15 @@ async function showLiveControls() {
   $("new-race").classList.toggle("hidden", !health.record_races);
 }
 
-// A shared link can open a race paused at a moment: /?race=<id>&t=40 (minutes into the search). Otherwise it plays.
+// A shared link can start a race at a moment: /?race=<id>&t=40 (minutes into the search).
 const link = new URLSearchParams(location.search);
 loadRunList(link.get("race")).then(() => {
   if (!state.run) return;
   const minutes = Number(link.get("t"));
-  if (!link.has("t") || !Number.isFinite(minutes)) return play();
-  seek(minutes * 60);
-  $("race").scrollIntoView();
+  if (link.has("t") && Number.isFinite(minutes)) {
+    seek(minutes * 60);
+    $("race").scrollIntoView();
+  }
+  play();
 }).catch((err) => showStatus(`Could not load races: ${err.message}`));
 showLiveControls();

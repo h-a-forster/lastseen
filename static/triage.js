@@ -5,9 +5,11 @@ const T = (id) => document.getElementById(id);
 const THUMB_PX = 96;
 
 async function showExample() {
-  const response = await fetch("/api/triage/example");
+  const response = await fetch("/api/triage/example", { cache: "no-cache" });  // revalidates; unchanged costs a 304
   if (!response.ok) return T("triage").classList.add("hidden");
-  showTriage(await response.json(), "/api/triage/example.jpg");
+  const result = await response.json();
+  // The photo is cached for a day, so its URL names the example: a new example never shows the old photo.
+  showTriage(result, `/api/triage/example.jpg?photo=${encodeURIComponent(result.name)}`);
 }
 
 function showTriage(result, imageUrl) {
@@ -16,13 +18,14 @@ function showTriage(result, imageUrl) {
   const labelled = result.people_labelled || [];
   const order = [...result.candidates].sort((a, b) => b.alarm - a.alarm || b.sam - a.sam);
   const missed = labelled.filter((b) => !result.candidates.some((c) => c.alarm && overlaps(c.box, b)));
+  const unlabelled = (c) => labelled.length && !labelled.some((b) => overlaps(c.box, b));
   T("triage-photo").innerHTML = `<img src="${imageUrl}" alt="Drone photo being checked" class="w-full rounded">` +
     missed.map((b) => `<div class="absolute border-2 border-dashed border-rose-400" style="${pct(pad(b, 18))}" title="missed person"></div>`).join("") +
     order.map((c, i) => `<div class="absolute border-2 ${c.alarm ? "border-green-400" : "border-slate-400/80"}" style="${pct(pad(c.box, 18))}"><span class="absolute -top-5 left-0 text-xs font-mono ${c.alarm ? "text-green-300" : "text-slate-300"}">${i + 1}</span></div>`).join("");
   T("triage-list").innerHTML = order.length
     ? order.map((c, i) => `<li class="flex gap-2 items-start">${thumb(imageUrl, c.box, w, h)}<div>
         <span class="font-mono text-xs text-slate-400">${i + 1}</span>
-        <span class="${c.alarm ? "text-green-300 font-medium" : "text-slate-300"}">${c.alarm ? "Alarm: check this spot" : c.spark ? "Dismissed by Spark" : "Not checked (low SAM score)"}</span>
+        <span class="${c.alarm ? "text-green-300 font-medium" : "text-slate-300"}">${c.alarm ? (unlabelled(c) ? "Alarm: nobody is labelled here" : "Alarm: check this spot") : c.spark ? "Dismissed by Spark" : "Not checked (low SAM score)"}</span>
         <div class="text-xs text-slate-400">${c.spark ? `Spark: “${escapeText(c.spark.looks_like)}” (${Math.round(c.spark.confidence * 100)}%) · ` : ""}SAM 3.1: ${Math.round(c.sam * 100)}%</div>
       </div></li>`).join("")
     : `<li class="text-slate-400">SAM 3.1 proposed nobody in this photo.</li>`;
@@ -35,7 +38,9 @@ function showTriage(result, imageUrl) {
     `<span class="text-green-300 font-medium">${result.alarms} alarm${result.alarms === 1 ? "" : "s"}</span> after Muse Spark` +
     (labelled.length ? ` · finds ${found} of the ${labelled.length} people labelled in this photo (misses dashed red)` : "") +
     ` · model calls $${result.usd.toFixed(3)}${result.cached ? " (replayed from cache)" : ""}`;
-  T("triage-credit").textContent = result.credit ? `Example photo: ${result.name}. ${result.credit}` : "Your photo is checked and then discarded; it is not stored.";
+  T("triage-credit").textContent = result.credit
+    ? `Example photo: ${result.name}. ${result.note ? `${result.note} ` : ""}${result.credit}`
+    : "Your photo is checked and then discarded; it is not stored.";
 }
 
 function pad(box, px) {

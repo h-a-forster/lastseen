@@ -43,7 +43,7 @@ The volunteer types or says what the family told them and launches the drone. Fr
   needed;
 - when the battery runs low the drone flies home, the volunteer swaps it, and the search carries on.
 
-The volunteer stays in command, as the law requires, and the ground team confirms any find. LastSeen is designed
+The volunteer stays in command, as EU drone rules require, and the ground team confirms any find. LastSeen is designed
 around the radio link a drone keeps with its base, which is how a new leg reaches it mid-flight. LastSeen also expects each photo back as it is taken: in
 the simulator's flight plan that is one photo of about 5 MB every 10 seconds, around 4 Mbit/s. Some enterprise drones
 can send photos during flight, and on others a small onboard computer with a 4G modem can. Where photos only come off
@@ -115,7 +115,7 @@ points, 95% interval +1 to +9); the square restarted on its reading found 51.5%,
 run was added after the evaluation plan ([results](docs/results/final-open-weights.txt)). All 301 readings came back without an error, and our checks matter more here because Baseten
 doesn't enforce the JSON schema for this model; an answer cut off at the token limit is asked again with twice the
 budget. On the photo check's test tiles, SAM 3.1 + Muse Spark
-Open found 177 of 265 people and Muse Spark 179 (a one-off script, not in the repo). On the page, "Use open
+Open found 177 of 265 people and Muse Spark 179, with the same false-alarm rate (`python -m app.perception.gate_open`). On the page, "Use open
 weights" reads a brief with Muse Spark Open, and the question box runs on Muse Spark Open for every visitor: it may
 only return the ids of written answers, so an open-weight model routes the questions and never writes the text. Open weights mean a search team
 isn't tied to one hosted API; we tested them through Baseten, not on our own hardware.
@@ -125,10 +125,16 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
   empty ground; the simulator uses the measured rates by person size (`data/pod_table.json`).
 - **The simulator can't grade its own homework.** Planners search with published lost-person statistics, while the
   hidden person follows behaviour rules; stress tests make the person behave unlike those statistics.
+- **The hidden person walks as far as real ones.** The walk's speed, drift and moving time were fitted so that, over
+  1,000 simulated walks, the distances people with dementia end up from where they were last seen match the published
+  records: median 0.79 km against 0.80 km, and within 5% at the 25th and 75th percentiles (`python -m
+  app.sar.walker_check`). The simulated person ends up farther from paths than the published average (most real
+  subjects are found within about 70 m of one). That is the search a drone is for: someone near a path is usually
+  found by searchers walking it, and the drone is needed once they have left the paths.
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
-- **70 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+- **72 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
   answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it

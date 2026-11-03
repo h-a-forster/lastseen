@@ -28,7 +28,10 @@ from app.perception.verify import _jpeg, verify
 
 MAX_CHECKS = 30  # Spark checks per photo, most confident proposals first; bounds the cost of a crowded photo
 MAX_PIXELS = 24_000_000  # larger photos are refused rather than tiled into dozens of calls
-EXAMPLE_PHOTO = "test_GRO_0008"  # HERIDAL test photo shown on the page before anyone uploads one
+EXAMPLE_PHOTO = "test_ZRI_0006"  # HERIDAL test photo shown on the page before anyone uploads one
+# What we saw looking at the example's alarms where the dataset labels nobody (alarms 4 and 5 on the page).
+EXAMPLE_NOTE = ("The dataset labels 3 people here. Of the 2 alarms where nobody is labelled, number 4 is a person "
+                "walking on the path under a tree, missed by the labellers; number 5 is unclear.")
 EXAMPLE_DIR = Path(__file__).resolve().parents[2] / "data" / "triage"
 EXAMPLE_WIDTH_PX = 2000  # the page shows a smaller copy; boxes are stored in the original photo's pixels
 
@@ -77,7 +80,7 @@ def write_example() -> Path:
     os.environ["MODEL_MODE"] = "replay"
     photo = next(p for p in photos("test") if p.id == EXAMPLE_PHOTO)
     image = load(photo.path.read_bytes())
-    result = {**triage(image), "name": f"HERIDAL {photo.id}", "credit": CREDIT,
+    result = {**triage(image), "name": f"HERIDAL {photo.id}", "credit": CREDIT, "note": EXAMPLE_NOTE,
               "people_labelled": [[round(v) for v in box] for box in photo.people]}
     EXAMPLE_DIR.mkdir(parents=True, exist_ok=True)
     image.resize((EXAMPLE_WIDTH_PX, round(image.height * EXAMPLE_WIDTH_PX / image.width))).save(

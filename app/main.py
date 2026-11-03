@@ -1,3 +1,8 @@
+"""The web app: recorded races, and the page's paid model features (photo check, brief, transcript, help box).
+
+Settings come from the environment; `app.meta_api` loads `.env` when it is imported, before they are read below.
+"""
+
 import hashlib
 import json
 import os
@@ -8,27 +13,23 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Literal
 
-from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+from starlette.datastructures import Headers
+from starlette.staticfiles import NotModifiedResponse
 
-load_dotenv()
-
-from fastapi import FastAPI, HTTPException, Request  # noqa: E402
-from fastapi.concurrency import run_in_threadpool  # noqa: E402
-from fastapi.responses import FileResponse, Response  # noqa: E402
-from fastapi.staticfiles import StaticFiles  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
-from starlette.datastructures import Headers  # noqa: E402
-from starlette.staticfiles import NotModifiedResponse  # noqa: E402
-
-from app import faq, meta_api  # noqa: E402
-from app.agent import brief  # noqa: E402
-from app.meta_api import ModelCallError, SpendCapReached  # noqa: E402
-from app.perception import pool as photo_pool  # noqa: E402
-from app.perception import triage  # noqa: E402
-from app.sar import replay, terrain  # noqa: E402
-from app.sar.bench import SEED_SETS  # noqa: E402
-from app.sar.cues import COMPASS  # noqa: E402
-from app.sar.interface import FleetSpec  # noqa: E402
+from app import faq, meta_api
+from app.agent import brief
+from app.meta_api import ModelCallError, SpendCapReached
+from app.perception import pool as photo_pool
+from app.perception import triage
+from app.sar import replay, terrain
+from app.sar.bench import SEED_SETS
+from app.sar.cues import COMPASS
+from app.sar.interface import FleetSpec
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -127,7 +128,7 @@ def get_tile(tile_id: str):
 
 
 LIVE_MODELS = os.getenv("LIVE_MODELS") == "1"  # paid photo checks, briefs and transcripts: off unless set up for it
-PAID_PER_HOUR = 10  # paid requests per visitor address per hour, all kinds together
+PAID_PER_HOUR = 60  # paid requests per visitor address per hour, all kinds together (judges may share one address)
 MAX_UPLOAD_BYTES = 20_000_000
 _paid_times: dict[str, deque] = defaultdict(deque)
 
