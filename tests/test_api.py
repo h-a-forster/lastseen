@@ -3,6 +3,7 @@ checks that are switched off, aren't images, or come too often."""
 
 import io
 import json
+import math
 import os
 
 from fastapi.testclient import TestClient
@@ -32,6 +33,10 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
     assert client.post("/api/place-race", json={"lat": 89.0, "lon": 7.0}).status_code == 422
     assert client.post("/api/place-race", json=body | {"heading": "up"}).status_code == 422
+    spot = {"seen_lat": 47.37, "seen_lon": 7.16}
+    words = {"witness_text": "  Saw an old woman by the bridge twenty minutes ago.  "}
+    for refused in (spot, words, spot | words | {"heading": "east"}, words | {"seen_lat": 47.39, "seen_lon": 7.16}):
+        assert client.post("/api/place-race", json=body | refused).status_code == 422  # half a witness; 2.8 km north
 
     def busy(lat, lon):
         raise main.terrain.MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute")
@@ -45,16 +50,21 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
                         lambda lat, lon: model_lock_held.append(main._model_lock.locked()) or "at-47365n-7155e")
     picked = []
     monkeypatch.setattr(main.replay, "watchable_seed",
-                        lambda name, first, sighting_s, heading_deg: picked.append((sighting_s, heading_deg)) or 7)
+                        lambda name, first, sighting_s, heading_deg, seen_m: picked.append((sighting_s, heading_deg,
+                                                                                            seen_m)) or 7)
     raced = []
     monkeypatch.setattr(main.replay, "race", lambda *a, **k: raced.append((a, k)) or {"id": "at-47365n-7155e-race"})
     run_id = client.post("/api/place-race", json=body | {"report_minute": 30, "heading": "south-east"}).json()["id"]
-    (args, kwargs), = raced
+    client.post("/api/place-race", json=body | spot | words)
+    (args, kwargs), (_, witnessed) = raced
     assert args == (7, ["spiral", "hedge+spark"]) and kwargs["sighting_s"] == 1800.0
-    assert picked == [(1800.0, 135.0)] and kwargs["subject"] == "the test subject"
+    assert picked[0] == (1800.0, 135.0, None) and kwargs["subject"] == "the test subject" and kwargs["witness"] is None
+    text, (y_m, x_m) = witnessed["witness"]
+    assert text == words["witness_text"].strip() and picked[1] == (2700.0, None, (y_m, x_m))
+    assert abs(y_m - (1500 - 0.005 * 111_195)) < 1 and abs(x_m - 1500 - 0.005 * 111_195 * math.cos(math.radians(47.365))) < 1
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone
-    assert model_lock_held == [False]  # the minute-long map download doesn't make other visitors' model calls wait
+    assert model_lock_held == [False, False]  # the minute-long map download doesn't make other visitors' model calls wait
 
 
 def test_photo_checks_are_off_by_default_and_never_spend_on_bad_input_or_past_the_hourly_limit(monkeypatch):

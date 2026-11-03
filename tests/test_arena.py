@@ -282,6 +282,15 @@ def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_
     assert cue["true"] and cue["t_s"] == 1800.0  # a visitor's test search: the witness is right, when they chose
     assert test["id"].startswith(plain["id"] + "-sighting-")
 
+    from app.sar.cues import _sighting_detail
+    scenario = terrain.build(3, None, "dementia")  # walk 3 sets off at once (walk 2 sits still at first)
+    spot = tuple(scenario.track[20])  # where she was at 20 minutes, 10 minutes before the call
+    words = "A cyclist saw an old woman by the barn about ten minutes ago."
+    own = replay.race(3, ["spiral"], hours=0.2, drones=1, sighting_s=1800.0, subject="the test subject",
+                      witness=(words, spot))
+    assert own["reports"][1] == {"t_s": 1800.0, "text": words}  # the visitor's words, as they are
+    cue, = (c for c in own["truth"]["cues"] if c["kind"] == "sighting")
+    assert cue["true"] and cue["detail"] == _sighting_detail(scenario, *spot, 600.0)  # where she really was then
 
 def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monkeypatch):
     from app.sar import replay
@@ -299,6 +308,13 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
         walk = terrain.build(chosen, None, "dementia")
         assert walk.subject_at(2700.0) is not None
         assert abs((replay.bearing_at(walk, 2700.0) - bearing + 180) % 360 - 180) <= 22.5
+    spot = tuple(terrain.build(3, None, "dementia").track[40])  # a visitor's witness spot, off walk 1's way
+    chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=spot)
+    walk = terrain.build(chosen, None, "dementia")
+    window = walk.track[(3000 - 2400) // 60:(3000 - 300) // 60 + 1]  # 5-40 minutes before the call
+    assert chosen != 1 and np.hypot(*(window - spot).T).min() <= 300.0 and walk.subject_at(3000.0) is not None
+    with pytest.raises(ValueError, match="none of the simulated walks passes there"):
+        replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(-5000.0, -5000.0))
 
 
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():
