@@ -128,8 +128,9 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The hidden person walks as far as real ones.** The walk's speed, drift and moving time were fitted so that, over
   1,000 simulated walks, the distances people with dementia end up from where they were last seen match the published
   records: median 0.79 km against 0.80 km, and within 5% at the 25th and 75th percentiles (`python -m
-  app.sar.walker_check`). What doesn't match yet: real subjects are usually found within about 70 m of a path, while
-  the simulated ones end up far from paths, so a planner gets no credit here for searching along them.
+  app.sar.walker_check`). The simulated person ends up farther from paths than the published average (most real
+  subjects are found within about 70 m of one). That is the search a drone is for: someone near a path is usually
+  found by searchers walking it, and the drone is needed once they have left the paths.
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).

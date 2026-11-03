@@ -128,7 +128,7 @@ def get_tile(tile_id: str):
 
 
 LIVE_MODELS = os.getenv("LIVE_MODELS") == "1"  # paid photo checks, briefs and transcripts: off unless set up for it
-PAID_PER_HOUR = 40  # paid requests per visitor address per hour, all kinds together (judges may share one address)
+PAID_PER_HOUR = 60  # paid requests per visitor address per hour, all kinds together (judges may share one address)
 MAX_UPLOAD_BYTES = 20_000_000
 _paid_times: dict[str, deque] = defaultdict(deque)
 
