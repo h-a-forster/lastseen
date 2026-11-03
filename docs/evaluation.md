@@ -123,6 +123,8 @@ find times and which report details were true, so every number above can be reco
 
 ## Known limits
 - The scenarios are synthetic maps with a simulated walker; detection rates come from one dataset of staged scenes.
+- The walker matches the published distances for dementia but not the distance from paths (`app.sar.walker_check`,
+  1,000 walks: median 1.1 km from a path against 15 m published), so searching along paths earns no credit.
 - Forest detection is an assumption (0.4 of open ground), not a measurement.
 - Repeated photos of the same spot on different sorties are treated as independent chances.
 - Each photo is checked the moment it is taken, as if the drone sends its photos during flight. Without that link a
