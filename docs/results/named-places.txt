@@ -1,0 +1,14 @@
+MODEL_MODE=replay python -m app.sar.named_places (development seeds 0-999, Saint-Ursanne; main at 6e934a8 plus this script)
+Named places:
+planner                       found 1h              found 2h              found 4h median min         vs spiral (end)  RTL no-fly s plan ms   air  photos  alarms missed  h/find
+spiral               35% [ 27%- 43%]     40% [ 33%- 48%]     60% [ 52%- 67%]        169                            0        0     2.0   92%     708     161    0.8     3.5
+spiral+witness       35% [ 27%- 43%]     40% [ 33%- 48%]     60% [ 52%- 67%]        169         +0% [ +0%, +0%]    0        0     2.7   92%     708     161    0.8     3.5
+spiral+named         35% [ 28%- 44%]     46% [ 38%- 54%]     58% [ 49%- 65%]        167         -2% [ -7%, +3%]    0        0     1.4   93%     697     160    0.9     3.6
+hedge+spark          34% [ 27%- 42%]     55% [ 47%- 63%]     65% [ 57%- 73%]        105         +6% [ -1%,+13%]    0        0    15.9   92%     636     145    1.1     2.8
+144 scenarios; subject inside the mapped area at the start in 93% (the ceiling). Brackets: 95% intervals (Wilson; paired bootstrap for differences).
+air: share of drone time spent flying; h/find: drone flight hours per person found; photos / alarms: per search, what a reviewer would check without / with SAM 3.1 + Spark triage; missed: photos with the person in them that found nobody.
+
+Primary, hedge+spark named vs the square, found within 2 h: +14.6 points (95% interval +8.3 to +21.5) -> PASS
+Secondary, hedge+spark named vs template wording: -1.4 points (95% interval -4.9 to +2.1) -> PASS
+Rules for the template (spiral+witness), template vs named wording: +8.3 points (95% interval +3.5 to +13.2)
+Spark failures: 0

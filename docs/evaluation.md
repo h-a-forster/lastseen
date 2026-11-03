@@ -141,8 +141,42 @@ find times and which report details were true, so every number above can be reco
   talk (distances in miles or minutes' walk, "NE-ish", witnesses who aren't sure; design and pass marks written down
   before the run): the team's planner with Spark found 52% within 2 h against 53% on the templates (-1.5 points,
   -3.5 to 0; 3 of 200 changed), meeting its pass mark, while the share of Spark's probability within 500 m of the
-  named spot fell from 0.38 to 0.33, missing its pass mark (90% of the template value). Named places and reports that
-  disagree are still untested.
+  named spot fell from 0.38 to 0.33, missing its pass mark (90% of the template value). Witnesses who name a place,
+  and witnesses who disagree, are tested in the next section.
+
+## Named places and witnesses who disagree (development checks, 3 Nov)
+Two checks added after the held-out run, on development seeds only, each with its design and pass marks written in
+its script before any reading was paid for, and run once. Both pass. One drone, photo mode, 4 h.
+
+**Witnesses who name a place** (`python -m app.sar.named_places`,
+[results](results/named-places.txt)). On the Saint-Ursanne map, every sighting made within 400 m of a named place
+(and at least 0.3 km from the house) is reworded to give the place instead of a distance and direction: "by the
+bridge on the Route de Montmelon", "just outside Outremont". Nothing else changes, and mistaken witnesses are
+reworded the same way. 144 of 1,000 development scenarios qualify.
+
+| Found within 2 h | Named place | Template wording |
+|---|---|---|
+| Expanding square alone | 40% | 40% |
+| Rules for the template (`spiral+witness`) | 40% | 49% |
+| A volunteer who knows every named place (`spiral+named`) | 46% | |
+| Team planner + Muse Spark | **55%** | 56% |
+
+- Primary: the team's planner with Spark against the square, +14.6 points (95% interval +8.3 to +21.5); pass.
+- Secondary: named places against the template wording for the same planner, -1.4 points (-4.9 to +2.1); pass
+  (mark: within 5 points).
+- The rules lose their whole gain (+8.3 points on the template, +0 on names); Spark keeps nearly all of it, and beats
+  a volunteer who knows every place on the map by 9 points (+2.8 to +15.3). Half found by 105 min against 169 for
+  the square.
+
+**Two witnesses who disagree** (`python -m app.sar.two_witnesses`,
+[results](results/two-witnesses.txt)). Every development scenario with a sighting gets a second one 10-20 minutes
+later, in the same template wording so that rules read both exactly; a coin toss decides which of the two is right,
+and the other names a spot 1-2 km from where she was. 127 of 200 scenarios.
+
+- Primary: the team's planner with Spark found 53% within 2 h against 46% for the square, +7.1 points (+1.6 to
+  +12.6); pass.
+- Against a volunteer who restarts the square on each call as it comes in (`spiral+witness`, 54%): level at 2 h
+  (-1.6, -6.3 to +3.1), ahead by 4 h (62% against 57%, +5.5, +0.8 to +10.2).
 
 ## Changes on 29 Oct (before any held-out seed was run)
 - **Height 60 m → 100 m.** The altitude sweep on development seeds (`docs/parameters.md`) found more people within

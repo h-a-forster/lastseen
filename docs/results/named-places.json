@@ -1,0 +1,5739 @@
+{
+ "design": "Named-place test: witnesses who say where they saw her by a place's name, not by distance and direction.\n\nThe simulator's sighting report says \"roughly 1.2 km north-east of the house\", which rules written for that template\nread as well as Muse Spark does (docs/evaluation.md, Known limits). Real witnesses say \"by the chapel\" instead. On the\nSaint-Ursanne map, whose named places come from OpenStreetMap and are given to Spark with the map, this test rewrites\neach sighting that happened near a named place so that it names the place instead, and nothing else.\n\nFixed before any reading was paid for (dev seeds only; the held-out set stays unseen):\n- Scenarios: Saint-Ursanne, dementia, one drone, photo mode, 4 h, dev seeds 0-999. Kept: those whose sighting spot\n  (right or mistaken) is at least 0.3 km from the house and within 400 m of a named place at least 0.2 km from it.\n- Primary: `hedge+spark` with named places against the expanding square alone, found within 2 h; passes if the 95%\n  interval is above 0.\n- Secondary: `hedge+spark` with named places against the same scenarios worded as the template, within 5 points.\n- Reported alongside: `spiral+witness` (rules for the template) and `spiral+named`, a volunteer who knows every named\n  place on the map and restarts the square there.",
+ "scenarios": [
+  {
+   "seed": 8,
+   "t_s": 4101.845532745468,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 197
+  },
+  {
+   "seed": 11,
+   "t_s": 5368.6202801668815,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 268
+  },
+  {
+   "seed": 15,
+   "t_s": 5267.011171957598,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 136
+  },
+  {
+   "seed": 19,
+   "t_s": 2619.197796133514,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 376
+  },
+  {
+   "seed": 20,
+   "t_s": 4170.018637235511,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 217
+  },
+  {
+   "seed": 30,
+   "t_s": 1979.065324937955,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 340
+  },
+  {
+   "seed": 31,
+   "t_s": 3272.264105072889,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 398
+  },
+  {
+   "seed": 43,
+   "t_s": 5309.008147754327,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 266
+  },
+  {
+   "seed": 52,
+   "t_s": 4713.542747405616,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 369
+  },
+  {
+   "seed": 53,
+   "t_s": 1992.88673213267,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 365
+  },
+  {
+   "seed": 61,
+   "t_s": 2150.647227866457,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 51
+  },
+  {
+   "seed": 63,
+   "t_s": 1971.5846612369726,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 113
+  },
+  {
+   "seed": 64,
+   "t_s": 4229.64593180913,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 341
+  },
+  {
+   "seed": 72,
+   "t_s": 2381.5533996094377,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 243
+  },
+  {
+   "seed": 79,
+   "t_s": 2910.828229783494,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 371
+  },
+  {
+   "seed": 80,
+   "t_s": 4735.968937390626,
+   "place": "Outremont",
+   "kind": "hamlet",
+   "spot_to_place_m": 70
+  },
+  {
+   "seed": 83,
+   "t_s": 5061.330861548517,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 243
+  },
+  {
+   "seed": 98,
+   "t_s": 1886.0469669111246,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 241
+  },
+  {
+   "seed": 103,
+   "t_s": 5299.520983280709,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 11
+  },
+  {
+   "seed": 108,
+   "t_s": 1971.5754702196098,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 283
+  },
+  {
+   "seed": 111,
+   "t_s": 4125.561623036327,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 319
+  },
+  {
+   "seed": 117,
+   "t_s": 2444.6108309227257,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 359
+  },
+  {
+   "seed": 121,
+   "t_s": 3953.6185142554123,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 291
+  },
+  {
+   "seed": 124,
+   "t_s": 2759.0628702164263,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 131
+  },
+  {
+   "seed": 126,
+   "t_s": 3083.9139826018145,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 51
+  },
+  {
+   "seed": 133,
+   "t_s": 4660.256260022068,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 297
+  },
+  {
+   "seed": 135,
+   "t_s": 2790.1473563239133,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 270
+  },
+  {
+   "seed": 164,
+   "t_s": 4249.119820687241,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 233
+  },
+  {
+   "seed": 165,
+   "t_s": 3904.3224006620153,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 244
+  },
+  {
+   "seed": 168,
+   "t_s": 5387.497222697388,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 380
+  },
+  {
+   "seed": 169,
+   "t_s": 4863.65055895942,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 147
+  },
+  {
+   "seed": 170,
+   "t_s": 2985.9320852425412,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 291
+  },
+  {
+   "seed": 187,
+   "t_s": 2570.6475666451406,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 327
+  },
+  {
+   "seed": 190,
+   "t_s": 4278.628151503302,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 371
+  },
+  {
+   "seed": 198,
+   "t_s": 2311.9656574387545,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 130
+  },
+  {
+   "seed": 202,
+   "t_s": 2623.2750011168146,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 284
+  },
+  {
+   "seed": 204,
+   "t_s": 4087.248948061716,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 350
+  },
+  {
+   "seed": 208,
+   "t_s": 3485.053770827782,
+   "place": "Outremont",
+   "kind": "hamlet",
+   "spot_to_place_m": 173
+  },
+  {
+   "seed": 237,
+   "t_s": 3642.7012874177267,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 386
+  },
+  {
+   "seed": 240,
+   "t_s": 2122.7435924492775,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 131
+  },
+  {
+   "seed": 247,
+   "t_s": 3013.3331257278537,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 366
+  },
+  {
+   "seed": 248,
+   "t_s": 3202.2782100167105,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 101
+  },
+  {
+   "seed": 256,
+   "t_s": 4459.4874234373965,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 102
+  },
+  {
+   "seed": 258,
+   "t_s": 3280.1147934850906,
+   "place": "Les Planches",
+   "kind": "hamlet",
+   "spot_to_place_m": 281
+  },
+  {
+   "seed": 265,
+   "t_s": 5221.8222565140195,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 327
+  },
+  {
+   "seed": 269,
+   "t_s": 3102.0621964797397,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 325
+  },
+  {
+   "seed": 277,
+   "t_s": 2780.7264776950906,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 349
+  },
+  {
+   "seed": 285,
+   "t_s": 4785.816022207206,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 188
+  },
+  {
+   "seed": 289,
+   "t_s": 3377.095685263991,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 283
+  },
+  {
+   "seed": 302,
+   "t_s": 5352.889478665504,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 395
+  },
+  {
+   "seed": 320,
+   "t_s": 4759.379527519253,
+   "place": "Outremont",
+   "kind": "hamlet",
+   "spot_to_place_m": 236
+  },
+  {
+   "seed": 326,
+   "t_s": 3517.907842310955,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 289
+  },
+  {
+   "seed": 331,
+   "t_s": 2662.764479915753,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 260
+  },
+  {
+   "seed": 333,
+   "t_s": 2472.4911655416668,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 317
+  },
+  {
+   "seed": 342,
+   "t_s": 2090.780120047133,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 154
+  },
+  {
+   "seed": 354,
+   "t_s": 1918.4704197816857,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 335
+  },
+  {
+   "seed": 356,
+   "t_s": 4324.336635010079,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 227
+  },
+  {
+   "seed": 362,
+   "t_s": 1994.2016908104126,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 237
+  },
+  {
+   "seed": 363,
+   "t_s": 3959.1608637816134,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 322
+  },
+  {
+   "seed": 368,
+   "t_s": 5187.472233880853,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 359
+  },
+  {
+   "seed": 369,
+   "t_s": 5293.028082279649,
+   "place": "Les Planches",
+   "kind": "hamlet",
+   "spot_to_place_m": 317
+  },
+  {
+   "seed": 373,
+   "t_s": 5260.759320844243,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 373
+  },
+  {
+   "seed": 374,
+   "t_s": 3104.9204484402044,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 319
+  },
+  {
+   "seed": 384,
+   "t_s": 3607.6941592471794,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 210
+  },
+  {
+   "seed": 391,
+   "t_s": 4357.959864703703,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 350
+  },
+  {
+   "seed": 413,
+   "t_s": 2488.177673375287,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 251
+  },
+  {
+   "seed": 415,
+   "t_s": 3949.581842646349,
+   "place": "Outremont",
+   "kind": "hamlet",
+   "spot_to_place_m": 285
+  },
+  {
+   "seed": 420,
+   "t_s": 4026.5212889402346,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 324
+  },
+  {
+   "seed": 453,
+   "t_s": 5196.092624515672,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 397
+  },
+  {
+   "seed": 470,
+   "t_s": 2759.280273122991,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 137
+  },
+  {
+   "seed": 472,
+   "t_s": 5305.216059862805,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 229
+  },
+  {
+   "seed": 477,
+   "t_s": 4783.697891623986,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 382
+  },
+  {
+   "seed": 479,
+   "t_s": 4672.436053127261,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 380
+  },
+  {
+   "seed": 487,
+   "t_s": 4017.002830884876,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 356
+  },
+  {
+   "seed": 501,
+   "t_s": 5336.818177575425,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 257
+  },
+  {
+   "seed": 503,
+   "t_s": 5024.894785523778,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 269
+  },
+  {
+   "seed": 506,
+   "t_s": 5286.235545891499,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 257
+  },
+  {
+   "seed": 513,
+   "t_s": 2668.8928148344876,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 130
+  },
+  {
+   "seed": 519,
+   "t_s": 3221.3076505364397,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 358
+  },
+  {
+   "seed": 520,
+   "t_s": 3586.4668247645614,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 70
+  },
+  {
+   "seed": 535,
+   "t_s": 1973.165691268762,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 315
+  },
+  {
+   "seed": 540,
+   "t_s": 2902.0599234759693,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 361
+  },
+  {
+   "seed": 545,
+   "t_s": 3054.9259003286516,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 398
+  },
+  {
+   "seed": 549,
+   "t_s": 2623.9702260401655,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 207
+  },
+  {
+   "seed": 555,
+   "t_s": 4210.01045151888,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 298
+  },
+  {
+   "seed": 558,
+   "t_s": 4671.1601509375705,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 356
+  },
+  {
+   "seed": 560,
+   "t_s": 4572.075196050474,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 196
+  },
+  {
+   "seed": 562,
+   "t_s": 2659.907299660779,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 336
+  },
+  {
+   "seed": 566,
+   "t_s": 4656.202649638044,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 380
+  },
+  {
+   "seed": 568,
+   "t_s": 5217.712288567519,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 306
+  },
+  {
+   "seed": 578,
+   "t_s": 2306.773821770557,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 234
+  },
+  {
+   "seed": 581,
+   "t_s": 2613.8367777849307,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 327
+  },
+  {
+   "seed": 594,
+   "t_s": 5379.977937436312,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 174
+  },
+  {
+   "seed": 626,
+   "t_s": 2713.3993986700034,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 356
+  },
+  {
+   "seed": 628,
+   "t_s": 2693.575491645898,
+   "place": "Les Planches",
+   "kind": "hamlet",
+   "spot_to_place_m": 218
+  },
+  {
+   "seed": 635,
+   "t_s": 2839.3862451458253,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 90
+  },
+  {
+   "seed": 636,
+   "t_s": 5356.235356950228,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 376
+  },
+  {
+   "seed": 639,
+   "t_s": 3643.2929103525253,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 383
+  },
+  {
+   "seed": 646,
+   "t_s": 5377.11368894374,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 260
+  },
+  {
+   "seed": 648,
+   "t_s": 3657.8006125058528,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 9
+  },
+  {
+   "seed": 651,
+   "t_s": 4686.803176796382,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 76
+  },
+  {
+   "seed": 656,
+   "t_s": 5270.709940804912,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 215
+  },
+  {
+   "seed": 665,
+   "t_s": 4971.553223651865,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 242
+  },
+  {
+   "seed": 675,
+   "t_s": 2442.8332184801266,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 223
+  },
+  {
+   "seed": 684,
+   "t_s": 2333.6896211957037,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 397
+  },
+  {
+   "seed": 685,
+   "t_s": 5371.881920331391,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 334
+  },
+  {
+   "seed": 688,
+   "t_s": 5068.958363612384,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 357
+  },
+  {
+   "seed": 700,
+   "t_s": 3860.43889900497,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 275
+  },
+  {
+   "seed": 712,
+   "t_s": 2569.8804959023178,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 356
+  },
+  {
+   "seed": 719,
+   "t_s": 3720.1350948269883,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 369
+  },
+  {
+   "seed": 731,
+   "t_s": 3137.5228167235737,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 398
+  },
+  {
+   "seed": 759,
+   "t_s": 2354.5648627490164,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 152
+  },
+  {
+   "seed": 769,
+   "t_s": 2022.617908598841,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 271
+  },
+  {
+   "seed": 772,
+   "t_s": 2153.008055356373,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 160
+  },
+  {
+   "seed": 782,
+   "t_s": 5221.662831750471,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 174
+  },
+  {
+   "seed": 784,
+   "t_s": 4575.54885256518,
+   "place": "Chapelle Sainte-Anne",
+   "kind": "chapel",
+   "spot_to_place_m": 367
+  },
+  {
+   "seed": 787,
+   "t_s": 2880.4022041695694,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 309
+  },
+  {
+   "seed": 788,
+   "t_s": 2000.3176602947062,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 170
+  },
+  {
+   "seed": 808,
+   "t_s": 2146.3195287408075,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 238
+  },
+  {
+   "seed": 811,
+   "t_s": 3352.5483047951857,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 228
+  },
+  {
+   "seed": 828,
+   "t_s": 3833.681988177272,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 137
+  },
+  {
+   "seed": 830,
+   "t_s": 3103.3834087531786,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 365
+  },
+  {
+   "seed": 836,
+   "t_s": 5230.594215752202,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 400
+  },
+  {
+   "seed": 858,
+   "t_s": 3641.8142131782306,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 279
+  },
+  {
+   "seed": 860,
+   "t_s": 2675.276837518262,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 318
+  },
+  {
+   "seed": 863,
+   "t_s": 5387.189154351291,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 355
+  },
+  {
+   "seed": 877,
+   "t_s": 2108.3715530086447,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 267
+  },
+  {
+   "seed": 879,
+   "t_s": 3491.0465348645944,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 226
+  },
+  {
+   "seed": 889,
+   "t_s": 2137.1859659804772,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 298
+  },
+  {
+   "seed": 899,
+   "t_s": 3154.350312449527,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 243
+  },
+  {
+   "seed": 906,
+   "t_s": 4639.9359929942675,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 253
+  },
+  {
+   "seed": 909,
+   "t_s": 2510.9298709459454,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 298
+  },
+  {
+   "seed": 926,
+   "t_s": 3531.6280415622678,
+   "place": "En Chavatte",
+   "kind": "hamlet",
+   "spot_to_place_m": 360
+  },
+  {
+   "seed": 932,
+   "t_s": 3176.55163945799,
+   "place": "Route du Clos du Doubs",
+   "kind": "bridge",
+   "spot_to_place_m": 104
+  },
+  {
+   "seed": 942,
+   "t_s": 4253.031866201961,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 218
+  },
+  {
+   "seed": 951,
+   "t_s": 3161.275239456975,
+   "place": "Outremont",
+   "kind": "hamlet",
+   "spot_to_place_m": 221
+  },
+  {
+   "seed": 958,
+   "t_s": 2389.3790617129107,
+   "place": "Arche naturelle",
+   "kind": "attraction",
+   "spot_to_place_m": 220
+  },
+  {
+   "seed": 970,
+   "t_s": 1814.7416475871287,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 115
+  },
+  {
+   "seed": 974,
+   "t_s": 2084.6093248991433,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 303
+  },
+  {
+   "seed": 977,
+   "t_s": 4163.883302752514,
+   "place": "Route de Montmelon",
+   "kind": "bridge",
+   "spot_to_place_m": 186
+  },
+  {
+   "seed": 979,
+   "t_s": 3887.9664293192427,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 352
+  },
+  {
+   "seed": 981,
+   "t_s": 3626.1915017789142,
+   "place": "Ruines du Ch\u00e2teau de Sainte Ursanne",
+   "kind": "castle",
+   "spot_to_place_m": 364
+  },
+  {
+   "seed": 993,
+   "t_s": 3869.0989358381125,
+   "place": "Route du Moulin des Lavoirs",
+   "kind": "bridge",
+   "spot_to_place_m": 363
+  },
+  {
+   "seed": 997,
+   "t_s": 3691.860350746797,
+   "place": "Montmelon-Dessous",
+   "kind": "hamlet",
+   "spot_to_place_m": 355
+  }
+ ],
+ "named": {
+  "scenarios": 144,
+  "in_area_at_start": 0.9305555555555556,
+  "planners": {
+   "spiral": {
+    "found_by": {
+     "1h": [
+      0.3472222222222222,
+      0.2743455215337146,
+      0.4280386517977428
+     ],
+     "2h": [
+      0.4027777777777778,
+      0.3262034003252684,
+      0.48440470997656815
+     ],
+     "4h": [
+      0.5972222222222222,
+      0.5155952900234319,
+      0.6737965996747316
+     ]
+    },
+    "median_min": 168.66666666666666,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 2.0340000046417117,
+    "air": 0.9249295041782273,
+    "photos": 707.9861111111111,
+    "alarms": 161.41666666666666,
+    "missed_in_frame": 0.8125,
+    "per_find": {
+     "drone_h": 3.523772609819121,
+     "photos": 1185.4651162790697,
+     "alarms": 270.27906976744185
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2125.0,
+      0.31249999999999933
+     ],
+     [
+      2125.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      3515.0,
+      0.34722222222222143
+     ],
+     [
+      4335.0,
+      0.35416666666666585
+     ],
+     [
+      4335.0,
+      0.3611111111111103
+     ],
+     [
+      4355.0,
+      0.3680555555555548
+     ],
+     [
+      4395.0,
+      0.3749999999999992
+     ],
+     [
+      4835.0,
+      0.38194444444444364
+     ],
+     [
+      6390.0,
+      0.38888888888888806
+     ],
+     [
+      6470.0,
+      0.3958333333333325
+     ],
+     [
+      7020.0,
+      0.4027777777777769
+     ],
+     [
+      8145.0,
+      0.4097222222222213
+     ],
+     [
+      8260.0,
+      0.41666666666666574
+     ],
+     [
+      8925.0,
+      0.42361111111111016
+     ],
+     [
+      9555.0,
+      0.4305555555555547
+     ],
+     [
+      9575.0,
+      0.4374999999999991
+     ],
+     [
+      9720.0,
+      0.44444444444444364
+     ],
+     [
+      9730.0,
+      0.45138888888888806
+     ],
+     [
+      9740.0,
+      0.4583333333333325
+     ],
+     [
+      9865.0,
+      0.4652777777777769
+     ],
+     [
+      10045.0,
+      0.4722222222222213
+     ],
+     [
+      10045.0,
+      0.47916666666666585
+     ],
+     [
+      10065.0,
+      0.4861111111111103
+     ],
+     [
+      10080.0,
+      0.4930555555555547
+     ],
+     [
+      10110.0,
+      0.4999999999999992
+     ],
+     [
+      10120.0,
+      0.5069444444444436
+     ],
+     [
+      10140.0,
+      0.5138888888888881
+     ],
+     [
+      10465.0,
+      0.5208333333333325
+     ],
+     [
+      10560.0,
+      0.5277777777777769
+     ],
+     [
+      11270.0,
+      0.5347222222222213
+     ],
+     [
+      11370.0,
+      0.5416666666666659
+     ],
+     [
+      11400.0,
+      0.5486111111111103
+     ],
+     [
+      11645.0,
+      0.5555555555555547
+     ],
+     [
+      11810.0,
+      0.5624999999999991
+     ],
+     [
+      11820.0,
+      0.5694444444444435
+     ],
+     [
+      12170.0,
+      0.5763888888888881
+     ],
+     [
+      13005.0,
+      0.5833333333333326
+     ],
+     [
+      13160.0,
+      0.590277777777777
+     ],
+     [
+      14275.0,
+      0.5972222222222214
+     ]
+    ]
+   },
+   "spiral+witness": {
+    "found_by": {
+     "1h": [
+      0.3472222222222222,
+      0.2743455215337146,
+      0.4280386517977428
+     ],
+     "2h": [
+      0.4027777777777778,
+      0.3262034003252684,
+      0.48440470997656815
+     ],
+     "4h": [
+      0.5972222222222222,
+      0.5155952900234319,
+      0.6737965996747316
+     ]
+    },
+    "median_min": 168.66666666666666,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 2.6582999853417277,
+    "air": 0.9249295041782273,
+    "photos": 707.9861111111111,
+    "alarms": 161.41666666666666,
+    "missed_in_frame": 0.8125,
+    "per_find": {
+     "drone_h": 3.523772609819121,
+     "photos": 1185.4651162790697,
+     "alarms": 270.27906976744185
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2125.0,
+      0.31249999999999933
+     ],
+     [
+      2125.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      3515.0,
+      0.34722222222222143
+     ],
+     [
+      4335.0,
+      0.35416666666666585
+     ],
+     [
+      4335.0,
+      0.3611111111111103
+     ],
+     [
+      4355.0,
+      0.3680555555555548
+     ],
+     [
+      4395.0,
+      0.3749999999999992
+     ],
+     [
+      4835.0,
+      0.38194444444444364
+     ],
+     [
+      6390.0,
+      0.38888888888888806
+     ],
+     [
+      6470.0,
+      0.3958333333333325
+     ],
+     [
+      7020.0,
+      0.4027777777777769
+     ],
+     [
+      8145.0,
+      0.4097222222222213
+     ],
+     [
+      8260.0,
+      0.41666666666666574
+     ],
+     [
+      8925.0,
+      0.42361111111111016
+     ],
+     [
+      9555.0,
+      0.4305555555555547
+     ],
+     [
+      9575.0,
+      0.4374999999999991
+     ],
+     [
+      9720.0,
+      0.44444444444444364
+     ],
+     [
+      9730.0,
+      0.45138888888888806
+     ],
+     [
+      9740.0,
+      0.4583333333333325
+     ],
+     [
+      9865.0,
+      0.4652777777777769
+     ],
+     [
+      10045.0,
+      0.4722222222222213
+     ],
+     [
+      10045.0,
+      0.47916666666666585
+     ],
+     [
+      10065.0,
+      0.4861111111111103
+     ],
+     [
+      10080.0,
+      0.4930555555555547
+     ],
+     [
+      10110.0,
+      0.4999999999999992
+     ],
+     [
+      10120.0,
+      0.5069444444444436
+     ],
+     [
+      10140.0,
+      0.5138888888888881
+     ],
+     [
+      10465.0,
+      0.5208333333333325
+     ],
+     [
+      10560.0,
+      0.5277777777777769
+     ],
+     [
+      11270.0,
+      0.5347222222222213
+     ],
+     [
+      11370.0,
+      0.5416666666666659
+     ],
+     [
+      11400.0,
+      0.5486111111111103
+     ],
+     [
+      11645.0,
+      0.5555555555555547
+     ],
+     [
+      11810.0,
+      0.5624999999999991
+     ],
+     [
+      11820.0,
+      0.5694444444444435
+     ],
+     [
+      12170.0,
+      0.5763888888888881
+     ],
+     [
+      13005.0,
+      0.5833333333333326
+     ],
+     [
+      13160.0,
+      0.590277777777777
+     ],
+     [
+      14275.0,
+      0.5972222222222214
+     ]
+    ],
+    "vs_reference": {
+     "1h": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "2h": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "4h": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "spiral+named": {
+    "found_by": {
+     "1h": [
+      0.3541666666666667,
+      0.2807687889835203,
+      0.4351433764692346
+     ],
+     "2h": [
+      0.4583333333333333,
+      0.37909042411148686,
+      0.5397416231607288
+     ],
+     "4h": [
+      0.5763888888888888,
+      0.49472676416117145,
+      0.6540811491730998
+     ]
+    },
+    "median_min": 167.41666666666666,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 1.428399991709739,
+    "air": 0.9254550115803772,
+    "photos": 697.2222222222222,
+    "alarms": 159.59722222222223,
+    "missed_in_frame": 0.8680555555555556,
+    "per_find": {
+     "drone_h": 3.5508701472556896,
+     "photos": 1209.6385542168675,
+     "alarms": 276.89156626506025
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2125.0,
+      0.31249999999999933
+     ],
+     [
+      2250.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      3380.0,
+      0.34722222222222143
+     ],
+     [
+      3415.0,
+      0.35416666666666585
+     ],
+     [
+      3840.0,
+      0.3611111111111103
+     ],
+     [
+      3845.0,
+      0.3680555555555548
+     ],
+     [
+      4190.0,
+      0.3749999999999992
+     ],
+     [
+      4335.0,
+      0.38194444444444364
+     ],
+     [
+      4335.0,
+      0.38888888888888806
+     ],
+     [
+      4395.0,
+      0.3958333333333325
+     ],
+     [
+      4465.0,
+      0.4027777777777769
+     ],
+     [
+      4835.0,
+      0.4097222222222213
+     ],
+     [
+      4840.0,
+      0.41666666666666574
+     ],
+     [
+      5075.0,
+      0.42361111111111016
+     ],
+     [
+      5355.0,
+      0.4305555555555547
+     ],
+     [
+      5435.0,
+      0.4374999999999991
+     ],
+     [
+      5800.0,
+      0.44444444444444364
+     ],
+     [
+      6440.0,
+      0.45138888888888806
+     ],
+     [
+      7130.0,
+      0.4583333333333325
+     ],
+     [
+      7290.0,
+      0.4652777777777769
+     ],
+     [
+      8145.0,
+      0.4722222222222213
+     ],
+     [
+      9280.0,
+      0.47916666666666585
+     ],
+     [
+      9720.0,
+      0.4861111111111103
+     ],
+     [
+      9730.0,
+      0.4930555555555547
+     ],
+     [
+      9740.0,
+      0.4999999999999992
+     ],
+     [
+      10045.0,
+      0.5069444444444436
+     ],
+     [
+      10045.0,
+      0.5138888888888881
+     ],
+     [
+      10065.0,
+      0.5208333333333325
+     ],
+     [
+      10365.0,
+      0.5277777777777769
+     ],
+     [
+      11260.0,
+      0.5347222222222213
+     ],
+     [
+      11550.0,
+      0.5416666666666659
+     ],
+     [
+      12775.0,
+      0.5486111111111103
+     ],
+     [
+      13005.0,
+      0.5555555555555547
+     ],
+     [
+      13545.0,
+      0.5624999999999991
+     ],
+     [
+      14045.0,
+      0.5694444444444435
+     ],
+     [
+      14055.0,
+      0.5763888888888881
+     ]
+    ],
+    "vs_reference": {
+     "1h": [
+      0.006944444444444444,
+      -0.013888888888888888,
+      0.027777777777777776
+     ],
+     "2h": [
+      0.05555555555555555,
+      0.013888888888888888,
+      0.09722222222222222
+     ],
+     "4h": [
+      -0.020833333333333332,
+      -0.06944444444444445,
+      0.027777777777777776
+     ]
+    }
+   },
+   "hedge+spark": {
+    "found_by": {
+     "1h": [
+      0.3402777777777778,
+      0.267939727271058,
+      0.4209164539391021
+     ],
+     "2h": [
+      0.5486111111111112,
+      0.46712120157498654,
+      0.6275747432740952
+     ],
+     "4h": [
+      0.6527777777777778,
+      0.5719613482022572,
+      0.7256544784662853
+     ]
+    },
+    "median_min": 104.66666666666667,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 15.921999991405755,
+    "air": 0.9217520832111236,
+    "photos": 636.2638888888889,
+    "alarms": 145.02777777777777,
+    "missed_in_frame": 1.0694444444444444,
+    "per_find": {
+     "drone_h": 2.822532505910165,
+     "photos": 974.7021276595744,
+     "alarms": 222.17021276595744
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2125.0,
+      0.31249999999999933
+     ],
+     [
+      2195.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      3680.0,
+      0.34722222222222143
+     ],
+     [
+      3700.0,
+      0.35416666666666585
+     ],
+     [
+      3710.0,
+      0.3611111111111103
+     ],
+     [
+      4335.0,
+      0.3680555555555548
+     ],
+     [
+      4335.0,
+      0.3749999999999992
+     ],
+     [
+      4415.0,
+      0.38194444444444364
+     ],
+     [
+      4755.0,
+      0.38888888888888806
+     ],
+     [
+      4920.0,
+      0.3958333333333325
+     ],
+     [
+      4955.0,
+      0.4027777777777769
+     ],
+     [
+      4990.0,
+      0.4097222222222213
+     ],
+     [
+      5140.0,
+      0.41666666666666574
+     ],
+     [
+      5215.0,
+      0.42361111111111016
+     ],
+     [
+      5220.0,
+      0.4305555555555547
+     ],
+     [
+      5235.0,
+      0.4374999999999991
+     ],
+     [
+      5260.0,
+      0.44444444444444364
+     ],
+     [
+      5285.0,
+      0.45138888888888806
+     ],
+     [
+      5295.0,
+      0.4583333333333325
+     ],
+     [
+      5315.0,
+      0.4652777777777769
+     ],
+     [
+      5605.0,
+      0.4722222222222213
+     ],
+     [
+      5620.0,
+      0.47916666666666585
+     ],
+     [
+      6070.0,
+      0.4861111111111103
+     ],
+     [
+      6075.0,
+      0.4930555555555547
+     ],
+     [
+      6100.0,
+      0.4999999999999992
+     ],
+     [
+      6280.0,
+      0.5069444444444436
+     ],
+     [
+      6545.0,
+      0.5138888888888881
+     ],
+     [
+      6595.0,
+      0.5208333333333325
+     ],
+     [
+      6755.0,
+      0.5277777777777769
+     ],
+     [
+      6920.0,
+      0.5347222222222213
+     ],
+     [
+      6925.0,
+      0.5416666666666659
+     ],
+     [
+      7060.0,
+      0.5486111111111103
+     ],
+     [
+      7205.0,
+      0.5555555555555547
+     ],
+     [
+      7385.0,
+      0.5624999999999991
+     ],
+     [
+      7730.0,
+      0.5694444444444435
+     ],
+     [
+      7975.0,
+      0.5763888888888881
+     ],
+     [
+      8455.0,
+      0.5833333333333326
+     ],
+     [
+      8610.0,
+      0.590277777777777
+     ],
+     [
+      9310.0,
+      0.5972222222222214
+     ],
+     [
+      9395.0,
+      0.6041666666666659
+     ],
+     [
+      9625.0,
+      0.6111111111111104
+     ],
+     [
+      10400.0,
+      0.6180555555555549
+     ],
+     [
+      12220.0,
+      0.6249999999999993
+     ],
+     [
+      12595.0,
+      0.6319444444444438
+     ],
+     [
+      12865.0,
+      0.6388888888888882
+     ],
+     [
+      13505.0,
+      0.6458333333333327
+     ],
+     [
+      13815.0,
+      0.6527777777777772
+     ]
+    ],
+    "vs_reference": {
+     "1h": [
+      -0.006944444444444444,
+      -0.020833333333333332,
+      0.0
+     ],
+     "2h": [
+      0.14583333333333334,
+      0.08333333333333333,
+      0.2152777777777778
+     ],
+     "4h": [
+      0.05555555555555555,
+      -0.013888888888888888,
+      0.13194444444444445
+     ]
+    }
+   }
+  },
+  "spark_gain": {},
+  "calibrated": true
+ },
+ "template": {
+  "scenarios": 144,
+  "in_area_at_start": 0.9305555555555556,
+  "planners": {
+   "spiral+witness": {
+    "found_by": {
+     "1h": [
+      0.375,
+      0.30014120233883046,
+      0.4563549394778166
+     ],
+     "2h": [
+      0.4861111111111111,
+      0.4059036542402024,
+      0.5670403615172028
+     ],
+     "4h": [
+      0.5486111111111112,
+      0.46712120157498654,
+      0.6275747432740952
+     ]
+    },
+    "median_min": 167.08333333333334,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 10.81730000441894,
+    "air": 0.9259151126411737,
+    "photos": 689.2291666666666,
+    "alarms": 157.46527777777777,
+    "missed_in_frame": 0.7916666666666666,
+    "per_find": {
+     "drone_h": 3.6871835443037977,
+     "photos": 1256.3164556962026,
+     "alarms": 287.0253164556962
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2105.0,
+      0.31249999999999933
+     ],
+     [
+      2125.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      2995.0,
+      0.34722222222222143
+     ],
+     [
+      3320.0,
+      0.35416666666666585
+     ],
+     [
+      3320.0,
+      0.3611111111111103
+     ],
+     [
+      3580.0,
+      0.3680555555555548
+     ],
+     [
+      3585.0,
+      0.3749999999999992
+     ],
+     [
+      3720.0,
+      0.38194444444444364
+     ],
+     [
+      3995.0,
+      0.38888888888888806
+     ],
+     [
+      4305.0,
+      0.3958333333333325
+     ],
+     [
+      4335.0,
+      0.4027777777777769
+     ],
+     [
+      4335.0,
+      0.4097222222222213
+     ],
+     [
+      4365.0,
+      0.41666666666666574
+     ],
+     [
+      4395.0,
+      0.42361111111111016
+     ],
+     [
+      4440.0,
+      0.4305555555555547
+     ],
+     [
+      4835.0,
+      0.4374999999999991
+     ],
+     [
+      4895.0,
+      0.44444444444444364
+     ],
+     [
+      4905.0,
+      0.45138888888888806
+     ],
+     [
+      4925.0,
+      0.4583333333333325
+     ],
+     [
+      5375.0,
+      0.4652777777777769
+     ],
+     [
+      5435.0,
+      0.4722222222222213
+     ],
+     [
+      5665.0,
+      0.47916666666666585
+     ],
+     [
+      5780.0,
+      0.4861111111111103
+     ],
+     [
+      8430.0,
+      0.4930555555555547
+     ],
+     [
+      9935.0,
+      0.4999999999999992
+     ],
+     [
+      10025.0,
+      0.5069444444444436
+     ],
+     [
+      10600.0,
+      0.5138888888888881
+     ],
+     [
+      11380.0,
+      0.5208333333333325
+     ],
+     [
+      11730.0,
+      0.5277777777777769
+     ],
+     [
+      12735.0,
+      0.5347222222222213
+     ],
+     [
+      13490.0,
+      0.5416666666666659
+     ],
+     [
+      13570.0,
+      0.5486111111111103
+     ]
+    ]
+   },
+   "hedge+spark": {
+    "found_by": {
+     "1h": [
+      0.3611111111111111,
+      0.2872092991896756,
+      0.44223085838437665
+     ],
+     "2h": [
+      0.5625,
+      0.48089298453184853,
+      0.6408589445598278
+     ],
+     "4h": [
+      0.6875,
+      0.607752268137033,
+      0.7575035191379965
+     ]
+    },
+    "median_min": 99.08333333333333,
+    "forced_returns": 0,
+    "no_fly_s": 0.0,
+    "plan_ms_max": 46.51100002229214,
+    "air": 0.9221117636297554,
+    "photos": 614.3055555555555,
+    "alarms": 140.31944444444446,
+    "missed_in_frame": 1.0902777777777777,
+    "per_find": {
+     "drone_h": 2.5888187429854095,
+     "photos": 893.5353535353536,
+     "alarms": 204.1010101010101
+    },
+    "curve": [
+     [
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.00694444444444442
+     ],
+     [
+      0.0,
+      0.01388888888888884
+     ],
+     [
+      95.0,
+      0.02083333333333326
+     ],
+     [
+      115.0,
+      0.02777777777777768
+     ],
+     [
+      145.0,
+      0.0347222222222221
+     ],
+     [
+      155.0,
+      0.04166666666666652
+     ],
+     [
+      280.0,
+      0.04861111111111105
+     ],
+     [
+      290.0,
+      0.05555555555555547
+     ],
+     [
+      290.0,
+      0.06249999999999989
+     ],
+     [
+      300.0,
+      0.06944444444444431
+     ],
+     [
+      300.0,
+      0.07638888888888873
+     ],
+     [
+      300.0,
+      0.08333333333333326
+     ],
+     [
+      300.0,
+      0.09027777777777768
+     ],
+     [
+      310.0,
+      0.0972222222222221
+     ],
+     [
+      340.0,
+      0.10416666666666652
+     ],
+     [
+      340.0,
+      0.11111111111111094
+     ],
+     [
+      350.0,
+      0.11805555555555536
+     ],
+     [
+      370.0,
+      0.12499999999999978
+     ],
+     [
+      380.0,
+      0.1319444444444442
+     ],
+     [
+      420.0,
+      0.13888888888888862
+     ],
+     [
+      585.0,
+      0.14583333333333304
+     ],
+     [
+      595.0,
+      0.15277777777777757
+     ],
+     [
+      595.0,
+      0.159722222222222
+     ],
+     [
+      595.0,
+      0.1666666666666664
+     ],
+     [
+      605.0,
+      0.17361111111111083
+     ],
+     [
+      650.0,
+      0.18055555555555525
+     ],
+     [
+      710.0,
+      0.18749999999999967
+     ],
+     [
+      740.0,
+      0.1944444444444441
+     ],
+     [
+      850.0,
+      0.2013888888888885
+     ],
+     [
+      935.0,
+      0.20833333333333293
+     ],
+     [
+      935.0,
+      0.21527777777777735
+     ],
+     [
+      935.0,
+      0.22222222222222177
+     ],
+     [
+      985.0,
+      0.22916666666666619
+     ],
+     [
+      1075.0,
+      0.2361111111111106
+     ],
+     [
+      1080.0,
+      0.24305555555555503
+     ],
+     [
+      1120.0,
+      0.24999999999999944
+     ],
+     [
+      1120.0,
+      0.256944444444444
+     ],
+     [
+      1130.0,
+      0.2638888888888884
+     ],
+     [
+      1200.0,
+      0.2708333333333328
+     ],
+     [
+      1260.0,
+      0.27777777777777724
+     ],
+     [
+      1295.0,
+      0.28472222222222165
+     ],
+     [
+      1765.0,
+      0.2916666666666661
+     ],
+     [
+      1785.0,
+      0.2986111111111105
+     ],
+     [
+      1820.0,
+      0.3055555555555549
+     ],
+     [
+      2125.0,
+      0.31249999999999933
+     ],
+     [
+      2195.0,
+      0.31944444444444375
+     ],
+     [
+      2390.0,
+      0.3263888888888882
+     ],
+     [
+      2400.0,
+      0.3333333333333326
+     ],
+     [
+      2575.0,
+      0.340277777777777
+     ],
+     [
+      2700.0,
+      0.34722222222222143
+     ],
+     [
+      3330.0,
+      0.35416666666666585
+     ],
+     [
+      3565.0,
+      0.3611111111111103
+     ],
+     [
+      3625.0,
+      0.3680555555555548
+     ],
+     [
+      3700.0,
+      0.3749999999999992
+     ],
+     [
+      3780.0,
+      0.38194444444444364
+     ],
+     [
+      4200.0,
+      0.38888888888888806
+     ],
+     [
+      4335.0,
+      0.3958333333333325
+     ],
+     [
+      4335.0,
+      0.4027777777777769
+     ],
+     [
+      4415.0,
+      0.4097222222222213
+     ],
+     [
+      4445.0,
+      0.41666666666666574
+     ],
+     [
+      4520.0,
+      0.42361111111111016
+     ],
+     [
+      4795.0,
+      0.4305555555555547
+     ],
+     [
+      4815.0,
+      0.4374999999999991
+     ],
+     [
+      4900.0,
+      0.44444444444444364
+     ],
+     [
+      5175.0,
+      0.45138888888888806
+     ],
+     [
+      5225.0,
+      0.4583333333333325
+     ],
+     [
+      5280.0,
+      0.4652777777777769
+     ],
+     [
+      5285.0,
+      0.4722222222222213
+     ],
+     [
+      5325.0,
+      0.47916666666666585
+     ],
+     [
+      5425.0,
+      0.4861111111111103
+     ],
+     [
+      5620.0,
+      0.4930555555555547
+     ],
+     [
+      5860.0,
+      0.4999999999999992
+     ],
+     [
+      5945.0,
+      0.5069444444444436
+     ],
+     [
+      6020.0,
+      0.5138888888888881
+     ],
+     [
+      6110.0,
+      0.5208333333333325
+     ],
+     [
+      6165.0,
+      0.5277777777777769
+     ],
+     [
+      6335.0,
+      0.5347222222222213
+     ],
+     [
+      6520.0,
+      0.5416666666666659
+     ],
+     [
+      6550.0,
+      0.5486111111111103
+     ],
+     [
+      6615.0,
+      0.5555555555555547
+     ],
+     [
+      6725.0,
+      0.5624999999999991
+     ],
+     [
+      7875.0,
+      0.5694444444444435
+     ],
+     [
+      7885.0,
+      0.5763888888888881
+     ],
+     [
+      7910.0,
+      0.5833333333333326
+     ],
+     [
+      8020.0,
+      0.590277777777777
+     ],
+     [
+      8160.0,
+      0.5972222222222214
+     ],
+     [
+      8275.0,
+      0.6041666666666659
+     ],
+     [
+      8440.0,
+      0.6111111111111104
+     ],
+     [
+      9165.0,
+      0.6180555555555549
+     ],
+     [
+      9375.0,
+      0.6249999999999993
+     ],
+     [
+      9545.0,
+      0.6319444444444438
+     ],
+     [
+      9990.0,
+      0.6388888888888882
+     ],
+     [
+      10675.0,
+      0.6458333333333327
+     ],
+     [
+      12245.0,
+      0.6527777777777772
+     ],
+     [
+      13070.0,
+      0.6597222222222217
+     ],
+     [
+      13855.0,
+      0.6666666666666661
+     ],
+     [
+      13945.0,
+      0.6736111111111106
+     ],
+     [
+      14000.0,
+      0.6805555555555551
+     ],
+     [
+      14165.0,
+      0.6874999999999996
+     ]
+    ],
+    "vs_reference": {
+     "1h": [
+      -0.013888888888888888,
+      -0.041666666666666664,
+      0.013888888888888888
+     ],
+     "2h": [
+      0.0763888888888889,
+      0.027777777777777776,
+      0.12517361111111017
+     ],
+     "4h": [
+      0.1388888888888889,
+      0.06944444444444445,
+      0.2152777777777778
+     ]
+    }
+   }
+  },
+  "spark_gain": {},
+  "calibrated": true
+ },
+ "per_seed": [
+  {
+   "seed": 8,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 11,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 4335.0,
+    "spiral+witness": 4335.0,
+    "spiral+named": 4335.0,
+    "hedge+spark": 4335.0,
+    "spiral+witness (template)": 4335.0,
+    "hedge+spark (template)": 4335.0
+   }
+  },
+  {
+   "seed": 15,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 145.0,
+    "spiral+witness": 145.0,
+    "spiral+named": 145.0,
+    "hedge+spark": 145.0,
+    "spiral+witness (template)": 145.0,
+    "hedge+spark (template)": 145.0
+   }
+  },
+  {
+   "seed": 19,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10560.0,
+    "spiral+witness": 10560.0,
+    "spiral+named": 14045.0,
+    "hedge+spark": 8610.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 6520.0
+   }
+  },
+  {
+   "seed": 20,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 30,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 4395.0,
+    "spiral+witness": 4395.0,
+    "spiral+named": 4395.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 4440.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 31,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9865.0,
+    "spiral+witness": 9865.0,
+    "spiral+named": 3415.0,
+    "hedge+spark": 5260.0,
+    "spiral+witness (template)": 3320.0,
+    "hedge+spark (template)": 3565.0
+   }
+  },
+  {
+   "seed": 43,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 370.0,
+    "spiral+witness": 370.0,
+    "spiral+named": 370.0,
+    "hedge+spark": 370.0,
+    "spiral+witness (template)": 370.0,
+    "hedge+spark (template)": 370.0
+   }
+  },
+  {
+   "seed": 52,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 13160.0,
+    "spiral+witness": 13160.0,
+    "spiral+named": 10365.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 10025.0,
+    "hedge+spark (template)": 14000.0
+   }
+  },
+  {
+   "seed": 53,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 9990.0
+   }
+  },
+  {
+   "seed": 61,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 350.0,
+    "spiral+witness": 350.0,
+    "spiral+named": 350.0,
+    "hedge+spark": 350.0,
+    "spiral+witness (template)": 350.0,
+    "hedge+spark (template)": 350.0
+   }
+  },
+  {
+   "seed": 63,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 2125.0,
+    "spiral+witness": 2125.0,
+    "spiral+named": 2250.0,
+    "hedge+spark": 2195.0,
+    "spiral+witness (template)": 2105.0,
+    "hedge+spark (template)": 2195.0
+   }
+  },
+  {
+   "seed": 64,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 8145.0,
+    "spiral+witness": 8145.0,
+    "spiral+named": 8145.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 11380.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 72,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 6390.0,
+    "spiral+witness": 6390.0,
+    "spiral+named": 4840.0,
+    "hedge+spark": 7205.0,
+    "spiral+witness (template)": 4835.0,
+    "hedge+spark (template)": 6110.0
+   }
+  },
+  {
+   "seed": 79,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1200.0,
+    "spiral+witness": 1200.0,
+    "spiral+named": 1200.0,
+    "hedge+spark": 1200.0,
+    "spiral+witness (template)": 1200.0,
+    "hedge+spark (template)": 1200.0
+   }
+  },
+  {
+   "seed": 80,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": 13545.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 12735.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 83,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 11645.0,
+    "spiral+witness": 11645.0,
+    "spiral+named": 9280.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 8430.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 98,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 103,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9555.0,
+    "spiral+witness": 9555.0,
+    "spiral+named": 5435.0,
+    "hedge+spark": 6070.0,
+    "spiral+witness (template)": 5435.0,
+    "hedge+spark (template)": 5425.0
+   }
+  },
+  {
+   "seed": 108,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 12220.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 4200.0
+   }
+  },
+  {
+   "seed": 111,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10065.0,
+    "spiral+witness": 10065.0,
+    "spiral+named": 10065.0,
+    "hedge+spark": 4415.0,
+    "spiral+witness (template)": 4395.0,
+    "hedge+spark (template)": 4415.0
+   }
+  },
+  {
+   "seed": 117,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 121,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 300.0,
+    "spiral+witness": 300.0,
+    "spiral+named": 300.0,
+    "hedge+spark": 300.0,
+    "spiral+witness (template)": 300.0,
+    "hedge+spark (template)": 300.0
+   }
+  },
+  {
+   "seed": 124,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 9375.0
+   }
+  },
+  {
+   "seed": 126,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 420.0,
+    "spiral+witness": 420.0,
+    "spiral+named": 420.0,
+    "hedge+spark": 420.0,
+    "spiral+witness (template)": 420.0,
+    "hedge+spark (template)": 420.0
+   }
+  },
+  {
+   "seed": 133,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9720.0,
+    "spiral+witness": 9720.0,
+    "spiral+named": 9720.0,
+    "hedge+spark": 5295.0,
+    "spiral+witness (template)": 4905.0,
+    "hedge+spark (template)": 4815.0
+   }
+  },
+  {
+   "seed": 135,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9730.0,
+    "spiral+witness": 9730.0,
+    "spiral+named": 9730.0,
+    "hedge+spark": 3710.0,
+    "spiral+witness (template)": 2995.0,
+    "hedge+spark (template)": 3330.0
+   }
+  },
+  {
+   "seed": 164,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 850.0,
+    "spiral+witness": 850.0,
+    "spiral+named": 850.0,
+    "hedge+spark": 850.0,
+    "spiral+witness (template)": 850.0,
+    "hedge+spark (template)": 850.0
+   }
+  },
+  {
+   "seed": 165,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 168,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10045.0,
+    "spiral+witness": 10045.0,
+    "spiral+named": 10045.0,
+    "hedge+spark": 5620.0,
+    "spiral+witness (template)": 5665.0,
+    "hedge+spark (template)": 5620.0
+   }
+  },
+  {
+   "seed": 169,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 170,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 187,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1120.0,
+    "spiral+witness": 1120.0,
+    "spiral+named": 1120.0,
+    "hedge+spark": 1120.0,
+    "spiral+witness (template)": 1120.0,
+    "hedge+spark (template)": 1120.0
+   }
+  },
+  {
+   "seed": 190,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 7060.0,
+    "spiral+witness (template)": 4895.0,
+    "hedge+spark (template)": 6725.0
+   }
+  },
+  {
+   "seed": 198,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9575.0,
+    "spiral+witness": 9575.0,
+    "spiral+named": 12775.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 13490.0,
+    "hedge+spark (template)": 6020.0
+   }
+  },
+  {
+   "seed": 202,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 10465.0,
+    "spiral+witness": 10465.0,
+    "spiral+named": 7290.0,
+    "hedge+spark": 5215.0,
+    "spiral+witness (template)": 9935.0,
+    "hedge+spark (template)": 2700.0
+   }
+  },
+  {
+   "seed": 204,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 208,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 237,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 12170.0,
+    "spiral+witness": 12170.0,
+    "spiral+named": 4190.0,
+    "hedge+spark": 6920.0,
+    "spiral+witness (template)": 3995.0,
+    "hedge+spark (template)": 4900.0
+   }
+  },
+  {
+   "seed": 240,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 6470.0,
+    "spiral+witness": 6470.0,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 247,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 248,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 8260.0,
+    "spiral+witness": 8260.0,
+    "spiral+named": null,
+    "hedge+spark": 5605.0,
+    "spiral+witness (template)": 10600.0,
+    "hedge+spark (template)": 13945.0
+   }
+  },
+  {
+   "seed": 256,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 7020.0,
+    "spiral+witness": 7020.0,
+    "spiral+named": 5355.0,
+    "hedge+spark": 5285.0,
+    "spiral+witness (template)": 5375.0,
+    "hedge+spark (template)": 5285.0
+   }
+  },
+  {
+   "seed": 258,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 1130.0,
+    "spiral+witness": 1130.0,
+    "spiral+named": 1130.0,
+    "hedge+spark": 1130.0,
+    "spiral+witness (template)": 1130.0,
+    "hedge+spark (template)": 1130.0
+   }
+  },
+  {
+   "seed": 265,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 300.0,
+    "spiral+witness": 300.0,
+    "spiral+named": 300.0,
+    "hedge+spark": 300.0,
+    "spiral+witness (template)": 300.0,
+    "hedge+spark (template)": 300.0
+   }
+  },
+  {
+   "seed": 269,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 277,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": 14055.0,
+    "hedge+spark": 6100.0,
+    "spiral+witness (template)": 3320.0,
+    "hedge+spark (template)": 4795.0
+   }
+  },
+  {
+   "seed": 285,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 9740.0,
+    "spiral+witness": 9740.0,
+    "spiral+named": 9740.0,
+    "hedge+spark": 5315.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 5325.0
+   }
+  },
+  {
+   "seed": 289,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 7385.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 7885.0
+   }
+  },
+  {
+   "seed": 302,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1080.0,
+    "spiral+witness": 1080.0,
+    "spiral+named": 1080.0,
+    "hedge+spark": 1080.0,
+    "spiral+witness (template)": 1080.0,
+    "hedge+spark (template)": 1080.0
+   }
+  },
+  {
+   "seed": 320,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 326,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": 11260.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 11730.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 331,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 1075.0,
+    "spiral+witness": 1075.0,
+    "spiral+named": 1075.0,
+    "hedge+spark": 1075.0,
+    "spiral+witness (template)": 1075.0,
+    "hedge+spark (template)": 1075.0
+   }
+  },
+  {
+   "seed": 333,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 342,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 354,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1260.0,
+    "spiral+witness": 1260.0,
+    "spiral+named": 1260.0,
+    "hedge+spark": 1260.0,
+    "spiral+witness (template)": 1260.0,
+    "hedge+spark (template)": 1260.0
+   }
+  },
+  {
+   "seed": 356,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 0.0,
+    "spiral+witness": 0.0,
+    "spiral+named": 0.0,
+    "hedge+spark": 0.0,
+    "spiral+witness (template)": 0.0,
+    "hedge+spark (template)": 0.0
+   }
+  },
+  {
+   "seed": 362,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 310.0,
+    "spiral+witness": 310.0,
+    "spiral+named": 310.0,
+    "hedge+spark": 310.0,
+    "spiral+witness (template)": 310.0,
+    "hedge+spark (template)": 310.0
+   }
+  },
+  {
+   "seed": 363,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 368,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10045.0,
+    "spiral+witness": 10045.0,
+    "spiral+named": 10045.0,
+    "hedge+spark": 6595.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 6615.0
+   }
+  },
+  {
+   "seed": 369,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 9395.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 9545.0
+   }
+  },
+  {
+   "seed": 373,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 6755.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 6335.0
+   }
+  },
+  {
+   "seed": 374,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 650.0,
+    "spiral+witness": 650.0,
+    "spiral+named": 650.0,
+    "hedge+spark": 650.0,
+    "spiral+witness (template)": 650.0,
+    "hedge+spark (template)": 650.0
+   }
+  },
+  {
+   "seed": 384,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10110.0,
+    "spiral+witness": 10110.0,
+    "spiral+named": 3840.0,
+    "hedge+spark": 4920.0,
+    "spiral+witness (template)": 3720.0,
+    "hedge+spark (template)": 5280.0
+   }
+  },
+  {
+   "seed": 391,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 7730.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 8160.0
+   }
+  },
+  {
+   "seed": 413,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 300.0,
+    "spiral+witness": 300.0,
+    "spiral+named": 300.0,
+    "hedge+spark": 300.0,
+    "spiral+witness (template)": 300.0,
+    "hedge+spark (template)": 300.0
+   }
+  },
+  {
+   "seed": 415,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 420,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 10400.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 7875.0
+   }
+  },
+  {
+   "seed": 453,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 280.0,
+    "spiral+witness": 280.0,
+    "spiral+named": 280.0,
+    "hedge+spark": 280.0,
+    "spiral+witness (template)": 280.0,
+    "hedge+spark (template)": 280.0
+   }
+  },
+  {
+   "seed": 470,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 472,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 1820.0,
+    "spiral+witness": 1820.0,
+    "spiral+named": 1820.0,
+    "hedge+spark": 1820.0,
+    "spiral+witness (template)": 1820.0,
+    "hedge+spark (template)": 1820.0
+   }
+  },
+  {
+   "seed": 477,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 4835.0,
+    "spiral+witness": 4835.0,
+    "spiral+named": 4835.0,
+    "hedge+spark": 5235.0,
+    "spiral+witness (template)": 4925.0,
+    "hedge+spark (template)": 5225.0
+   }
+  },
+  {
+   "seed": 479,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 6545.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 6165.0
+   }
+  },
+  {
+   "seed": 487,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10080.0,
+    "spiral+witness": 10080.0,
+    "spiral+named": 4465.0,
+    "hedge+spark": 6075.0,
+    "spiral+witness (template)": 4305.0,
+    "hedge+spark (template)": 6550.0
+   }
+  },
+  {
+   "seed": 501,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 2575.0,
+    "spiral+witness": 2575.0,
+    "spiral+named": 2575.0,
+    "hedge+spark": 2575.0,
+    "spiral+witness (template)": 2575.0,
+    "hedge+spark (template)": 2575.0
+   }
+  },
+  {
+   "seed": 503,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 506,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 2400.0,
+    "spiral+witness": 2400.0,
+    "spiral+named": 2400.0,
+    "hedge+spark": 2400.0,
+    "spiral+witness (template)": 2400.0,
+    "hedge+spark (template)": 2400.0
+   }
+  },
+  {
+   "seed": 513,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 11810.0,
+    "spiral+witness": 11810.0,
+    "spiral+named": null,
+    "hedge+spark": 4755.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 7910.0
+   }
+  },
+  {
+   "seed": 519,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 12865.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 8275.0
+   }
+  },
+  {
+   "seed": 520,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1765.0,
+    "spiral+witness": 1765.0,
+    "spiral+named": 1765.0,
+    "hedge+spark": 1765.0,
+    "spiral+witness (template)": 1765.0,
+    "hedge+spark (template)": 1765.0
+   }
+  },
+  {
+   "seed": 535,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 380.0,
+    "spiral+witness": 380.0,
+    "spiral+named": 380.0,
+    "hedge+spark": 380.0,
+    "spiral+witness (template)": 380.0,
+    "hedge+spark (template)": 380.0
+   }
+  },
+  {
+   "seed": 540,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 985.0,
+    "spiral+witness": 985.0,
+    "spiral+named": 985.0,
+    "hedge+spark": 985.0,
+    "spiral+witness (template)": 985.0,
+    "hedge+spark (template)": 985.0
+   }
+  },
+  {
+   "seed": 545,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 549,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 2390.0,
+    "spiral+witness": 2390.0,
+    "spiral+named": 2390.0,
+    "hedge+spark": 2390.0,
+    "spiral+witness (template)": 2390.0,
+    "hedge+spark (template)": 2390.0
+   }
+  },
+  {
+   "seed": 555,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 290.0,
+    "spiral+witness": 290.0,
+    "spiral+named": 290.0,
+    "hedge+spark": 290.0,
+    "spiral+witness (template)": 290.0,
+    "hedge+spark (template)": 290.0
+   }
+  },
+  {
+   "seed": 558,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 11370.0,
+    "spiral+witness": 11370.0,
+    "spiral+named": 13005.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": 13570.0,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 560,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 562,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1120.0,
+    "spiral+witness": 1120.0,
+    "spiral+named": 1120.0,
+    "hedge+spark": 1120.0,
+    "spiral+witness (template)": 1120.0,
+    "hedge+spark (template)": 1120.0
+   }
+  },
+  {
+   "seed": 566,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 710.0,
+    "spiral+witness": 710.0,
+    "spiral+named": 710.0,
+    "hedge+spark": 710.0,
+    "spiral+witness (template)": 710.0,
+    "hedge+spark (template)": 710.0
+   }
+  },
+  {
+   "seed": 568,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 11400.0,
+    "spiral+witness": 11400.0,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 578,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 6925.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 5945.0
+   }
+  },
+  {
+   "seed": 581,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10140.0,
+    "spiral+witness": 10140.0,
+    "spiral+named": null,
+    "hedge+spark": 4990.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 3780.0
+   }
+  },
+  {
+   "seed": 594,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 1785.0,
+    "spiral+witness": 1785.0,
+    "spiral+named": 1785.0,
+    "hedge+spark": 1785.0,
+    "spiral+witness (template)": 1785.0,
+    "hedge+spark (template)": 1785.0
+   }
+  },
+  {
+   "seed": 626,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 14165.0
+   }
+  },
+  {
+   "seed": 628,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 585.0,
+    "spiral+witness": 585.0,
+    "spiral+named": 585.0,
+    "hedge+spark": 585.0,
+    "spiral+witness (template)": 585.0,
+    "hedge+spark (template)": 585.0
+   }
+  },
+  {
+   "seed": 635,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 11820.0,
+    "spiral+witness": 11820.0,
+    "spiral+named": 3380.0,
+    "hedge+spark": 3700.0,
+    "spiral+witness (template)": 3580.0,
+    "hedge+spark (template)": 3700.0
+   }
+  },
+  {
+   "seed": 636,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 639,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 9625.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 12245.0
+   }
+  },
+  {
+   "seed": 646,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 4335.0,
+    "spiral+witness": 4335.0,
+    "spiral+named": 4335.0,
+    "hedge+spark": 4335.0,
+    "spiral+witness (template)": 4335.0,
+    "hedge+spark (template)": 4335.0
+   }
+  },
+  {
+   "seed": 648,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 13505.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 13855.0
+   }
+  },
+  {
+   "seed": 651,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 8455.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 8020.0
+   }
+  },
+  {
+   "seed": 656,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 10120.0,
+    "spiral+witness": 10120.0,
+    "spiral+named": null,
+    "hedge+spark": 7975.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 8440.0
+   }
+  },
+  {
+   "seed": 665,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 155.0,
+    "spiral+witness": 155.0,
+    "spiral+named": 155.0,
+    "hedge+spark": 155.0,
+    "spiral+witness (template)": 155.0,
+    "hedge+spark (template)": 155.0
+   }
+  },
+  {
+   "seed": 675,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 0.0,
+    "spiral+witness": 0.0,
+    "spiral+named": 0.0,
+    "hedge+spark": 0.0,
+    "spiral+witness (template)": 0.0,
+    "hedge+spark (template)": 0.0
+   }
+  },
+  {
+   "seed": 684,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 14275.0,
+    "spiral+witness": 14275.0,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 685,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 595.0,
+    "spiral+witness": 595.0,
+    "spiral+named": 595.0,
+    "hedge+spark": 595.0,
+    "spiral+witness (template)": 595.0,
+    "hedge+spark (template)": 595.0
+   }
+  },
+  {
+   "seed": 688,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 595.0,
+    "spiral+witness": 595.0,
+    "spiral+named": 595.0,
+    "hedge+spark": 595.0,
+    "spiral+witness (template)": 595.0,
+    "hedge+spark (template)": 595.0
+   }
+  },
+  {
+   "seed": 700,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 712,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 1295.0,
+    "spiral+witness": 1295.0,
+    "spiral+named": 1295.0,
+    "hedge+spark": 1295.0,
+    "spiral+witness (template)": 1295.0,
+    "hedge+spark (template)": 1295.0
+   }
+  },
+  {
+   "seed": 719,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 4355.0,
+    "spiral+witness": 4355.0,
+    "spiral+named": 5075.0,
+    "hedge+spark": 5140.0,
+    "spiral+witness (template)": 4365.0,
+    "hedge+spark (template)": 4445.0
+   }
+  },
+  {
+   "seed": 731,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 95.0,
+    "spiral+witness": 95.0,
+    "spiral+named": 95.0,
+    "hedge+spark": 95.0,
+    "spiral+witness (template)": 95.0,
+    "hedge+spark (template)": 95.0
+   }
+  },
+  {
+   "seed": 759,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 13005.0,
+    "spiral+witness": 13005.0,
+    "spiral+named": 7130.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 769,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 772,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 340.0,
+    "spiral+witness": 340.0,
+    "spiral+named": 340.0,
+    "hedge+spark": 340.0,
+    "spiral+witness (template)": 340.0,
+    "hedge+spark (template)": 340.0
+   }
+  },
+  {
+   "seed": 782,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 290.0,
+    "spiral+witness": 290.0,
+    "spiral+named": 290.0,
+    "hedge+spark": 290.0,
+    "spiral+witness (template)": 290.0,
+    "hedge+spark (template)": 290.0
+   }
+  },
+  {
+   "seed": 784,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 787,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 935.0,
+    "spiral+witness": 935.0,
+    "spiral+named": 935.0,
+    "hedge+spark": 935.0,
+    "spiral+witness (template)": 935.0,
+    "hedge+spark (template)": 935.0
+   }
+  },
+  {
+   "seed": 788,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 4955.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 4520.0
+   }
+  },
+  {
+   "seed": 808,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 935.0,
+    "spiral+witness": 935.0,
+    "spiral+named": 935.0,
+    "hedge+spark": 935.0,
+    "spiral+witness (template)": 935.0,
+    "hedge+spark (template)": 935.0
+   }
+  },
+  {
+   "seed": 811,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 300.0,
+    "spiral+witness": 300.0,
+    "spiral+named": 300.0,
+    "hedge+spark": 300.0,
+    "spiral+witness (template)": 300.0,
+    "hedge+spark (template)": 300.0
+   }
+  },
+  {
+   "seed": 828,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 2125.0,
+    "spiral+witness": 2125.0,
+    "spiral+named": 2125.0,
+    "hedge+spark": 2125.0,
+    "spiral+witness (template)": 2125.0,
+    "hedge+spark (template)": 2125.0
+   }
+  },
+  {
+   "seed": 830,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": 6440.0,
+    "hedge+spark": 5220.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 5175.0
+   }
+  },
+  {
+   "seed": 836,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 935.0,
+    "spiral+witness": 935.0,
+    "spiral+named": 935.0,
+    "hedge+spark": 935.0,
+    "spiral+witness (template)": 935.0,
+    "hedge+spark (template)": 935.0
+   }
+  },
+  {
+   "seed": 858,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 860,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 115.0,
+    "spiral+witness": 115.0,
+    "spiral+named": 115.0,
+    "hedge+spark": 115.0,
+    "spiral+witness (template)": 115.0,
+    "hedge+spark (template)": 115.0
+   }
+  },
+  {
+   "seed": 863,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 877,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 879,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 13815.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 889,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 10675.0
+   }
+  },
+  {
+   "seed": 899,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 3515.0,
+    "spiral+witness": 3515.0,
+    "spiral+named": 3845.0,
+    "hedge+spark": 3680.0,
+    "spiral+witness (template)": 3585.0,
+    "hedge+spark (template)": 3625.0
+   }
+  },
+  {
+   "seed": 906,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 740.0,
+    "spiral+witness": 740.0,
+    "spiral+named": 740.0,
+    "hedge+spark": 740.0,
+    "spiral+witness (template)": 740.0,
+    "hedge+spark (template)": 740.0
+   }
+  },
+  {
+   "seed": 909,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 595.0,
+    "spiral+witness": 595.0,
+    "spiral+named": 595.0,
+    "hedge+spark": 595.0,
+    "spiral+witness (template)": 595.0,
+    "hedge+spark (template)": 595.0
+   }
+  },
+  {
+   "seed": 926,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 932,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 942,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 11270.0,
+    "spiral+witness": 11270.0,
+    "spiral+named": 5800.0,
+    "hedge+spark": 9310.0,
+    "spiral+witness (template)": 5780.0,
+    "hedge+spark (template)": 9165.0
+   }
+  },
+  {
+   "seed": 951,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 958,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": 8925.0,
+    "spiral+witness": 8925.0,
+    "spiral+named": 11550.0,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 970,
+   "cues": {
+    "heading": false,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 340.0,
+    "spiral+witness": 340.0,
+    "spiral+named": 340.0,
+    "hedge+spark": 340.0,
+    "spiral+witness (template)": 340.0,
+    "hedge+spark (template)": 340.0
+   }
+  },
+  {
+   "seed": 974,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": 605.0,
+    "spiral+witness": 605.0,
+    "spiral+named": 605.0,
+    "hedge+spark": 605.0,
+    "spiral+witness (template)": 605.0,
+    "hedge+spark (template)": 605.0
+   }
+  },
+  {
+   "seed": 977,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 979,
+   "cues": {
+    "heading": false,
+    "fitness": false,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 12595.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 13070.0
+   }
+  },
+  {
+   "seed": 981,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": true
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": 6280.0,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": 5860.0
+   }
+  },
+  {
+   "seed": 993,
+   "cues": {
+    "heading": true,
+    "fitness": true,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  },
+  {
+   "seed": 997,
+   "cues": {
+    "heading": true,
+    "fitness": false,
+    "sighting": false
+   },
+   "found_s": {
+    "spiral": null,
+    "spiral+witness": null,
+    "spiral+named": null,
+    "hedge+spark": null,
+    "spiral+witness (template)": null,
+    "hedge+spark (template)": null
+   }
+  }
+ ]
+}
