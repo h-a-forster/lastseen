@@ -34,8 +34,13 @@ const AERIAL_ZOOM = 15; // about 3 m per pixel here: sharper than the 5 m the ma
 
 async function api(path, options) {
   const response = await fetch(path, options);
-  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || response.statusText);
+  if (!response.ok) throw new Error(errorText((await response.json().catch(() => ({}))).detail) || response.statusText);
   return response.json();
+}
+
+function errorText(detail) {
+  // FastAPI sends a string, or for a request that fails validation a list of {msg} objects
+  return Array.isArray(detail) ? detail.map((d) => d.msg.replace(/^Value error, /, "")).join("; ") : detail;
 }
 
 async function loadRunList(selectId) {

@@ -62,6 +62,11 @@ class Place:
         b = self.bounds()
         return b["north"] - y_m / M_PER_DEG, b["west"] + x_m / (M_PER_DEG * math.cos(math.radians(self.lat)))
 
+    def position(self, lat: float, lon: float) -> tuple[float, float]:
+        """The inverse of `latlon`: a point in degrees as (y_m, x_m) on this place's map."""
+        b = self.bounds()
+        return (b["north"] - lat) * M_PER_DEG, (lon - b["west"]) * M_PER_DEG * math.cos(math.radians(self.lat))
+
 
 PLACES = {
     "saint-ursanne": Place("Saint-Ursanne, Doubs valley (Switzerland)", 47.36495, 7.15520),
@@ -88,13 +93,9 @@ def visitor_place(lat: float, lon: float) -> str:
     """Register the 3 km square around a visitor's point as a place, download it and check it can be searched; returns
     its name. The point is rounded to about 100 m, so a place is downloaded once. Raises ValueError for coasts, water
     and places OpenStreetMap maps too sparsely, and MapDataUnavailable when its servers are busy."""
-    lat, lon = round(lat, 3), round(lon, 3)
-    name = f"{VISITOR_PREFIX}{abs(lat) * 1000:.0f}{'n' if lat >= 0 else 's'}-{abs(lon) * 1000:.0f}{'e' if lon >= 0 else 'w'}"
-    south, north, west, east = SWISS_IMAGERY
+    name, square = _visitor_square(lat, lon)
     known = name in PLACES
-    PLACES[name] = PLACES.get(name) or Place(f"{abs(lat):.3f}° {'N' if lat >= 0 else 'S'}, "
-                                             f"{abs(lon):.3f}° {'E' if lon >= 0 else 'W'}", lat, lon,
-                                             aerial=south <= lat <= north and west <= lon <= east)
+    PLACES[name] = PLACES.get(name) or square
     try:
         try:
             osm = fetch(name, attempts=2, timeout_s=90, wait_s=2)  # the main server takes about 45 s for 3 km when busy
@@ -106,6 +107,25 @@ def visitor_place(lat: float, lon: float) -> str:
             del PLACES[name]
         raise
     return name
+
+
+def visitor_spot(lat: float, lon: float, spot_lat: float, spot_lon: float) -> tuple[float, float]:
+    """Where a point lies on the map of the visitor's place around (lat, lon), as (y_m, x_m); no download. Raises
+    ValueError outside its 3 km square."""
+    square = _visitor_square(lat, lon)[1]
+    y_m, x_m = square.position(spot_lat, spot_lon)
+    if not (0 <= y_m < square.side_m and 0 <= x_m < square.side_m):
+        raise ValueError("the witness's spot is outside the 3 km search area; mark it inside the square")
+    return y_m, x_m
+
+
+def _visitor_square(lat: float, lon: float) -> tuple[str, Place]:
+    """The name and square of a visitor's place, centred on the point rounded to about 100 m."""
+    lat, lon = round(lat, 3), round(lon, 3)
+    name = f"{VISITOR_PREFIX}{abs(lat) * 1000:.0f}{'n' if lat >= 0 else 's'}-{abs(lon) * 1000:.0f}{'e' if lon >= 0 else 'w'}"
+    south, north, west, east = SWISS_IMAGERY
+    return name, Place(f"{abs(lat):.3f}° {'N' if lat >= 0 else 'S'}, {abs(lon):.3f}° {'E' if lon >= 0 else 'W'}", lat,
+                       lon, aerial=south <= lat <= north and west <= lon <= east)
 
 
 def visitor_seed(name: str) -> int:

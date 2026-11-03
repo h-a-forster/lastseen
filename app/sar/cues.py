@@ -67,11 +67,15 @@ def reports_for(scenario: Scenario, seed: int, subject: str | None = None) -> tu
 def true_sighting(scenario: Scenario, seed: int, t_s: float, subject: str | None = None) -> tuple[Report, Cue]:
     """A sighting reported at search time `t_s` that is right: where the person was 10-40 minutes earlier (fixed by
     the seed). For a visitor's test search, where the witness is right by design."""
-    age_s = min(np.random.default_rng([seed, 3]).uniform(*SIGHTING_AGE_S), t_s)
-    y, x = scenario.track[int((t_s - age_s) // RECORD_S)]
-    cue = Cue("sighting", True, t_s, _sighting_detail(scenario, y, x, age_s))
+    cue = right_sighting(scenario, t_s, min(np.random.default_rng([seed, 3]).uniform(*SIGHTING_AGE_S), t_s))
     name = subject or _NAMES.get(scenario.map.category, ("Alex", 50))[0]
     return Report(t_s, _sighting_text(name, cue.detail)), cue
+
+
+def right_sighting(scenario: Scenario, t_s: float, age_s: float) -> Cue:
+    """The facts behind a right sighting reported at search time `t_s`: where the person was `age_s` earlier."""
+    y, x = scenario.track[int((t_s - age_s) // RECORD_S)]
+    return Cue("sighting", True, t_s, _sighting_detail(scenario, y, x, age_s))
 
 
 def _sighting_text(name: str, d: dict) -> str:

@@ -11,13 +11,13 @@ import threading
 import time
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 from starlette.datastructures import Headers
 from starlette.staticfiles import NotModifiedResponse
 
@@ -185,6 +185,19 @@ class PlaceRace(BaseModel):
     report_minute: int = Field(45, ge=10, le=180)  # when a witness phones in where they saw her (right, by design)
     # where the test subject is from the start point when the witness calls (cues.COMPASS); None: the simulator picks
     heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
+    # or the visitor's own witness: where they saw her, and what they say, read by Spark as it is (the spot stays hidden)
+    seen_lat: float | None = Field(None, ge=-90, le=90)
+    seen_lon: float | None = Field(None, ge=-180, le=180)
+    witness_text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=10, max_length=400)] | None = None
+
+    @model_validator(mode="after")
+    def _witness_comes_whole(self):
+        given = [v is not None for v in (self.seen_lat, self.seen_lon, self.witness_text)]
+        if any(given) and not all(given):
+            raise ValueError("a witness needs both where they saw her and what they say")
+        if all(given) and self.heading is not None:
+            raise ValueError("with a witness's spot, the walk is chosen by the spot, not a heading")
+        return self
 
 
 @app.post("/api/place-race")
@@ -193,6 +206,11 @@ async def place_race(req: PlaceRace, request: Request):
     (a paid call, so it counts towards the hourly limit)."""
     if len(list(replay.RUNS_DIR.glob("*.json"))) >= MAX_STORED_RUNS:
         raise HTTPException(507, "storage for recorded races is full")
+    try:
+        witness = None if req.witness_text is None else (
+            req.witness_text, terrain.visitor_spot(req.lat, req.lon, req.seen_lat, req.seen_lon))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     _check_paid(request)
     try:
         name = await run_in_threadpool(_download_place, req.lat, req.lon)
@@ -201,10 +219,10 @@ async def place_race(req: PlaceRace, request: Request):
     except ValueError as e:
         raise HTTPException(422, str(e))
     try:
-        seed = await run_in_threadpool(_pick_walk, name, req)
-    except ValueError as e:  # no walk from here goes the chosen way
+        seed = await run_in_threadpool(_pick_walk, name, req, witness)
+    except ValueError as e:  # no walk from here goes the chosen way, or passes the witness's spot
         raise HTTPException(422, str(e))
-    return {"id": (await _live(_place_race, name, seed, req.report_minute * 60.0)).stem}
+    return {"id": (await _live(_place_race, name, seed, req.report_minute * 60.0, witness)).stem}
 
 
 def _download_place(lat: float, lon: float) -> str:
@@ -212,15 +230,15 @@ def _download_place(lat: float, lon: float) -> str:
         return terrain.visitor_place(lat, lon)
 
 
-def _pick_walk(name: str, req: PlaceRace) -> int:
+def _pick_walk(name: str, req: PlaceRace, witness: tuple[str, tuple[float, float]] | None) -> int:
     heading = None if req.heading is None else COMPASS.index(req.heading) * 45.0
     return replay.watchable_seed(name, terrain.visitor_seed(name), sighting_s=req.report_minute * 60.0,
-                                 heading_deg=heading)
+                                 heading_deg=heading, seen_m=None if witness is None else witness[1])
 
 
-def _place_race(name: str, seed: int, sighting_s: float) -> Path:
+def _place_race(name: str, seed: int, sighting_s: float, witness: tuple[str, tuple[float, float]] | None) -> Path:
     return replay.save(replay.race(seed, ["spiral", "hedge+spark"], drones=1, place=name, sighting_s=sighting_s,
-                                   subject="the test subject"))
+                                   subject="the test subject", witness=witness))
 
 
 class Question(BaseModel):
