@@ -2,6 +2,8 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 26 Oct - 4 Nov 2026
 
+[![Watch the 3-minute demo video](docs/img/video-thumb.jpg)](YOUTUBE_LINK)
+
 LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
 "more art than science"
 ([MIT Technology Review, 2024](https://www.technologyreview.com/2024/05/30/1092988/ai-directed-drones-could-help-find-lost-hikers-faster/)):
@@ -24,15 +26,16 @@ records 95% of those found within 24 hours are alive, against 60% after 48 hours
 call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia.pdf)). Every search-time claim is
 tested on a simulator built for it.
 
-## For judges: 3 minutes
-1. [Watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40):
+## For judges
+1. [Watch the demo video](YOUTUBE_LINK) (3 minutes): from a spoken brief to the find, with the results.
+2. [Watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40):
    the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone
    takes 2 h 56.
-2. [Read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief): type or say what the family said, and watch it become weighted places
+3. [Read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief): type or say what the family said, and watch it become weighted places
    on a real map in about 20 seconds.
-3. [Be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place): mark where she was seen, say the call in your own words, and
+4. [Be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place): mark where she was seen, say the call in your own words, and
    watch the drone follow it (about a minute).
-4. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
+5. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
 
 The races are recorded simulator runs, on a real Swiss valley or on synthetic maps, with real drone photos; reading a
 brief, checking your own photo and the witness call are live calls to Meta's models. The hosted page runs one model job
