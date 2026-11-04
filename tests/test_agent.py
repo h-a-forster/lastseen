@@ -114,6 +114,28 @@ def test_advisor_carries_on_when_spark_fails(monkeypatch):
     assert a.name == "greedy+spark"
 
 
+def test_a_race_asks_for_each_reading_at_once_before_the_search_flies(monkeypatch):
+    import threading
+    from app.agent import advisor
+    from app.sar import replay
+
+    lock, running, most = threading.Lock(), [0], [0]
+
+    def slow_and_offline(search_map, reports, base):
+        with lock:
+            running[0] += 1
+            most[0] = max(most[0], running[0])
+        time.sleep(0.3)
+        with lock:
+            running[0] -= 1
+        raise ModelCallError("offline")
+
+    monkeypatch.setattr(advisor, "interpret", slow_and_offline)
+    run = replay.race(1, ["hedge+spark"], drones=1, hours=0.5, sighting_s=600.0)
+    assert most[0] == 2  # the brief and the sighting were read side by side, not one after the other
+    assert run["lanes"]["hedge+spark"]["result"]  # and without readings the search still flew
+
+
 def fake_spark(monkeypatch, data):
     from app.agent import interpret as interpret_module
     monkeypatch.setattr(interpret_module, "spark_json", lambda *a, **k: Answer(data, 0.0, True, "test"))

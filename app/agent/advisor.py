@@ -6,6 +6,8 @@ stays deterministic. If Spark fails (network, spend cap, cache miss in replay mo
 the hypotheses and the failure is recorded: the drones never wait on the model.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+
 from app.agent.interpret import interpret
 from app.meta_api import ModelCallError
 from app.sar.detection import DetectionModel
@@ -24,6 +26,19 @@ def read_all(search_map: SearchMap, reports: list[Report], stats: dict) -> list:
     """Spark's reading after each report, as the advisor would request them (same requests, so they share the cache)."""
     base = base_map(search_map, stats)
     return [interpret(search_map, reports[:k], base) for k in range(1, len(reports) + 1)]
+
+
+def read_ahead(search_map: SearchMap, reports: list[Report], stats: dict) -> None:
+    """Ask for Spark's reading after each report all at once, before a race flies. Each reading depends only on the
+    reports, so the race then replays them from the cache instead of waiting on them one after another. A reading that
+    fails is left to the race, which asks again and carries on without it."""
+    base = base_map(search_map, stats)
+    with ThreadPoolExecutor(len(reports)) as pool:
+        for reading in [pool.submit(interpret, search_map, reports[:k], base) for k in range(1, len(reports) + 1)]:
+            try:
+                reading.result()
+            except ModelCallError:
+                pass
 
 
 class SparkAdvisor:

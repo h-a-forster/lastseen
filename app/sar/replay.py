@@ -21,6 +21,7 @@ import re
 import zlib
 from pathlib import Path
 
+from app.agent.advisor import read_ahead
 from app.perception import pool as photo_pool
 from app.perception.heridal import CREDIT
 from app.sar.bench import fleet_for, make_planner
@@ -32,6 +33,7 @@ from app.sar.scenario import Scenario
 from app.sar.terrain import PLACES, build
 from app.sar.terrain import CREDIT as MAP_CREDIT
 from app.sar.sim import Sim, drone_losses
+from app.sar.stats import lost_person_stats
 from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "runs"
@@ -57,6 +59,8 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
         else:
             sighting, cue = Report(sighting_s, witness[0]), right_sighting(scenario, sighting_s, sighting_s - seen[1])
         reports, cues = [reports[0], sighting], [c for c in cues if c.kind != "sighting"] + [cue]
+    if any(name.endswith("+spark") for name in planner_names):
+        read_ahead(scenario.map, reports, lost_person_stats())
     fleet = FleetSpec(drones=drones)
     losses = drone_losses(seed, drones) if lose_drone else None
     photos = photo_pool.shared()
