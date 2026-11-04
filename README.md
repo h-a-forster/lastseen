@@ -55,11 +55,13 @@ to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 4
 drone photo of a person her size](static/race.jpg)
 
 ## What search experts told us
-We wrote to people who study and fly drone searches. Four answered our questions, and their answers shaped LastSeen:
+We wrote to people who study and fly drone searches. Five answered our questions, and their answers shaped LastSeen:
 - **Witnesses or statistics?** "These two sources of information are not mutually exclusive; rather, they complement
   each other." (Antonio Miguel Cruz, University of Alberta). LastSeen blends both into one probability map.
 - **Does the map change mid-search?** Jan-Hendrik Ewers (University of Glasgow) told us his drone-search planner
-  "assumes that the underlying [probability map] is static." LastSeen re-plans mid-flight when a report changes it.
+  "assumes that the underlying [probability map] is static." Steve Bullock (University of Bristol), a co-creator of
+  SAREnv, the open benchmark for drone searches, told us: "We haven't yet implemented changes in probability map."
+  LastSeen re-plans mid-flight when a report changes it.
 - **How reliable are sightings?** "From my own SAR experience I would say the vast majority [of sightings] have nothing
   to do with the subject." (Robert J. Koester, dbS Productions). So the team planner hedges: when a sighting was wrong,
   it still did as well as the standard pattern, and the demo includes a search where the sighting is wrong.

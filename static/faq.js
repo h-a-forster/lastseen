@@ -5,7 +5,7 @@ const F = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 async function showFaq() {
-  const entries = await fetch("/faq.json?v=12").then((r) => r.json());
+  const entries = await fetch("/faq.json?v=13").then((r) => r.json());
   F("faq-list").innerHTML = entries.map((e) => (e.group ? `<h3 class="faq-group">${esc(e.group)}</h3>` : "") +
     `<details id="faq-${esc(e.id)}"><summary>${esc(e.q)}</summary><p>${esc(e.a)}</p></details>`).join("");
 }
