@@ -364,7 +364,7 @@ function updateLaneText(lane, t) {
   const found = lane.found && t >= lane.found.t_s;
   const ended = !lane.found && t >= lane.endT;
   lane.statusEl.textContent = found ? `FOUND at ${clock(lane.found.t_s)}` : ended ? `not found in ${clock(lane.endT)}` : `${lane.photoIndex} photo${lane.photoIndex === 1 ? "" : "s"} · ${lane.alarmCount} alarm${lane.alarmCount === 1 ? "" : "s"}`;
-  lane.statusEl.className = `text-xs font-mono ${found ? "text-green-400 font-semibold" : ended ? "text-rose-400" : "text-slate-400"}`;
+  lane.statusEl.className = found ? "lane-badge found" : ended ? "lane-badge" : "text-xs font-mono text-slate-400";
   const sortie = lastAt(lane.notes.filter((n) => ["sortie", "restart", "hunt"].includes(n.kind)), Math.min(t, lane.endT));
   lane.noteEl.textContent = sortie ? `Last decision: ${sortie.text}.` : "";
   const hit = found && lane.sightings.find((s) => s.found);

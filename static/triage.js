@@ -21,10 +21,10 @@ function showTriage(result, imageUrl) {
   const unlabelled = (c) => labelled.length && !labelled.some((b) => overlaps(c.box, b));
   T("triage-photo").innerHTML = `<img src="${imageUrl}" alt="Drone photo being checked" class="w-full rounded">` +
     missed.map((b) => `<div class="absolute border-2 border-dashed border-rose-400" style="${pct(pad(b, 18))}" title="missed person"></div>`).join("") +
-    order.map((c, i) => `<div class="absolute border-2 ${c.alarm ? "border-green-400" : "border-slate-400/80"}" style="${pct(pad(c.box, 18))}"><span class="absolute -top-5 left-0 text-xs font-mono ${c.alarm ? "text-green-300" : "text-slate-300"}">${i + 1}</span></div>`).join("");
+    order.map((c, i) => `<div class="absolute border-2 ${c.alarm ? "border-green-400" : "border-slate-400/80"}" style="${pct(pad(c.box, 18))}"><span class="num-badge on-photo${c.alarm ? " alarm" : ""}">${i + 1}</span></div>`).join("");
   T("triage-list").innerHTML = order.length
     ? order.map((c, i) => `<li class="flex gap-2 items-start">${thumb(imageUrl, c.box, w, h)}<div>
-        <span class="font-mono text-xs text-slate-400">${i + 1}</span>
+        <span class="num-badge${c.alarm ? " alarm" : ""}">${i + 1}</span>
         <span class="${c.alarm ? "text-green-300 font-medium" : "text-slate-300"}">${c.alarm ? (unlabelled(c) ? "Alarm: nobody is labelled here" : "Alarm: check this spot") : c.spark ? "Dismissed by Spark" : "Not checked (low SAM score)"}</span>
         <div class="text-xs text-slate-400">${c.spark ? `Spark: “${escapeText(c.spark.looks_like)}” (${Math.round(c.spark.confidence * 100)}%) · ` : ""}SAM 3.1: ${Math.round(c.sam * 100)}%</div>
       </div></li>`).join("")
