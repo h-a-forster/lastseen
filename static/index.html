@@ -16,7 +16,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=6" />
+  <link rel="stylesheet" href="/style.css?v=7" />
 </head>
 <body class="sv" data-tint="sage">
   <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
@@ -47,9 +47,9 @@
           <p class="lede">LastSeen flies a search drone for a missing person and decides where it looks. Today, what witnesses say reaches the search map by hand, or not at all. One volunteer launches it, swaps batteries and stays in command.</p>
         </div>
         <ul class="hero-points">
-          <li><b>Muse Spark reads every report</b><span>Each witness's words become weighted, checked scenarios on the real map, in seconds.</span></li>
-          <li><b>The drone re-plans mid-flight</b><span>It breaks off its search pattern to follow a sighting, and flies the search itself.</span></li>
-          <li><b>SAM&nbsp;3.1 and Muse Spark check every photo</b><span>For a person a few dozen pixels wide: a reviewer sees about 280 close-ups instead of 1,250 photos.</span></li>
+          <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg><b>Muse Spark reads every report</b><span>Each witness's words become weighted, checked scenarios on the real map, in seconds.</span></li>
+          <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7h7V6"/><path d="M12 13c3 0 5-2 7-6"/><circle cx="19.5" cy="5.5" r="1.6"/></svg><b>The drone re-plans mid-flight</b><span>It breaks off its search pattern to follow a sighting, and flies the search itself.</span></li>
+          <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><circle cx="12" cy="10" r="2"/><path d="M8.5 16.5c1-2.5 6-2.5 7 0"/></svg><b>SAM&nbsp;3.1 and Muse Spark check every photo</b><span>For a person a few dozen pixels wide: a reviewer sees about 280 close-ups instead of 1,250 photos.</span></li>
         </ul>
         <p class="hero-foot">Tested in simulation on 200 searches fixed in advance, with detection measured on real drone photos. The search below runs over a real Swiss valley.</p>
       </div>
@@ -138,15 +138,26 @@
         <dl class="facts">
           <div class="fact">
             <dt>79%</dt>
-            <dd>of people about 44&nbsp;px wide (a drone at 100&nbsp;m) found in a single photo, measured on 227 people in real drone photos. 3 of its 4 "false alarms" on empty ground were people the labellers had missed.</dd>
+            <div class="mini" role="img" aria-label="Found in a single photo: 79%">
+              <div class="mini-row ours" style="--v:79%"><span>One photo</span><i></i><b>79%</b></div>
+            </div>
+            <dd>of people about 44&nbsp;px wide (a drone at 100&nbsp;m) found by SAM&nbsp;3.1 in a single photo, measured on 227 people in real drone photos. 3 of its 4 "false alarms" on empty ground were people the labellers had missed.</dd>
           </div>
           <div class="fact">
             <dt>~280</dt>
-            <dd>close-ups instead of 1,250 photos for a reviewer in 4 hours of one-drone flying.</dd>
+            <div class="mini" role="img" aria-label="Photos to review in 4 hours: about 280 close-ups instead of 1,250 photos">
+              <div class="mini-row ours" style="--v:22.4%"><span>Close-ups</span><i></i><b>280</b></div>
+              <div class="mini-row" style="--v:100%"><span>Every photo</span><i></i><b>1,250</b></div>
+            </div>
+            <dd>close-ups for a reviewer to check in 4 hours of flying, instead of all 1,250 photos.</dd>
           </div>
           <div class="fact">
             <dt>1 h 52</dt>
-            <dd>until half were found, against 3 h 17 with the expanding square alone; 51% found within 2 hours instead of 44.5% (one drone, 200 scenarios fixed in advance and run once).</dd>
+            <div class="mini" role="img" aria-label="Time until half were found: LastSeen 1 h 52, expanding square 3 h 17">
+              <div class="mini-row ours" style="--v:46.7%"><span>LastSeen</span><i></i><b>1 h 52</b></div>
+              <div class="mini-row" style="--v:82.1%"><span>Square</span><i></i><b>3 h 17</b></div>
+            </div>
+            <dd>until half the missing people were found, against 3 h 17 with the standard expanding square (one drone, 200 test searches fixed in advance and run once).</dd>
           </div>
         </dl>
         <div>
@@ -156,15 +167,31 @@
         <dl class="facts">
           <div class="fact">
             <dt>55%</dt>
-            <dd>found within 2 hours when witnesses name places ("by the bridge on the Route de Montmelon"), against 40% for rules and 46% for a volunteer who knows every place on the map. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/named-places.txt">Results</a></dd>
+            <div class="mini" role="img" aria-label="Found within 2 hours when witnesses name places: LastSeen 55%, a volunteer who knows the map 46%, rules 40%">
+              <div class="mini-row ours" style="--v:55%"><span>LastSeen</span><i></i><b>55%</b></div>
+              <div class="mini-row" style="--v:46%"><span>Volunteer</span><i></i><b>46%</b></div>
+              <div class="mini-row" style="--v:40%"><span>Rules</span><i></i><b>40%</b></div>
+            </div>
+            <dd>found within 2 hours when witnesses name places ("by the bridge on the Route de Montmelon") instead of giving distances. Rules can't read that; Muse Spark can. The volunteer knows every place on the map. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/named-places.txt">Results</a></dd>
           </div>
           <div class="fact">
             <dt>+7 points</dt>
-            <dd>more found within 2 hours than the expanding square when two witnesses disagree and only one is right. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/two-witnesses.txt">Results</a></dd>
+            <div class="mini" role="img" aria-label="Found within 2 hours when two witnesses disagree: LastSeen 53%, expanding square 46%">
+              <div class="mini-row ours" style="--v:53%"><span>LastSeen</span><i></i><b>53%</b></div>
+              <div class="mini-row" style="--v:46%"><span>Square</span><i></i><b>46%</b></div>
+            </div>
+            <dd>more found within 2 hours than the standard square, when two witnesses disagree and only one of them is right. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/two-witnesses.txt">Results</a></dd>
           </div>
           <div class="fact">
             <dt>PX4</dt>
-            <dd>the autopilot many real drones run flew LastSeen's missions in its simulator, and took a new leg sent mid-flight without stopping. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/px4-sitl.md">How</a></dd>
+            <svg class="mini mini-route" viewBox="0 0 200 56" role="img" aria-label="The drone leaves its search pattern for the new route mid-flight">
+              <path class="planned" d="M52 28v-14h-32v32h40" />
+              <path class="flown" d="M36 30h8v-8h-16v16h24v-10" />
+              <path class="leg" d="M52 28C95 28 135 12 176 12" />
+              <circle class="seen" cx="181" cy="12" r="4.5" />
+              <text x="72" y="48">new route, sent mid-flight</text>
+            </svg>
+            <dd>The flight software many real drones run flew LastSeen's routes in its simulator. When a witness called mid-flight, it switched to the new route without stopping. No real drone has flown them yet. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/px4-sitl.md">How we tested</a></dd>
           </div>
         </dl>
       </div>

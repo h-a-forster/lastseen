@@ -86,7 +86,9 @@
 }
 .lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 48ch; }
 .hero-points { display: grid; gap: 18px; padding-top: 6px; }
-.hero-points li { padding-top: 10px; border-top: 1.5px solid var(--ink); }
+.hero-points li { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; padding-top: 12px; border-top: 1.5px solid var(--ink); }
+.hero-points li > * { grid-column: 2; }
+.hero-points .point-icon { grid-column: 1; grid-row: 1 / span 2; width: 34px; height: 34px; padding: 6px; border: 1.5px solid var(--red); border-radius: var(--r-frame); fill: none; stroke: var(--red); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .hero-points b { display: block; font-size: 16px; font-weight: 650; }
 .hero-points span { display: block; margin-top: 4px; font-size: 14px; line-height: 1.45; color: var(--ink-2); max-width: 48ch; }
 .hero-foot { grid-column: 1 / -1; font-size: 13px; color: var(--ink-3); }
@@ -96,10 +98,24 @@
 .band h2, .band-title { font-size: 22px; line-height: 1.15; font-weight: 650; font-stretch: 86%; letter-spacing: -0.01em; }
 .band-sub { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 40ch; }
 .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
-.fact { padding-top: 12px; border-top: 1.5px solid var(--ink); }
+.fact { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 0; padding-top: 12px; border-top: 1.5px solid var(--ink); }
 .fact dt { margin-bottom: 8px; font-size: 40px; font-weight: 600; font-stretch: 80%; letter-spacing: -0.02em; line-height: 1; }
 .fact dd { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
 .fact dd a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+/* Mini charts under each fact: red is LastSeen (Meta's models at work), grey what it is compared with */
+.mini { display: grid; gap: 6px; align-content: start; margin-bottom: 12px; }
+.mini-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-2); }
+.mini-row i { position: relative; height: 8px; border-radius: 4px; background: rgba(24, 36, 30, 0.1); }
+.mini-row i::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--v); border-radius: 4px; background: var(--ink-3); }
+.mini-row.ours i::before { background: var(--red); }
+.mini-row b { font-weight: 600; color: var(--ink); text-align: right; white-space: nowrap; }
+.mini-route { width: 100%; max-width: 260px; height: auto; }
+.mini-route path { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mini-route .planned { stroke: var(--ink-3); stroke-dasharray: 2 4; opacity: 0.7; }
+.mini-route .flown { stroke: var(--ink); }
+.mini-route .leg { stroke: var(--red); }
+.mini-route .seen { fill: var(--well); stroke: var(--red); stroke-width: 2; }
+.mini-route text { font-size: 9px; fill: var(--ink-2); }
 
 /* ---------- sheets (sections) ---------- */
 
