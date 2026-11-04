@@ -7,6 +7,9 @@
   MODEL_MODE=replay forbids network calls: a cache miss is an error. Use it offline and in CI.
 - SPARK_BACKEND=open sends every Spark call to Muse Spark Open, the open-weight model, on Baseten's inference API
   (BASETEN_API_KEY). It accepts a JSON schema but doesn't enforce it, so callers keep checking what comes back.
+- transcribe_live relays a visitor's microphone to Muse Voice Transcribe's realtime stream, so the words appear as they
+  speak. It is neither retried nor cached: a live recording can't be sent twice, and the page falls back to sending the
+  whole recording to `transcribe`, which is.
 - USD_CAP stops a process that has spent that much (default $2), so a loop can't drain the credits. Every paid call is
   appended to the spend ledger; with USD_CAP_INCLUDES_LEDGER=1 the cap counts the whole ledger instead, for a host
   that restarts often but keeps its ledger.
@@ -14,6 +17,7 @@
 Plain httpx rather than LiteLLM, because LiteLLM's `drop_params` can silently strip `response_format`.
 """
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -22,15 +26,18 @@ import random
 import re
 import threading
 import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+import websockets
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_URL = "https://api.meta.ai/v1"
+REALTIME_URL = "wss://api.meta.ai/v1/asr/realtime"
 SPARK = "muse-spark-1.3"
 SPARK_OPEN = "meta-models/muse-spark-open-1026"
 SAM = "sam-3.1"
@@ -38,7 +45,9 @@ VOICE = "muse-voice-transcribe-1.0"
 # USD per million tokens: input, cached input, output (reasoning is billed as output). dev.meta.ai pricing, 29 Oct 2026.
 PRICE_PER_M = {SPARK: (1.25, 0.15, 4.25), SPARK_OPEN: (1.25, 0.15, 4.25)}  # SPARK_OPEN: Baseten pricing, 30 Oct 2026
 SAM_USD_PER_IMAGE = 2.50 / 1000  # SAM is billed per image, not per token
-VOICE_USD_PER_HOUR = 0.18  # Voice Transcribe is billed per hour of audio
+VOICE_USD_PER_HOUR = 0.18  # Voice Transcribe is billed per hour of audio, streamed or sent as a file
+LIVE_BYTES_PER_S = 32000  # the realtime stream's audio: 16 kHz mono 16-bit PCM
+LIVE_MAX_S = 180  # a spoken brief or witness report; the stream ends here
 RETRY_STATUS = {429, 500, 503}
 MAX_ATTEMPTS = 4
 TIMEOUT_S = 120.0
@@ -134,6 +143,53 @@ def transcribe(wav: bytes) -> tuple[str, float, bool]:
     return _without_repeats(record["response"].get("transcript", "")), record["usd"], record["cached"]
 
 
+async def transcribe_live(audio: AsyncIterator[bytes], on_text: Callable[[str, bool], Awaitable[None]]) -> float:
+    """Muse Voice Transcribe's realtime stream: send the PCM chunks from `audio` as they come, and pass each partial
+    transcript, then the final one, to `on_text(text, final)`. Returns what the audio cost."""
+    key = _api_key("MODEL_API_KEY")
+    sent = 0
+    try:
+        async with websockets.connect(REALTIME_URL, open_timeout=30) as meta:
+            await meta.send(json.dumps({"authorization": {"accessToken": f"Bearer {key}"}, "model": VOICE,
+                                        "audioEncoding": "PCM_16KHZ", "mode": "PUSH_TO_TALK",
+                                        "emitAudioProgress": False}))
+            if "sessionId" not in json.loads(await asyncio.wait_for(meta.recv(), 30)):
+                raise ModelCallError("the realtime stream didn't open a session")
+
+            async def forward():
+                nonlocal sent
+                try:
+                    async for chunk in audio:
+                        if sent + len(chunk) > LIVE_MAX_S * LIVE_BYTES_PER_S:
+                            break
+                        await meta.send(chunk)
+                        sent += len(chunk)
+                    await meta.send(json.dumps({"type": "endStream"}))
+                except BaseException:
+                    await meta.close()  # the visitor left: end the stream now rather than when it times out
+                    raise
+
+            forwarding = asyncio.create_task(forward())
+            try:
+                async for message in meta:  # ends when the server closes the stream after the final transcript
+                    event = json.loads(message) if isinstance(message, str) else {}
+                    if event.get("type") == "error":
+                        raise ModelCallError(f"realtime stream: {event.get('message')}")
+                    if event.get("type") == "transcript":
+                        await on_text(_without_repeats(event["transcript"]), bool(event.get("final")))
+            finally:
+                forwarding.cancel()
+            if forwarding.done() and not forwarding.cancelled() and forwarding.exception():
+                raise forwarding.exception()
+    except (websockets.exceptions.WebSocketException, OSError, TimeoutError) as e:
+        raise ModelCallError(f"realtime stream: {e}") from e
+    finally:
+        usd = sent / LIVE_BYTES_PER_S / 3600 * VOICE_USD_PER_HOUR
+        if sent:
+            _charge(usd, VOICE, "realtime")
+    return usd
+
+
 def _without_repeats(text: str) -> str:
     """The transcripts sometimes say a word twice in a row ("heading heading east"); keep one."""
     return re.sub(r"\b(\w+)(\s+\1\b)+", r"\1", text, flags=re.IGNORECASE)
@@ -180,13 +236,7 @@ def _counted_usd() -> float:
 
 def _post(path: str, body: dict, files: dict | None = None) -> dict:
     base_url, key_var = ENDPOINTS.get(body["model"], (BASE_URL, "MODEL_API_KEY"))
-    key = os.getenv(key_var)
-    if not key:
-        raise ModelCallError(f"{key_var} is not set")
-    cap = float(os.getenv("USD_CAP", "2"))
-    spent = _counted_usd()
-    if spent >= cap:
-        raise SpendCapReached(f"spent ${spent:.2f} of the USD_CAP ${cap:.2f}")
+    key = _api_key(key_var)
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             payload = {"files": files} if files else {"json": body}
@@ -203,6 +253,18 @@ def _post(path: str, body: dict, files: dict | None = None) -> dict:
             continue
         raise ModelCallError(f"HTTP {r.status_code}: {r.text[:300]}")
     raise AssertionError("unreachable")
+
+
+def _api_key(key_var: str) -> str:
+    """The key for a paid call, once the spend cap allows another one."""
+    key = os.getenv(key_var)
+    if not key:
+        raise ModelCallError(f"{key_var} is not set")
+    cap = float(os.getenv("USD_CAP", "2"))
+    spent = _counted_usd()
+    if spent >= cap:
+        raise SpendCapReached(f"spent ${spent:.2f} of the USD_CAP ${cap:.2f}")
+    return key
 
 
 def _retryable(r: httpx.Response) -> bool:

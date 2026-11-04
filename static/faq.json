@@ -30,7 +30,7 @@
   {"id": "sam", "q": "What does SAM 3.1 do?",
    "a": "It looks at each drone photo, in 1000-pixel tiles, and proposes everything that might be a person, with a confidence. Muse Spark then checks each proposal, so the reviewer only sees the alarms."},
   {"id": "voice", "q": "What does Muse Voice Transcribe do?",
-   "a": "It turns a spoken brief or a witness's call into text, so a volunteer can say what the family told them instead of typing it. In section 4 you can say a witness call yourself and watch the drone follow it."},
+   "a": "It turns a spoken brief or a witness's call into text, word by word as it is spoken, so a volunteer can say what the family told them instead of typing it. In section 4 you can say a witness call yourself and watch the drone follow it."},
   {"id": "languages", "q": "Does it work in other languages?",
    "a": "Muse Voice Transcribe, the model that takes the spoken brief, understands 25 languages, including French, German and Italian, and detects on its own which one is being spoken."},
   {"id": "map", "q": "Where does the map of likely places come from?",

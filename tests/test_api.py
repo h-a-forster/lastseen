@@ -1,16 +1,18 @@
 """The public endpoints refuse what they must: unknown planners and places, the held-out scenarios, and paid photo
 checks that are switched off, aren't images, or come too often."""
 
+import asyncio
 import io
 import json
 import math
 import os
 import re
 
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import main
+from app import main, meta_api
 from app.main import app
 from app.perception import pool as photo_pool
 
@@ -168,3 +170,95 @@ def test_the_help_box_only_ever_returns_written_answers(monkeypatch):
     monkeypatch.setattr(main.faq, "spark_json", lambda *a, **k: answer)
     assert [e["id"] for e in main.faq.route("Can it run without signal?")["answers"]] == ["open"]
 
+
+
+class FakeRealtime:
+    """Muse Voice Transcribe's realtime stream as its docs describe it: a session for the handshake, a partial
+    transcript per audio chunk, and after endStream the final transcript and a normal close."""
+
+    def __init__(self):
+        self.sent, self.closed, self.inbox = [], False, asyncio.Queue()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        self.closed = True
+
+    async def send(self, message):
+        self.sent.append(message)
+        if isinstance(message, bytes):
+            words = sum(isinstance(m, bytes) for m in self.sent)
+            await self.inbox.put(json.dumps({"type": "transcript", "transcript": f"word {words}", "final": False}))
+        elif json.loads(message).get("type") == "endStream":
+            await self.inbox.put(json.dumps({"type": "transcript", "transcript": "she went east", "final": True}))
+            await self.inbox.put(None)
+        else:
+            await self.inbox.put(json.dumps({"sessionId": "s1"}))
+
+    async def recv(self):
+        return await self.inbox.get()
+
+    async def close(self):
+        self.closed = True
+        await self.inbox.put(None)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        message = await self.inbox.get()
+        if message is None:
+            raise StopAsyncIteration
+        return message
+
+
+def realtime(tmp_path, monkeypatch) -> FakeRealtime:
+    monkeypatch.setattr(meta_api, "LEDGER", tmp_path / "spend.jsonl")
+    monkeypatch.setattr(meta_api, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(meta_api, "_spent_usd", 0.0)
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    monkeypatch.setenv("USD_CAP", "10")
+    fake = FakeRealtime()
+    monkeypatch.setattr(meta_api.websockets, "connect", lambda url, **kw: fake)
+    return fake
+
+
+def test_a_live_transcript_relays_the_microphone_and_passes_the_words_back_as_they_come(tmp_path, monkeypatch):
+    fake = realtime(tmp_path, monkeypatch)
+    monkeypatch.setattr(main, "LIVE_MODELS", False)
+    with client.websocket_connect("/api/transcribe/live") as socket:
+        assert socket.receive_json() == {"error": "live model calls are switched off on this server"}
+    assert fake.sent == []
+    monkeypatch.setattr(main, "LIVE_MODELS", True)
+    monkeypatch.setattr(main, "_paid_times", main.defaultdict(main.deque))
+    second = b"\0" * meta_api.LIVE_BYTES_PER_S
+    with client.websocket_connect("/api/transcribe/live") as socket:
+        socket.send_bytes(second)
+        socket.send_bytes(second)
+        socket.send_text(json.dumps({"type": "endStream"}))
+        words = [socket.receive_json() for _ in range(3)]
+    assert words == [{"text": "word 1", "final": False}, {"text": "word 2", "final": False},
+                     {"text": "she went east", "final": True}]
+    handshake = json.loads(fake.sent[0])
+    assert handshake["authorization"] == {"accessToken": "Bearer test-key"} and handshake["audioEncoding"] == "PCM_16KHZ"
+    assert fake.sent[1:] == [second, second, json.dumps({"type": "endStream"})]
+    assert json.loads(meta_api.LEDGER.read_text())["usd"] == round(2 / 3600 * meta_api.VOICE_USD_PER_HOUR, 5)
+
+
+def test_a_live_transcript_ends_the_realtime_stream_as_soon_as_the_visitor_leaves(tmp_path, monkeypatch):
+    fake = realtime(tmp_path, monkeypatch)
+
+    class Left(Exception):
+        pass
+
+    async def audio():
+        yield b"\0" * meta_api.LIVE_BYTES_PER_S
+        raise Left
+
+    async def ignore(text, final):
+        pass
+
+    with pytest.raises(Left):  # within a second, not when the realtime stream would time out
+        asyncio.run(asyncio.wait_for(meta_api.transcribe_live(audio(), ignore), 1))
+    assert fake.closed and len(meta_api.LEDGER.read_text().splitlines()) == 1
