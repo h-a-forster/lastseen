@@ -21,7 +21,7 @@ Each job's instructions are the `SYSTEM` string and its answer format the `SCHEM
 Spark runs at `reasoning_effort` "low" everywhere: each job is one bounded reading, and reasoning is billed as output.
 
 ## Calls and cost
-From the spend ledger, 27 Oct to 4 Nov 2026, at dev.meta.ai and Baseten list prices:
+From the spend ledger, every paid call of the hackathon, at dev.meta.ai and Baseten list prices:
 
 | Model | Paid calls | Cost | Per call |
 |---|---|---|---|
