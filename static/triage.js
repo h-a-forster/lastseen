@@ -12,7 +12,7 @@ async function showExample() {
   showTriage(result, `/api/triage/example.jpg?photo=${encodeURIComponent(result.name)}`);
 }
 
-function showTriage(result, imageUrl) {
+function showTriage(result, imageUrl, seconds = null) {
   const { width: w, height: h } = result;
   const pct = (box) => `left:${(box[0] / w) * 100}%;top:${(box[1] / h) * 100}%;width:${((box[2] - box[0]) / w) * 100}%;height:${((box[3] - box[1]) / h) * 100}%`;
   const labelled = result.people_labelled || [];
@@ -39,7 +39,7 @@ function showTriage(result, imageUrl) {
     stat(result.candidates.length, "proposals from SAM 3.1") +
     stat(result.alarms, `alarm${result.alarms === 1 ? "" : "s"} after Muse Spark`, "alarm") +
     (labelled.length ? stat(`${found} of ${labelled.length}`, "labelled people found (misses dashed red)") : "") +
-    stat(`$${result.usd.toFixed(3)}`, result.cached ? "model calls, replayed from cache" : "model calls");
+    stat(`$${result.usd.toFixed(3)}`, result.cached ? "model calls, replayed from cache" : seconds ? `model calls, ${seconds} s` : "model calls");
   T("triage-credit").textContent = result.credit
     ? `Example photo: ${result.name}. ${result.note ? `${result.note} ` : ""}${result.credit}`
     : "Your photo is checked and then discarded; it is not stored.";
@@ -69,11 +69,12 @@ T("triage-file").onchange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   T("triage-summary").textContent = "Checking every tile with SAM 3.1, then each proposal with Muse Spark...";
+  const started = performance.now();
   try {
     const response = await fetch("/api/triage", { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
-    showTriage(body, URL.createObjectURL(file));
+    showTriage(body, URL.createObjectURL(file), secondsSince(started));
   } catch (err) {
     T("triage-summary").textContent = `Could not check the photo: ${err.message}`;
   }

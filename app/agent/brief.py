@@ -7,6 +7,7 @@ grades who said what (`witnesses.py`); the reference planner then picks a first 
 
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from app.agent.advisor import base_map
@@ -38,8 +39,10 @@ def read_brief(place_name: str, text: str, drones: int = 1) -> dict:
     place, search = terrain.PLACES[place_name], terrain.search_map(place_name)
     stats, fleet = lost_person_stats(), FleetSpec(drones=drones)
     base = base_map(search, stats)
-    reading = interpret(search, [Report(0.0, text)], base)
-    witnesses = grade(text)
+    with ThreadPoolExecutor(1) as pool:  # the two readings are independent, so the visitor waits for the slower only
+        grading = pool.submit(grade, text)
+        reading = interpret(search, [Report(0.0, text)], base)
+        witnesses = grading.result()
     planner = ProbabilityGreedy()
     planner.reset(search, fleet, DetectionModel.load(), stats, seed=0)
     planner.observe(reading.to_event())

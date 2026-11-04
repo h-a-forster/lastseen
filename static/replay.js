@@ -38,6 +38,11 @@ async function api(path, options) {
   return response.json();
 }
 
+function secondsSince(started) {
+  // How long a live model request took, as the visitor waited for it (performance.now() at the start)
+  return Math.max(1, Math.round((performance.now() - started) / 1000));
+}
+
 function errorText(detail) {
   // FastAPI sends a string, or for a request that fails validation a list of {msg} objects
   return Array.isArray(detail) ? detail.map((d) => d.msg.replace(/^Value error, /, "")).join("; ") : detail;

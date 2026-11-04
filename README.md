@@ -211,7 +211,7 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
-- **73 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+- **74 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
   answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it

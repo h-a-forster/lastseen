@@ -14,7 +14,7 @@ async function showBriefExample() {
   await showBrief(result);
 }
 
-async function showBrief(result) {
+async function showBrief(result, seconds = null) {
   brief.result = result;
   if (!brief.aerial || brief.aerialFor !== result.place.name) {
     brief.aerial = await aerialCanvas(result.place.bounds, BRIEF_PX, BRIEF_PX).catch(() => null);
@@ -37,7 +37,7 @@ async function showBrief(result) {
   B("brief-sorties").innerHTML = result.sorties.map((s, i) =>
     `<button data-sortie="${i}" class="rounded px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs" style="border-left:4px solid ${SORTIE_COLOURS[i % SORTIE_COLOURS.length]}">Drone ${s.drone}: download mission (.plan)</button>`).join(" ");
   B("brief-sorties").querySelectorAll("button").forEach((b) => (b.onclick = () => downloadPlan(result.sorties[+b.dataset.sortie])));
-  B("brief-status").textContent = `${result.model || "Muse Spark"} read the brief${result.cached ? " (replayed from cache)" : ""} · $${result.usd.toFixed(4)}. ` +
+  B("brief-status").textContent = `${result.model || "Muse Spark"} read the brief${result.cached ? " (replayed from cache)" : seconds ? ` in ${seconds} s` : ""} · $${result.usd.toFixed(4)}. ` +
     "In a search the drone flies this on autopilot and LastSeen re-plans after each report and battery. The mission exports for QGroundControl; it hasn't been flown on a real drone yet.";
   B("brief-credit").textContent = `${result.place.title}. Aerial imagery © swisstopo · ${result.place.credit}.`;
 }
@@ -74,13 +74,14 @@ function downloadPlan(sortie) {
 
 async function readBrief() {
   B("brief-status").textContent = `${B("brief-open").checked ? "Muse Spark Open" : "Muse Spark"} is reading the brief...`;
+  const started = performance.now();
   try {
     const response = await fetch("/api/brief", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ place: brief.result?.place.name || "saint-ursanne", text: B("brief-text").value,
                              open_weights: B("brief-open").checked }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
-    await showBrief(body);
+    await showBrief(body, secondsSince(started));
   } catch (err) {
     B("brief-status").textContent = `Could not read the brief: ${err.message}`;
   }
@@ -124,13 +125,15 @@ async function typeIn(box, text) {
 
 async function transcribe(mic, recording) {
   mic.say(`Muse Voice Transcribe is writing down ${mic.what}...`);
+  const started = performance.now();
   try {
     const decoded = await new OfflineAudioContext(1, 16000, 16000).decodeAudioData(await recording.arrayBuffer());
     const response = await fetch("/api/transcribe", { method: "POST", headers: { "Content-Type": "audio/wav" }, body: wav16k(decoded) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
+    const seconds = secondsSince(started);
     await typeIn(mic.box, body.transcript);
-    mic.say(mic.done);
+    mic.say(`Transcribed by Muse Voice Transcribe ${body.cached ? "(replayed from cache)" : `in ${seconds} s`}. ${mic.done}`);
   } catch (err) {
     mic.box.value ||= mic.typed;
     mic.say(`Could not transcribe: ${err.message}`);
@@ -157,7 +160,7 @@ B("brief-read").onclick = readBrief;
 B("brief-open").onchange = (e) => (B("brief-read").textContent = e.target.checked ? "Read with Muse Spark Open" : "Read with Muse Spark");
 const briefMic = {
   button: B("brief-mic"), box: B("brief-text"), say: (text) => (B("brief-status").textContent = text),
-  what: "the brief", idle: "Speak the brief", done: "Transcribed. Check the text, then ask Muse Spark to read it.",
+  what: "the brief", idle: "Speak the brief", done: "Check the text, then ask Muse Spark to read it.",
   listening: "Recording... say who is missing, where they were last seen and what witnesses said.",
 };
 B("brief-mic").onclick = () => toggleRecording(briefMic);
