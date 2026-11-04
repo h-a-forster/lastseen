@@ -301,6 +301,8 @@ def test_a_brief_waits_for_the_slower_reading_not_both(monkeypatch):
         time.sleep(0.5)
         raise Graded
 
+    monkeypatch.setattr(brief.terrain, "search_map", lambda name: None)  # no map download: only the readings are timed
+    monkeypatch.setattr(brief, "base_map", lambda search, stats: None)
     monkeypatch.setattr(brief, "interpret", lambda *args: time.sleep(0.5))
     monkeypatch.setattr(brief, "grade", slow_grade)
     started = time.perf_counter()
