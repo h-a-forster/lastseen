@@ -16,7 +16,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=5" />
+  <link rel="stylesheet" href="/style.css?v=6" />
 </head>
 <body class="sv" data-tint="sage">
   <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
@@ -147,6 +147,24 @@
           <div class="fact">
             <dt>1 h 52</dt>
             <dd>until half were found, against 3 h 17 with the expanding square alone; 51% found within 2 hours instead of 44.5% (one drone, 200 scenarios fixed in advance and run once).</dd>
+          </div>
+        </dl>
+        <div>
+          <h3 class="band-title">Tested where it could fail</h3>
+          <p class="band-sub">Each pass mark was written down before the test, and each test was run once.</p>
+        </div>
+        <dl class="facts">
+          <div class="fact">
+            <dt>55%</dt>
+            <dd>found within 2 hours when witnesses name places ("by the bridge on the Route de Montmelon"), against 40% for rules and 46% for a volunteer who knows every place on the map. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/named-places.txt">Results</a></dd>
+          </div>
+          <div class="fact">
+            <dt>+7 points</dt>
+            <dd>more found within 2 hours than the expanding square when two witnesses disagree and only one is right. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/two-witnesses.txt">Results</a></dd>
+          </div>
+          <div class="fact">
+            <dt>PX4</dt>
+            <dd>the autopilot many real drones run flew LastSeen's missions in its simulator, and took a new leg sent mid-flight without stopping. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/px4-sitl.md">How</a></dd>
           </div>
         </dl>
       </div>

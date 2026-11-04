@@ -92,13 +92,14 @@
 .hero-foot { grid-column: 1 / -1; font-size: 13px; color: var(--ink-3); }
 
 .band { background: var(--well); transition: background-color 1.2s ease; padding: 40px 0 44px; }
-.band-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
-.band h2 { font-size: 22px; line-height: 1.15; font-weight: 650; font-stretch: 86%; letter-spacing: -0.01em; }
+.band-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 40px 56px; align-items: start; }
+.band h2, .band-title { font-size: 22px; line-height: 1.15; font-weight: 650; font-stretch: 86%; letter-spacing: -0.01em; }
 .band-sub { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 40ch; }
 .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
 .fact { padding-top: 12px; border-top: 1.5px solid var(--ink); }
 .fact dt { margin-bottom: 8px; font-size: 40px; font-weight: 600; font-stretch: 80%; letter-spacing: -0.02em; line-height: 1; }
 .fact dd { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.fact dd a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- sheets (sections) ---------- */
 
@@ -322,6 +323,7 @@
 
 @media (max-width: 1100px) {
   .hero-grid, .band-grid { grid-template-columns: 1fr; gap: 20px; }
+  .band-grid > .facts { margin-bottom: 20px; }
   .race-grid, .triage-grid { grid-template-columns: minmax(0, 1fr); }
   .feed { contain: none; max-height: 520px; }
   .brief-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
