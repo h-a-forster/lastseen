@@ -34,7 +34,7 @@ from app.sar.terrain import CREDIT as MAP_CREDIT
 from app.sar.sim import Sim, drone_losses
 from app.sar.walker import RECORD_S
 
-RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
+RUNS_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "runs"
 MAX_LANES = 3
 HEADING_TRIES = 60  # walks tried for one that goes the way a visitor chose (terrain makes some directions rare)
 WITNESS_LEAD_S = 1200.0  # a visitor's own witness saw her this long before calling (less if the call comes sooner)
