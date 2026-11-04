@@ -220,9 +220,40 @@ def download_tiles(south: float, west: float, north: float, east: float) -> None
         if not path.exists():
             edge = lambda i: round(i * TILE_DEG, 6)
             b = {"south": edge(row), "west": edge(col), "north": edge(row + 1), "east": edge(col + 1)}
-            osm = _overpass(_query(b, 300), attempts=3, timeout_s=300, wait_s=30)
-            path.write_text(json.dumps(osm), encoding="utf-8")
+            osm = _one_server_at_a_time(_query(b, 300), first=(row + col) % len(OVERPASS_URLS), timeout_s=300)
+            part = path.with_suffix(".part")  # a download cut off half-way never passes for a whole tile
+            part.write_text(json.dumps(osm), encoding="utf-8")
+            part.replace(path)
         print(f"tile {i}/{len(todo)} {path.name}: {path.stat().st_size / 1e6:.1f} MB", flush=True)
+
+
+def _one_server_at_a_time(query: str, first: int, timeout_s: float, rounds: int = 3, wait_s: float = 30) -> dict:
+    """For downloads ahead, where no visitor waits: one server per tile, the next only if it fails, so the public servers
+    share the load instead of each serving every tile."""
+    order = OVERPASS_URLS[first:] + OVERPASS_URLS[:first]
+    for attempt in range(rounds):
+        for url in order:
+            try:
+                return _ask_overpass(url, query, timeout_s)
+            except (httpx.HTTPError, ValueError) as error:
+                failed = error
+        time.sleep(wait_s * (attempt + 1))
+    raise failed
+
+
+def downloaded_area() -> dict:
+    """The tiles downloaded ahead, as [south, west, north, east] boxes, and the outline of the area they cover: the tile
+    edges with no downloaded tile on their other side, as [[lat, lon], [lat, lon]] segments."""
+    have = {tuple(map(int, p.name.removesuffix(".osm.json").split("_"))) for p in OSM_TILES_DIR.glob("*_*.osm.json")}
+    deg = lambda i: round(i * TILE_DEG, 6)
+    outline = []
+    for row, col in sorted(have):
+        s, w, n, e = deg(row), deg(col), deg(row + 1), deg(col + 1)
+        for neighbour, edge in (((row - 1, col), [[s, w], [s, e]]), ((row + 1, col), [[n, w], [n, e]]),
+                                ((row, col - 1), [[s, w], [n, w]]), ((row, col + 1), [[s, e], [n, e]])):
+            if neighbour not in have:
+                outline.append(edge)
+    return {"tiles": [[deg(r), deg(c), deg(r + 1), deg(c + 1)] for r, c in sorted(have)], "outline": outline}
 
 
 def _overpass(query: str, attempts: int, timeout_s: float, wait_s: float = 10) -> dict:

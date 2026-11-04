@@ -3,7 +3,7 @@
 
 const PLACE_SIDE_M = 3000;
 const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
-const place = { map: null, marker: null, square: null, seen: null, seenMarker: null, marking: false };
+const place = { map: null, marker: null, square: null, seen: null, seenMarker: null, marking: false, ready: new Set() };
 
 function placeSay(text) {
   document.getElementById("place-status").textContent = text;
@@ -21,6 +21,32 @@ function squareAround([lat, lon]) {
   const cLat = Math.round(lat * 1000) / 1000, cLon = Math.round(lon * 1000) / 1000;
   const dLat = PLACE_SIDE_M / 2 / 111195, dLon = dLat / Math.cos((cLat * Math.PI) / 180);
   return [[cLat - dLat, cLon - dLon], [cLat + dLat, cLon + dLon]];
+}
+
+function mapIsReady(start) {
+  // whether the square's map can be cut from the OpenStreetMap tiles downloaded ahead (terrain._tiles)
+  const [[south, west], [north, east]] = squareAround(start);
+  const index = (deg) => Math.floor(Math.round((deg / 0.1) * 1e6) / 1e6);
+  for (let row = index(south); row <= index(north); row++)
+    for (let col = index(west); col <= index(east); col++) if (!place.ready.has(`${row}_${col}`)) return false;
+  return true;
+}
+
+async function showDownloadedArea() {
+  // the area whose maps are downloaded ahead: faintly shaded, with a dashed outline and a key on the map
+  const area = await api("/api/place-area").catch(() => null);
+  if (!area?.tiles.length) return;
+  for (const [south, west, north, east] of area.tiles) {
+    place.ready.add(`${Math.round(south * 10)}_${Math.round(west * 10)}`);
+    L.rectangle([[south, west], [north, east]], { stroke: false, fillColor: "#18241e", fillOpacity: 0.07, interactive: false })
+      .addTo(place.map);
+  }
+  L.polyline(area.outline, { color: "#18241e", weight: 1.5, dashArray: "5 4", interactive: false }).addTo(place.map);
+  const key = L.control({ position: "bottomleft" });
+  key.onAdd = () => Object.assign(L.DomUtil.create("div", "place-key"), {
+    textContent: "Shaded, inside the dashed line: map data downloaded ahead, so a test search there starts sooner.",
+  });
+  key.addTo(place.map);
 }
 
 function inSquare(start, [lat, lon]) {
@@ -107,12 +133,13 @@ function initPlaceMap() {
     document.getElementById("place-map").textContent = "The map didn't load; type coordinates instead.";
     return;
   }
-  place.map = L.map("place-map").setView([47.365, 7.155], 11);
+  place.map = L.map("place-map").setView([47.365, 7.155], 10);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 17,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(place.map);
   place.map.on("click", (e) => (place.marking ? markSeen : showPoint)([e.latlng.lat, e.latlng.lng]));
+  showDownloadedArea();
 }
 
 async function openPlaceRace(id) {
@@ -159,7 +186,9 @@ document.getElementById("place-form").onsubmit = async (e) => {
   button.disabled = true;
   const started = Date.now();
   let retrying = "";
-  const tick = () => placeSay(`${retrying}Downloading the map from OpenStreetMap (up to a minute for a new place), then Muse Spark reads the reports and both searches fly... ${Math.round((Date.now() - started) / 1000)} s`);
+  const map = mapIsReady(point) ? "Cutting the map from OpenStreetMap data downloaded ahead"
+    : "Downloading the map from OpenStreetMap (up to a minute for a new place)";
+  const tick = () => placeSay(`${retrying}${map}, then Muse Spark reads the reports and both searches fly... ${Math.round((Date.now() - started) / 1000)} s`);
   tick();
   const timer = setInterval(tick, 1000);
   const request = {
