@@ -99,13 +99,17 @@ drone photo of a person her size](static/race.jpg)
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
   them at an assumed rate, since the photos have no one under trees).
+- **Try it on any place.** Click a point on the map and LastSeen builds a 3 km search area from OpenStreetMap. Be the
+  witness: mark where she was seen and type or say the call in your own words. The test subject walks to your mark,
+  arriving 5 minutes before the call; Muse Voice Transcribe writes the call down, Muse Spark reads only the words
+  (never the mark), and the team planner's drone breaks off for where Spark points.
 
 ## Meta models
 | Model | Job |
 |---|---|
 | SAM 3.1 | Finds people in drone photos (text prompt "person", boxes with confidence) |
 | Muse Spark | Checks each SAM proposal on a close-up; reads briefs and witness reports into hypotheses, as strict JSON whose quotes and numbers code then checks |
-| Muse Voice Transcribe | Turns a spoken brief into text |
+| Muse Voice Transcribe | Turns a spoken brief or a witness's call into text |
 | Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
 
 Why these: SAM 3.1 finds people from the single word "person", with no training on our photos, so we measured it

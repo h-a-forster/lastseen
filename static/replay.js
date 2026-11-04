@@ -557,7 +557,8 @@ loadRunList(link.get("race")).then(() => {
   const minutes = Number(link.get("t"));
   if (link.has("t") && Number.isFinite(minutes)) {
     seek(minutes * 60);
-    $("race").scrollIntoView();
+    // On a phone the lanes stack: show the team planner's, where the drone breaks off
+    (innerWidth < 768 ? $("lanes").lastElementChild : $("race")).scrollIntoView();
   }
   play();
 }).catch((err) => showStatus(`Could not load races: ${err.message}`));
