@@ -262,6 +262,13 @@ def test_a_visitors_place_is_refused_on_coasts_water_or_sparse_maps_and_when_osm
     with pytest.raises(terrain.MapDataUnavailable):
         terrain.visitor_place(13.0, 13.0)
 
+    pond = lambda at: {"type": "way", "tags": {"natural": "water"}, "geometry": [at(0.49, 0.49), at(0.49, 0.51), at(0.51, 0.51), at(0.51, 0.49), at(0.49, 0.49)]}
+    monkeypatch.setattr(terrain, "_overpass", fake_osm(pond))  # a start point in a 60 m pond: she left from its bank
+    m = terrain.search_map(terrain.visitor_place(15.0, 15.0))
+    centre = m.grid.cell_of(1500.0, 1500.0)
+    assert m.terrain[centre] == Terrain.WATER and m.terrain[m.ipp] != Terrain.WATER
+    assert m.grid.distance_km(*centre)[m.ipp] <= 0.15
+
     monkeypatch.setattr(terrain, "_overpass", fake_osm())
     name = terrain.visitor_place(14.00012, 14.0)
     assert name == "at-14000n-14000e" and terrain.visitor_place(14.0, 13.99996) == name  # rounded to about 100 m
@@ -320,8 +327,12 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
     chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=spot)
     walk = terrain.build(chosen, None, "dementia", seen=(spot, 1800.0))
     assert np.allclose(walk.track[30], spot) and walk.subject_at(3000.0) is not None
-    with pytest.raises(ValueError, match="on water"):  # walk 1's map has a lake at its top edge
-        replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(10.0, 56 * 25.0 + 10.0))
+    pond = (5 * 25.0 + 12, 55 * 25.0 + 12)  # walk 1's map has a lake at its top edge: this spot is 50 m from its bank
+    chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=pond)
+    walk = terrain.build(chosen, None, "dementia", seen=(pond, 1800.0))
+    assert walk.map.passability[walk.map.grid.cell_of(*walk.track[30])] >= 0.1 and np.hypot(*(walk.track[30] - pond)) <= 75
+    with pytest.raises(ValueError, match="on water"):  # 326 m from the bank
+        replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(2 * 25.0 + 12, 68 * 25.0 + 12))
 
 
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():

@@ -70,6 +70,12 @@ class Grid:
         hi = math.floor((centre_m + size_m / 2) / self.cell_m - 0.5)
         return slice(max(lo, 0), max(min(hi + 1, n), 0))
 
+    def nearest(self, allowed: np.ndarray, cell: tuple[int, int], within_m: float) -> tuple[int, int] | None:
+        """The allowed cell closest to `cell` (itself if allowed), or None if none is within `within_m`."""
+        km = np.where(allowed, self.distance_km(*cell), np.inf)
+        best = np.unravel_index(int(km.argmin()), self.shape)
+        return (int(best[0]), int(best[1])) if km[best] * 1000 <= within_m else None
+
     def distance_km(self, row: int, col: int) -> np.ndarray:
         """Distance of every cell centre from cell (row, col), in km."""
         r, c = np.indices(self.shape)

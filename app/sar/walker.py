@@ -29,6 +29,7 @@ RECORD_S = 60.0
 BARRIER = 0.1  # passability below this blocks walking (open water)
 OUTSIDE_PASSABILITY = 0.6  # terrain beyond the mapped area is unknown; assume average going
 SET_OFF_M = 300.0  # how far along her way a neighbour's "she set off towards..." describes
+SNAP_M = 150.0  # a point a visitor puts on a river or pond means the bank, if one is this close
 _STEPS = np.array([(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
 _STEP_ANGLE = np.arctan2(_STEPS[:, 0], _STEPS[:, 1])  # heading convention: dy = sin, dx = cos
 
@@ -132,7 +133,7 @@ def guided_track(search_map: SearchMap, category: str, rng: np.random.Generator,
     clock = np.arange(0.0, seen_s, RECORD_S) + delay_s  # her walking time at each record before she is seen
     before = np.stack([np.interp(clock, walked_s, path[:, 0]), np.interp(clock, walked_s, path[:, 1])], axis=1)
     last = steps[-1] if len(steps) else np.zeros(2)
-    after = walk(search_map, category, rng, 1, hours * 3600 - seen_s, p, start_m=tuple(spot_m),
+    after = walk(search_map, category, rng, 1, hours * 3600 - seen_s, p, start_m=tuple(path[-1]),
                  heading=math.atan2(*last)).positions[:, 0]
     along = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T))])
     set_off = path[min(int(np.searchsorted(along, SET_OFF_M)), len(path) - 1)] - path[0]
@@ -141,11 +142,11 @@ def guided_track(search_map: SearchMap, category: str, rng: np.random.Generator,
 
 def easiest_path(search_map: SearchMap, spot_m: tuple[float, float]) -> np.ndarray:
     """Points (y, x) in metres from the IPP's centre to `spot_m`, through cell centres along the walk that costs least
-    (distance over passability), never into water (only out of it, when the start point is on water). ValueError if
-    water cuts the spot off."""
+    (distance over passability), never into water (only out of it, when the start point is on water). A spot on water
+    moves to the nearest bank within SNAP_M. ValueError if there is none, or water cuts the spot off."""
     grid, passability = search_map.grid, search_map.passability
-    goal = grid.cell_of(*spot_m)
-    if passability[goal] < BARRIER:
+    goal = grid.nearest(passability >= BARRIER, grid.cell_of(*spot_m), SNAP_M)
+    if goal is None:
         raise ValueError("the witness's spot is on water; mark it on land")
     cost = np.full(grid.shape, math.inf)
     came_from: dict[tuple[int, int], tuple[int, int]] = {}
@@ -173,7 +174,8 @@ def easiest_path(search_map: SearchMap, spot_m: tuple[float, float]) -> np.ndarr
     cells = [goal]
     while cells[-1] != search_map.ipp:
         cells.append(came_from[cells[-1]])
-    return np.array([grid.centre_m(*cell) for cell in reversed(cells)] + [tuple(spot_m)])
+    end = tuple(spot_m) if goal == grid.cell_of(*spot_m) else grid.centre_m(*goal)
+    return np.array([grid.centre_m(*cell) for cell in reversed(cells)] + [end])
 
 
 def _cells(grid: Grid, pos: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -182,7 +182,7 @@ async def read_brief(req: BriefRequest, request: Request):
 class PlaceRace(BaseModel):
     lat: float = Field(ge=-60, le=72)
     lon: float = Field(ge=-180, le=180)
-    report_minute: int = Field(45, ge=10, le=180)  # when a witness phones in where they saw her (right, by design)
+    report_minute: int = Field(30, ge=10, le=180)  # when a witness phones in where they saw her (right, by design)
     # where the test subject is from the start point when the witness calls (cues.COMPASS); None: the simulator picks
     heading: Literal["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"] | None = None
     # or the visitor's own witness: where they saw her, and what they say, read by Spark as it is (the spot stays hidden)
