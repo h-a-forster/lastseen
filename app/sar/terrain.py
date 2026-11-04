@@ -6,7 +6,9 @@ committed). `search_map` paints them at 5 m (later classes win: scrub, forest, b
 cell its most common class; any cell a path or road crosses is a trail. The truth walker then walks on this map exactly
 as it does on a synthetic one.
 
-`visitor_place` builds a place around any point a visitor picks, refusing ones it can't map honestly.
+`visitor_place` builds a place around any point a visitor picks, refusing ones it can't map honestly. Where its region
+was downloaded ahead in 0.1° tiles (`python -m app.sar.terrain S W N E`), the place is cut from them instead of waiting
+on Overpass.
 
 Not modelled: height. The map is flat, so slopes, cliffs and the valley sides don't slow the walker or change the
 camera's ground resolution.
@@ -30,7 +32,10 @@ from app.sar.grid import Grid, Terrain
 from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
 from app.sar.walker import SNAP_M, WalkerParams, guided_track, truth_track
 
-PLACES_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "places"
+DATA_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data")
+PLACES_DIR = DATA_DIR / "places"
+OSM_TILES_DIR = DATA_DIR / "osm-tiles"  # OpenStreetMap features for a region, downloaded ahead (`download_tiles`)
+TILE_DEG = 0.1
 # Public Overpass instances (wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances), asked all at once
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
                  "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
@@ -157,15 +162,67 @@ def fetch(name: str, attempts: int = 4, timeout_s: float = 120, wait_s: float = 
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     b = PLACES[name].bounds()
-    query = (f"[out:json][timeout:{round(timeout_s * 0.75)}][bbox:{b['south']},{b['west']},{b['north']},{b['east']}];"
-             '(nwr[natural~"^(scrub|heath|wetland|wood|water)$"];nwr[landuse];way[waterway~"^(river|riverbank)$"];'
-             "way[building];way[highway];nwr[aeroway];"
-             'nwr[amenity=place_of_worship];nwr[historic];nwr[tourism~"^(viewpoint|attraction)$"];'
-             'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];way[natural=coastline];);out geom;')
-    osm = _overpass(query, attempts, timeout_s, wait_s)
+    osm = _from_tiles(b) or _overpass(_query(b, timeout_s), attempts, timeout_s, wait_s)
     PLACES_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(osm), encoding="utf-8")
     return osm
+
+
+def _query(b: dict[str, float], timeout_s: float) -> str:
+    return (f"[out:json][timeout:{round(timeout_s * 0.75)}][bbox:{b['south']},{b['west']},{b['north']},{b['east']}];"
+            '(nwr[natural~"^(scrub|heath|wetland|wood|water)$"];nwr[landuse];way[waterway~"^(river|riverbank)$"];'
+            "way[building];way[highway];nwr[aeroway];"
+            'nwr[amenity=place_of_worship];nwr[historic];nwr[tourism~"^(viewpoint|attraction)$"];'
+            'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];way[natural=coastline];);out geom;')
+
+
+def _tiles(b: dict[str, float]) -> list[tuple[int, int]]:
+    """The 0.1° tiles (row, column: south-west corner in tenths of a degree) that cover these bounds."""
+    index = lambda deg: math.floor(round(deg / TILE_DEG, 6))  # 47.3 / 0.1 is 472.99999...
+    rows = range(index(b["south"]), index(b["north"]) + 1)
+    cols = range(index(b["west"]), index(b["east"]) + 1)
+    return [(r, c) for r in rows for c in cols]
+
+
+def _tile_path(row: int, col: int) -> Path:
+    return OSM_TILES_DIR / f"{row}_{col}.osm.json"
+
+
+def _from_tiles(b: dict[str, float]) -> dict | None:
+    """The square cut from tiles downloaded ahead, or None unless they cover it all. Like Overpass's bbox query, it keeps
+    every feature that reaches into the square, whole; one that crosses tiles is kept once."""
+    paths = [_tile_path(*tile) for tile in _tiles(b)]
+    if not all(path.exists() for path in paths):
+        return None
+    kept = {}
+    for path in paths:
+        for element in json.loads(path.read_text(encoding="utf-8"))["elements"]:
+            if _reaches(element, b):
+                kept[element["type"], element["id"]] = element
+    order = {"node": 0, "way": 1, "relation": 2}  # Overpass's own order, so a cut map draws like a downloaded one
+    return {"elements": sorted(kept.values(), key=lambda e: (order[e["type"]], e["id"]))}
+
+
+def _reaches(element: dict, b: dict[str, float]) -> bool:
+    if "bounds" in element:
+        e = element["bounds"]
+        return e["minlat"] <= b["north"] and e["maxlat"] >= b["south"] and e["minlon"] <= b["east"] and e["maxlon"] >= b["west"]
+    return b["south"] <= element["lat"] <= b["north"] and b["west"] <= element["lon"] <= b["east"]
+
+
+def download_tiles(south: float, west: float, north: float, east: float) -> None:
+    """Download a region's tiles ahead of visitors, one at a time; tiles already on disk are skipped, so a rerun resumes."""
+    OSM_TILES_DIR.mkdir(parents=True, exist_ok=True)
+    todo = [(row, col) for row in range(round(south / TILE_DEG), round(north / TILE_DEG))
+            for col in range(round(west / TILE_DEG), round(east / TILE_DEG))]
+    for i, (row, col) in enumerate(todo, 1):
+        path = _tile_path(row, col)
+        if not path.exists():
+            edge = lambda i: round(i * TILE_DEG, 6)
+            b = {"south": edge(row), "west": edge(col), "north": edge(row + 1), "east": edge(col + 1)}
+            osm = _overpass(_query(b, 300), attempts=3, timeout_s=300, wait_s=30)
+            path.write_text(json.dumps(osm), encoding="utf-8")
+        print(f"tile {i}/{len(todo)} {path.name}: {path.stat().st_size / 1e6:.1f} MB", flush=True)
 
 
 def _overpass(query: str, attempts: int, timeout_s: float, wait_s: float = 10) -> dict:
@@ -361,3 +418,9 @@ def _trails(osm: dict, to_px, side: int, place: Place) -> np.ndarray:
     for way in _ways(osm, "highway", WALKABLE_WAYS):
         draw.line([to_px(p) for p in way["geometry"]], fill=1)
     return np.asarray(lines).reshape(side, k, side, k).any(axis=(1, 3))
+
+
+if __name__ == "__main__":
+    import sys
+
+    download_tiles(*map(float, sys.argv[1:5]))

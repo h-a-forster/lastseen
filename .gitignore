@@ -25,6 +25,7 @@ data/tiles/*
 !data/tiles/f66a16d059028120.jpg
 # OpenStreetMap downloads for real places (ODbL; fetched on first use by app.sar.terrain)
 data/places/
+data/osm-tiles/
 # Photo-check example (python -m app.perception.triage --example), built from the dataset; committed for a clone
 data/triage/*
 !data/triage/example.json
