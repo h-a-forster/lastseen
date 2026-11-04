@@ -168,9 +168,11 @@ cp .env.example .env          # add MODEL_API_KEY for live model calls
 uv run uvicorn app.main:app --reload
 uv run pytest
 ```
-Open http://localhost:8000. A fresh clone has no recorded races or page examples yet (they're built from the
-downloaded dataset, below), so until then the page shows the place search and the questions (with `RECORD_RACES=1` the page can also record a race for any development seed, from
-cached readings only). The simulator and bench need no key:
+Open http://localhost:8000. A fresh clone already shows the three featured races with their find photos, the example
+brief and the example photo check: their files are committed (`data/runs`, `data/briefs`, `data/triage` and the 7
+photo tiles in `data/tiles`). Reading a new brief, checking your own photo and a race on a new place call the models,
+so they need `MODEL_API_KEY` and `LIVE_MODELS=1` in `.env`. With `RECORD_RACES=1` the page can also
+record a race for any development seed, from cached readings only. The simulator and bench need no key:
 ```bash
 uv run python -m app.sar.bench --planners lawnmower,spiral,greedy --seeds 40 --workers 4
 uv run python -m app.sar.replay --seed 19 --place saint-ursanne --planners spiral,greedy

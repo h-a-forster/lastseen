@@ -222,9 +222,28 @@ function resultLine() {
     .sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity));
   const notFound = `not found in ${clock(state.run.hours * 3600)}`;
   const line = finds.map(([s, name], i) => (s == null ? `${name} ${notFound}` : i ? `${clock(s)} ${name}` : `Found at ${clock(s)} with ${name}`)).join(" · ");
-  const left = finds[0][0] == null ? leftAreaAt() : null;
-  if (left == null) return line;
+  if (finds[0][0] != null) return line;
+  const left = leftAreaAt();
+  if (left == null) return `${line}. ${missLine()}`;
   return `${line}. ${left ? `She walked out of the search area at ${clock(left)}` : "She was outside the search area from the start"}. The drones didn't know, and kept searching inside it.`;
+}
+
+function missLine() {
+  // Nobody found her while she stayed inside: whether a drone flew over her, and what hid her in those photos.
+  const seen = state.lanes.filter((lane) => lane.sightings.length);
+  if (!seen.length) return "No drone flew over where she was.";
+  const flights = seen.map(({ name, sightings: [first, ...rest] }) => `${label(name)} photographed her ` +
+    (rest.length ? `${rest.length === 1 ? "twice" : `${rest.length + 1} times`}, first at ${clock(first.t_s)}` : `once, at ${clock(first.t_s)}`));
+  const photos = seen.flatMap((lane) => lane.sightings);
+  const count = (test) => photos.filter(test).length;
+  const trees = count((s) => s.canopy);
+  const reasons = [[trees, "trees hid her in"], [count((s) => !s.canopy && s.sam == null), "SAM 3.1 didn't pick her out in"],
+                   [count((s) => !s.canopy && s.sam != null), "Muse Spark ruled her out in"]]
+    .filter(([n]) => n).map(([n, why]) => `${why} ${n}`);
+  const why = reasons.length > 1 ? `${reasons.slice(0, -1).join(", ")} and ${reasons.at(-1)}` : reasons[0];
+  return `${flights.join("; ")}. Of those ${photos.length} photos, ${why}.` +
+    (trees ? " Under trees, a photo shows a person only 40% as often as on open ground." : "") +
+    ` Tick "Reveal where the person really was" to see each one.`;
 }
 
 function leftAreaAt() {
