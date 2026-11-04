@@ -8,7 +8,7 @@ LastSeen flies a search drone for a missing person and decides where it looks. P
 what witnesses say reaches the search map by hand, or not at all. Search drones already fly their routes
 automatically, but inside an area someone draws by hand beforehand; when new information comes in mid-search, the
 drone is recalled and the area redrawn. LastSeen closes that gap. Muse Spark turns every report into weighted, checked
-scenarios in seconds. The drone re-plans from them and flies the search itself,
+scenarios in about 20 seconds. The drone re-plans from them and flies the search itself,
 breaking off its pattern mid-flight to follow a sighting. SAM 3.1 and Muse Spark check every photo for a person a few
 dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photos. One volunteer launches it, swaps
 batteries and stays in command.
@@ -24,12 +24,12 @@ records 95% of those found within 24 hours are alive, against 60% after 48 hours
 call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia.pdf)). Every search-time claim is
 tested on a simulator built for it.
 
-### For judges: 3 minutes
+## For judges: 3 minutes
 1. [Watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40):
    the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone
    takes 2 h 56.
 2. [Read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief): type or say what the family said, and watch it become weighted places
-   on a real map in seconds.
+   on a real map in about 20 seconds.
 3. [Be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place): mark where she was seen, say the call in your own words, and
    watch the drone follow it (about a minute).
 4. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
@@ -126,15 +126,15 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
   written before the run: [docs/evaluation.md](docs/evaluation.md).
 - **When witnesses name a place instead, Muse Spark keeps the gain and rules lose it.** On the real valley, with
   each sighting given as a place ("by the bridge on the Route de Montmelon"), LastSeen found 55% within 2 hours
-  against 40% for the expanding square (+14.6 points, +8.3 to +21.5). Rules written for the simulator's sentences drop
-  to the square's 40%, and a volunteer who knows every named place on the map finds 46%. When two witnesses disagree
+  against 40% for the expanding square (+14.6 points, +8.3 to +21.5). Rules written for the simulator's sentences (the
+  careful volunteer above) drop to the square's 40%, and a volunteer who knows every named place on the map finds 46%. When two witnesses disagree
   and only one is right, LastSeen still beats the square by 7 points (+1.6 to +12.6). Both are development checks
   with pass marks written before the run ([docs/evaluation.md](docs/evaluation.md#named-places-and-witnesses-who-disagree-development-checks-3-nov)).
 
 ## Why it is built this way
 | What we found | What LastSeen does |
 |---|---|
-| SAM 3.1 alone raised about one false alarm per 10 tiles; Spark's close-up check cut that by 37% and lost 7 of 662 people | Muse Spark checks every SAM proposal on a close-up before a person sees it |
+| SAM 3.1 alone raised about one false alarm per 10 tiles; Spark's close-up check cut that by 37% and kept 485 of the 492 people SAM found | Muse Spark checks every SAM proposal on a close-up before a person sees it |
 | A mountain-rescue team takes 5 to 45 seconds to look through one full photo ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)) | Only alarms reach the volunteer, as close-ups: about 280 instead of 1,250 photos |
 | Most sightings have nothing to do with the missing person (Robert J. Koester, above) | The drone keeps its square until a sighting, and 15% of the weight always stays on "none of these"; when a sighting was wrong, it did as well as the square |
 | Drone-search planners assume the map doesn't change, and today a new report means recalling the drone (above) | The route is re-planned after every report, mid-flight; PX4 takes the new leg without stopping |
@@ -162,10 +162,16 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
 ## Screenshots
 Captured from the page with recorded answers, so no model was called.
 
-| | |
-|---|---|
-| ![The find at 1 h 48: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover](docs/screenshots/find.jpg)<br>**The find**: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover from facts code checked | ![A brief read by Muse Spark: witness grades, weighted places quoting the brief, and the first battery's route](docs/screenshots/brief.jpg)<br>**Start a search**: Muse Spark grades each witness and turns the brief into weighted places, each quoting the words it rests on; the first battery's route downloads for QGroundControl |
-| ![Photo check: 12 tiles, 5 SAM 3.1 proposals, close-ups with Muse Spark's verdicts](docs/screenshots/triage.jpg)<br>**Is anyone in this photo?** SAM 3.1 proposes, Muse Spark checks each close-up, and the reviewer sees only the alarms | ![Measured results: detection, close-ups, search times and the tests run with pass marks fixed in advance](docs/screenshots/facts.jpg)<br>**Measured, not assumed**: the headline numbers, each linked to how it was measured |
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/screenshots/find.jpg" alt="The find at 1 h 48: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover"><br><b>The find</b>: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover from facts code checked</td>
+<td width="50%" valign="top"><img src="docs/screenshots/brief.jpg" alt="A brief read by Muse Spark: witness grades, weighted places quoting the brief, and the first battery's route"><br><b>Start a search</b>: Muse Spark grades each witness and turns the brief into weighted places, each quoting the words it rests on; the first battery's route downloads for QGroundControl</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/screenshots/triage.jpg" alt="Photo check: 12 tiles, 5 SAM 3.1 proposals, close-ups with Muse Spark's verdicts"><br><b>Is anyone in this photo?</b> SAM 3.1 proposes, Muse Spark checks each close-up, and the reviewer sees only the alarms</td>
+<td width="50%" valign="top"><img src="docs/screenshots/facts.jpg" alt="Measured results: detection, close-ups, search times and the tests run with pass marks fixed in advance"><br><b>Measured, not assumed</b>: the headline numbers, each linked to how it was measured</td>
+</tr>
+</table>
 
 ## Meta models
 | Model | Job |
@@ -271,7 +277,7 @@ app/agent/        Spark reads reports and briefs into hypotheses
 app/perception/   SAM 3.1 + Spark on photos: calibration, photo pool, photo check
 app/planner/      the team's planner (`hedge`) and the map planner it hunts with (`ours`)
 app/main.py       web API;  static/  the page
-docs/             evaluation plan, parameters, team workflow
+docs/             evaluation plan and results, Meta models, parameters, PX4 runs, screenshots, team workflow
 ```
 
 ## Data and credits

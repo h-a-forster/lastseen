@@ -2,7 +2,7 @@
 
 SAM proposes; Spark looks at an enlarged close-up of each proposal, with the surrounding tile for context, and says
 whether a person is there. A trained eye at base does the same with a tool's alarms: most rocks and logs that look like
-a person from 60 m stop looking like one up close.
+a person from 100 m stop looking like one up close.
 """
 
 import io

@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyulog==1.3.0"]
+# ///
 """From a PX4 ULog: when the mission on the vehicle changed in flight, and the ground speed around that moment.
 A seamless re-plan keeps flying through the switch; a stop or loiter shows as speed near zero."""
 

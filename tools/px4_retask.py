@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pymavlink==2.4.50"]
+# ///
 """Fly a recorded LastSeen re-plan on a PX4 autopilot: the search pattern, then a new leg sent mid-flight.
 
 From a race replay, the sortie in which the drone was retasked becomes two missions: (a) take off and fly the pattern

@@ -161,6 +161,9 @@ reworded the same way. 144 of 1,000 development scenarios qualify.
 | A volunteer who knows every named place (`spiral+named`) | 46% | |
 | Team planner + Muse Spark | **55%** | 56% |
 
+`spiral+witness` reads the simulator's sentence exactly, so on template wording it stands for a careful volunteer
+(49%); it can't read a place name, which is what its 40% shows. `spiral+named` is the volunteer who can.
+
 - Primary: the team's planner with Spark against the square, +14.6 points (95% interval +8.3 to +21.5); pass.
 - Secondary: named places against the template wording for the same planner, -1.4 points (-4.9 to +2.1); pass
   (mark: within 5 points).

@@ -19,7 +19,7 @@ function showTriage(result, imageUrl, seconds = null) {
   const order = [...result.candidates].sort((a, b) => b.alarm - a.alarm || b.sam - a.sam);
   const missed = labelled.filter((b) => !result.candidates.some((c) => c.alarm && overlaps(c.box, b)));
   const unlabelled = (c) => labelled.length && !labelled.some((b) => overlaps(c.box, b));
-  T("triage-photo").innerHTML = `<img src="${imageUrl}" alt="Drone photo being checked" class="w-full rounded">` +
+  T("triage-photo").innerHTML = `<img src="${imageUrl}" width="${w}" height="${h}" alt="Drone photo being checked" class="w-full h-auto rounded">` +
     missed.map((b) => `<div class="absolute border-2 border-dashed border-rose-400" style="${pct(pad(b, 18))}" title="missed person"></div>`).join("") +
     order.map((c, i) => `<div class="absolute border-2 ${c.alarm ? "border-green-400" : "border-slate-400/80"}" style="${pct(pad(c.box, 18))}"><span class="num-badge on-photo${c.alarm ? " alarm" : ""}">${i + 1}</span></div>`).join("");
   T("triage-list").innerHTML = order.length
