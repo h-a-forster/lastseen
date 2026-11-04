@@ -45,14 +45,16 @@ class Cue:
     detail: dict  # what the text claims, in numbers: bearing_deg, distance_km, minutes_ago, fit
 
 
-def reports_for(scenario: Scenario, seed: int, subject: str | None = None) -> tuple[list[Report], list[Cue]]:
+def reports_for(scenario: Scenario, seed: int, subject: str | None = None,
+                reliable: bool = False) -> tuple[list[Report], list[Cue]]:
     """The brief and any later reports for a scenario. Fixed by the seed, independent of the planner. `subject`
-    replaces the person's name (a visitor's test search says "the test subject")."""
+    replaces the person's name (a visitor's test search says "the test subject"). With `reliable`, the brief's
+    direction and fitness are right, so they never contradict where a visitor had her go or be seen."""
     rng = np.random.default_rng([seed, 2])
     name, age = _NAMES.get(scenario.map.category, ("Alex", 50))
     name = subject or name
-    heading = _heading_cue(scenario, rng)
-    fitness = _fitness_cue(scenario, rng)
+    heading = _heading_cue(scenario, rng, reliable)
+    fitness = _fitness_cue(scenario, rng, reliable)
     brief = (f"{name[0].upper()}{name[1:]}, {age}, {_situation(scenario.map.category)} "
              f"A neighbour saw {name} set off towards the {_compass(heading.detail['bearing_deg'])}. "
              f"Family say {name} {'is fit and walks a lot' if fitness.detail['fit'] else 'walks slowly and tires quickly'}.")
@@ -91,19 +93,19 @@ def _situation(category: str) -> str:
     return "did not come back from a day walk; the car is still parked at the house where the walk started."
 
 
-def _heading_cue(scenario: Scenario, rng: np.random.Generator) -> Cue:
+def _heading_cue(scenario: Scenario, rng: np.random.Generator, reliable: bool = False) -> Cue:
     true_bearing = _bearing(math.sin(scenario.start_heading), math.cos(scenario.start_heading))
-    true = rng.random() < RELIABILITY["heading"]
+    true = rng.random() < RELIABILITY["heading"] or reliable
     bearing = true_bearing if true else (true_bearing + rng.uniform(90, 270)) % 360  # a mistaken witness
     return Cue("heading", true, 0.0, {"bearing_deg": round(bearing / 45) * 45 % 360})
 
 
-def _fitness_cue(scenario: Scenario, rng: np.random.Generator) -> Cue:
+def _fitness_cue(scenario: Scenario, rng: np.random.Generator, reliable: bool = False) -> Cue:
     """'Fit' is true when the person ends up farther away than the median for their category."""
     start = np.array(scenario.map.grid.centre_m(*scenario.map.ipp))
     went_km = float(np.hypot(*(scenario.track[-1] - start))) / 1000
     median_km = lost_person_stats()["categories"][scenario.map.category]["rings_km"][1]
-    true = rng.random() < RELIABILITY["fitness"]
+    true = rng.random() < RELIABILITY["fitness"] or reliable
     fit = (went_km > median_km) == true
     return Cue("fitness", true, 0.0, {"fit": fit})
 

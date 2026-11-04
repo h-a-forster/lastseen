@@ -280,17 +280,23 @@ def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_
     assert "Margaret" in plain["reports"][0]["text"]
     cue, = (c for c in test["truth"]["cues"] if c["kind"] == "sighting")
     assert cue["true"] and cue["t_s"] == 1800.0  # a visitor's test search: the witness is right, when they chose
+    assert all(c["true"] for c in test["truth"]["cues"])  # so is the brief: walk 2's neighbour is wrong in the bench
+    assert not all(c["true"] for c in plain["truth"]["cues"])
     assert test["id"].startswith(plain["id"] + "-sighting-")
 
     from app.sar.cues import _sighting_detail
-    scenario = terrain.build(3, None, "dementia")  # walk 3 sets off at once (walk 2 sits still at first)
-    spot = tuple(scenario.track[20])  # where she was at 20 minutes, 10 minutes before the call
-    words = "A cyclist saw an old woman by the barn about ten minutes ago."
-    own = replay.race(3, ["spiral"], hours=0.2, drones=1, sighting_s=1800.0, subject="the test subject",
+    spot = (300.0, 2700.0)  # near the corner of walk 3's map, far off the way it walks by itself
+    words = "A cyclist saw an old woman by the barn about twenty minutes ago."
+    own = replay.race(3, ["spiral"], hours=0.6, drones=1, sighting_s=1800.0, subject="the test subject",
                       witness=(words, spot))
     assert own["reports"][1] == {"t_s": 1800.0, "text": words}  # the visitor's words, as they are
+    walked = terrain.build(3, None, "dementia", seen=(spot, 600.0))
+    assert np.allclose(walked.track[10], spot)  # she is at the visitor's mark 20 minutes before the call
     cue, = (c for c in own["truth"]["cues"] if c["kind"] == "sighting")
-    assert cue["true"] and cue["detail"] == _sighting_detail(scenario, *spot, 600.0)  # where she really was then
+    assert cue["true"] and cue["detail"] == _sighting_detail(walked, *spot, 1200.0)
+    heading, = (c for c in own["truth"]["cues"] if c["kind"] == "heading")
+    assert heading["true"]
+    assert own["truth"]["track"][10] == [round(v, 1) for v in spot]
 
 
 
@@ -310,13 +316,12 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
         walk = terrain.build(chosen, None, "dementia")
         assert walk.subject_at(2700.0) is not None
         assert abs((replay.bearing_at(walk, 2700.0) - bearing + 180) % 360 - 180) <= 22.5
-    spot = tuple(terrain.build(3, None, "dementia").track[40])  # a visitor's witness spot, off walk 1's way
+    spot = (300.0, 2700.0)  # a visitor's witness spot, near the corner: no walk goes there by itself
     chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=spot)
-    walk = terrain.build(chosen, None, "dementia")
-    window = walk.track[(3000 - 2400) // 60:(3000 - 300) // 60 + 1]  # 5-40 minutes before the call
-    assert chosen != 1 and np.hypot(*(window - spot).T).min() <= 300.0 and walk.subject_at(3000.0) is not None
-    with pytest.raises(ValueError, match="none of the simulated walks passes there"):
-        replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(-5000.0, -5000.0))
+    walk = terrain.build(chosen, None, "dementia", seen=(spot, 1800.0))
+    assert np.allclose(walk.track[30], spot) and walk.subject_at(3000.0) is not None
+    with pytest.raises(ValueError, match="on water"):  # walk 1's map has a lake at its top edge
+        replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(10.0, 56 * 25.0 + 10.0))
 
 
 def test_a_lost_drone_stops_flying_and_another_drone_takes_over_its_strip():
