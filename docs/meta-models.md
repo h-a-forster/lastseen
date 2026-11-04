@@ -14,7 +14,7 @@ schema, and code checks the answer before anything uses it ([Who decides what](.
 | | Reads the brief and every witness report into at most 5 weighted places to search, each quoting the words it rests on | [`app/agent/interpret.py`](../app/agent/interpret.py), through [`advisor.py`](../app/agent/advisor.py) | On 200 held-out searches: half found by 1 h 52 instead of 3 h 17, +6.5 points within 2 hours ([evaluation](evaluation.md)). With places named instead of distances, +14.6 points where rules gain nothing |
 | | Grades each witness the way a search manager would (do they know her, did they see it themselves, does anyone back it up?) | [`app/agent/witnesses.py`](../app/agent/witnesses.py) | Shown next to the places, never used to change weights |
 | | Words the handover to the ground team from facts code worked out | [`app/agent/handover.py`](../app/agent/handover.py) | Any number or direction that isn't one of the facts rejects the message |
-| **Muse Voice Transcribe** (`muse-voice-transcribe-1.0`) | Turns a spoken brief or a witness's call into text | `transcribe` in `app/meta_api.py`; `/api/transcribe` in [`app/main.py`](../app/main.py) | Not benchmarked on its own: the transcript is typed into the text box, where the volunteer can correct it before Muse Spark reads it |
+| **Muse Voice Transcribe** (`muse-voice-transcribe-1.0`) | Turns a spoken brief or a witness's call into text as it is spoken | `transcribe_live` in `app/meta_api.py` relays the microphone to the realtime stream (`/api/transcribe/live` in [`app/main.py`](../app/main.py)); if that fails, `transcribe` takes the whole recording (`/api/transcribe`) | Not benchmarked on its own: the transcript is typed into the text box, where the volunteer can correct it before Muse Spark reads it |
 | **Muse Spark Open** (`meta-models/muse-spark-open-1026`, on Baseten) | Any of Spark's jobs on open weights (`SPARK_BACKEND=open`); on the page, "Use open weights" for a brief, and the question box for every visitor | `spark_model` in `app/meta_api.py`; [`app/faq.py`](../app/faq.py) | Half found by 2 h 05 instead of 3 h 17 on the same 200 searches; 177 of 265 people found on the photo check's test tiles, against 179 with Muse Spark ([results](results/final-open-weights.txt)) |
 
 Each job's instructions are the `SYSTEM` string and its answer format the `SCHEMA` at the top of the file named.
@@ -28,7 +28,7 @@ From the spend ledger, every paid call of the hackathon, at dev.meta.ai and Base
 | Muse Spark | 2,288 | $14.00 | $0.006 |
 | SAM 3.1 | 821 | $2.05 | $0.0025 (billed per image) |
 | Muse Spark Open | 871 | $4.16 | $0.005 |
-| Muse Voice Transcribe | 8 | under $0.01 | $0.0005 (billed per hour of audio) |
+| Muse Voice Transcribe | 73 | $0.01 | $0.0002 (billed per second of audio) |
 
 That covers building, the detection measurements and every evaluation run; the hosted page's own calls add about
 $0.35 so far. A rerun of any of them costs nothing, because every answer is cached.

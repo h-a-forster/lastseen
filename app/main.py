@@ -13,12 +13,13 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 from starlette.datastructures import Headers
+from starlette.requests import HTTPConnection
 from starlette.staticfiles import NotModifiedResponse
 
 from app import faq, meta_api
@@ -273,6 +274,39 @@ async def transcribe(request: Request):
     return {"transcript": text, "usd": round(usd, 5), "cached": cached}
 
 
+@app.websocket("/api/transcribe/live")
+async def transcribe_live(socket: WebSocket):
+    """Muse Voice Transcribe while the visitor speaks. The page sends 16 kHz mono 16-bit PCM as binary messages, then
+    {"type": "endStream"}; it gets {"text", "final"} for each partial transcript and the final one, or {"error"}. The
+    audio isn't stored."""
+    await socket.accept()
+    try:
+        _check_paid(socket)
+        await meta_api.transcribe_live(_audio_from(socket),
+                                       lambda text, final: socket.send_json({"text": text, "final": final}))
+    except HTTPException as e:
+        await socket.send_json({"error": e.detail})
+    except SpendCapReached:
+        await socket.send_json({"error": "this server's spending limit for model calls is reached"})
+    except ModelCallError as e:
+        await socket.send_json({"error": f"the model call failed: {e}"})
+    except WebSocketDisconnect:
+        return
+    await socket.close()
+
+
+async def _audio_from(socket: WebSocket):
+    """The visitor's audio chunks, until the page says the recording ended."""
+    while True:
+        message = await socket.receive()
+        if message["type"] == "websocket.disconnect":
+            raise WebSocketDisconnect(message.get("code", 1000))
+        if message.get("bytes"):
+            yield message["bytes"]
+        elif json.loads(message.get("text") or "{}").get("type") == "endStream":
+            return
+
+
 def _example_file(path: Path, how: str):
     if not path.is_file():
         raise HTTPException(404, f"no example on this server ({how})")
@@ -286,7 +320,7 @@ async def _paid_upload(request: Request) -> bytes:
     return await request.body()
 
 
-def _check_paid(request: Request) -> None:
+def _check_paid(request: HTTPConnection) -> None:
     """Paid requests need LIVE_MODELS=1 on the server and stay under PAID_PER_HOUR per visitor address."""
     if not LIVE_MODELS:
         raise HTTPException(403, "live model calls are switched off on this server")

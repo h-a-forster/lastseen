@@ -87,7 +87,9 @@ async function readBrief() {
   }
 }
 
-// ---------- voice: record, convert to 16 kHz mono WAV in the browser, transcribe on the server ----------
+// ---------- voice: Muse Voice Transcribe writes as the visitor speaks, or from the whole recording ----------
+// The microphone streams to the server, which relays it to Muse Voice Transcribe's realtime stream and passes the words
+// back as they come. If that can't start or finish, the recording is converted to a 16 kHz mono WAV and sent whole.
 // A mic is { button, box, say(text), what, idle, listening, done }: the button that records into the text box, how to
 // show progress, and its wording. Section 4 (place.js) uses one too.
 
@@ -103,9 +105,17 @@ async function toggleRecording(mic) {
     const meter = showListening(mic, audio, stream);
     mic.recorder.onstop = async () => {
       meter.stop();
+      showWriting(mic);
+      const started = performance.now();
+      const text = await live.then((relay) => relay.finish()).catch(() => null);
+      audio?.close();
       stream.getTracks().forEach((t) => t.stop());
       mic.recorder = null;
-      await transcribe(mic, new Blob(chunks));
+      if (text === null) await transcribe(mic, new Blob(chunks));
+      else mic.say(`Transcribed live by Muse Voice Transcribe as you spoke (last words in ${secondsSince(started)} s). ${mic.done}`);
+      mic.button.disabled = false;
+      mic.button.textContent = mic.idle;
+      mic.box.placeholder = mic.placeholder;
     };
     mic.recorder.start();
     mic.typed = mic.box.value;  // the box shows only what was said; put this back if transcription fails
@@ -113,10 +123,58 @@ async function toggleRecording(mic) {
     mic.box.value = "";
     mic.box.placeholder = "Listening...";
     mic.say(mic.listening);
+    const live = streamLive(mic, audio, stream);
+    live.catch(() => {});  // a stream that can't start is handled when the recording stops
   } catch (err) {
     audio?.close();
     mic.say(`Couldn't use the microphone (${err.message}); type ${mic.what} instead.`);
   }
+}
+
+async function streamLive(mic, audio, stream) {
+  // Sends 80 ms chunks of 16 kHz PCM (static/pcm16k.js) to /api/transcribe/live and shows each partial transcript in
+  // the box. finish() ends the stream and returns the final transcript, or throws if there isn't one.
+  await audio.audioWorklet.addModule("/pcm16k.js?v=1");
+  const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/transcribe/live`);
+  const worklet = new AudioWorkletNode(audio, "pcm16k");
+  const mute = audio.createGain();
+  mute.gain.value = 0;  // the worklet only runs when connected to the speakers; silence it
+  audio.createMediaStreamSource(stream).connect(worklet).connect(mute).connect(audio.destination);
+  const opened = new Promise((resolve) => { socket.onopen = resolve; socket.onclose = resolve; });
+  const closed = new Promise((resolve) => socket.addEventListener("close", resolve));
+  const waiting = [];  // audio recorded before the socket opened
+  let lastSent;
+  const flushed = new Promise((resolve) => (lastSent = resolve));
+  worklet.port.onmessage = ({ data }) => {
+    if (socket.readyState === WebSocket.OPEN) waiting.splice(0).concat(data.pcm).forEach((pcm) => socket.send(pcm));
+    else waiting.push(data.pcm);
+    if (data.last) lastSent();
+  };
+  let text = null, error = "the live transcript didn't finish";
+  socket.onmessage = ({ data }) => {
+    const event = JSON.parse(data);
+    if (event.error) return (error = event.error);
+    mic.box.value = event.text;
+    if (event.final) text = event.text;
+  };
+  return {
+    async finish() {
+      // Each wait has a limit, so a stream that stalls falls back to sending the recording instead of hanging.
+      await within(opened, 10000);
+      worklet.port.postMessage("flush");
+      await within(flushed, 2000);
+      if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "endStream" }));
+      await within(closed, 15000);
+      worklet.disconnect();
+      socket.close();
+      if (text === null) throw new Error(error);
+      return text;
+    },
+  };
+}
+
+function within(promise, ms) {
+  return Promise.race([promise, new Promise((resolve) => setTimeout(resolve, ms))]);
 }
 
 function showListening(mic, audio, stream) {
@@ -144,7 +202,6 @@ function showListening(mic, audio, stream) {
   return {
     stop() {
       cancelAnimationFrame(frame);
-      audio?.close();
       mic.button.classList.remove("mic-on");
       mic.box.classList.remove("mic-listening");
     },
@@ -160,11 +217,14 @@ async function typeIn(box, text) {
   }
 }
 
-async function transcribe(mic, recording) {
+function showWriting(mic) {
   mic.button.disabled = true;
   mic.button.innerHTML = `<span class="mic-spin" aria-hidden="true"></span>Transcribing...`;
   mic.box.placeholder = "Muse Voice Transcribe is writing down what you said...";
   mic.say(`Muse Voice Transcribe is writing down ${mic.what}...`);
+}
+
+async function transcribe(mic, recording) {
   const started = performance.now();
   try {
     const decoded = await new OfflineAudioContext(1, 16000, 16000).decodeAudioData(await recording.arrayBuffer());
@@ -177,10 +237,6 @@ async function transcribe(mic, recording) {
   } catch (err) {
     mic.box.value ||= mic.typed;
     mic.say(`Could not transcribe: ${err.message}`);
-  } finally {
-    mic.button.disabled = false;
-    mic.button.textContent = mic.idle;
-    mic.box.placeholder = mic.placeholder;
   }
 }
 

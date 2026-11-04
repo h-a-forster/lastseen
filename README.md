@@ -145,7 +145,7 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
   checks each proposal on a close-up. A reviewer checks a few alarms instead of every photo.
-- **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down,
+- **Start a search here.** Type or speak what the family and witnesses said. Muse Voice Transcribe writes it down as you speak,
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
   hill"). Spark also grades each witness the way a search manager would (do they know her, did they see it
   themselves, does anyone back it up?); the grades are shown, not used to change weights. LastSeen plans the drone's first
@@ -178,7 +178,7 @@ Captured from the page with recorded answers, so no model was called.
 |---|---|
 | SAM 3.1 | Finds people in drone photos (text prompt "person", boxes with confidence) |
 | Muse Spark | Checks each SAM proposal on a close-up; reads briefs and witness reports into hypotheses, as strict JSON whose quotes and numbers code then checks |
-| Muse Voice Transcribe | Turns a spoken brief or a witness's call into text |
+| Muse Voice Transcribe | Turns a spoken brief or a witness's call into text, word by word as it is spoken (realtime stream) |
 | Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
 
 Each model's calling code, prompts, measured result and cost, and why we don't use Muse Wonder or Muse Image:
@@ -217,7 +217,7 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
-- **74 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+- **76 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
   answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it
