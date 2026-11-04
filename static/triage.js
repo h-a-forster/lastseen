@@ -34,10 +34,12 @@ function showTriage(result, imageUrl) {
       <div class="text-xs text-slate-400">${result.candidates.some((c) => overlaps(c.box, b)) ? "SAM 3.1 proposed it; Spark dismissed it" : "SAM 3.1 did not propose it"}</div>
     </div></li>`).join("");
   const found = labelled.length - missed.length;
-  T("triage-summary").innerHTML = `${result.tiles} tiles checked · ${result.candidates.length} proposals from SAM 3.1 · ` +
-    `<span class="text-green-300 font-medium">${result.alarms} alarm${result.alarms === 1 ? "" : "s"}</span> after Muse Spark` +
-    (labelled.length ? ` · finds ${found} of the ${labelled.length} people labelled in this photo (misses dashed red)` : "") +
-    ` · model calls $${result.usd.toFixed(3)}${result.cached ? " (replayed from cache)" : ""}`;
+  const stat = (value, label, cls = "") => `<div class="${cls}"><dt>${value}</dt><dd>${label}</dd></div>`;
+  T("triage-summary").innerHTML = stat(result.tiles, "tiles checked") +
+    stat(result.candidates.length, "proposals from SAM 3.1") +
+    stat(result.alarms, `alarm${result.alarms === 1 ? "" : "s"} after Muse Spark`, "alarm") +
+    (labelled.length ? stat(`${found} of ${labelled.length}`, "labelled people found (misses dashed red)") : "") +
+    stat(`$${result.usd.toFixed(3)}`, result.cached ? "model calls, replayed from cache" : "model calls");
   T("triage-credit").textContent = result.credit
     ? `Example photo: ${result.name}. ${result.note ? `${result.note} ` : ""}${result.credit}`
     : "Your photo is checked and then discarded; it is not stored.";

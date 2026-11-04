@@ -79,13 +79,17 @@
 /* ---------- hero ---------- */
 
 .hero { position: relative; padding: 36px 0 20px; overflow: hidden; }
-.hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 56px; align-items: end; }
+.hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px 56px; align-items: start; }
 .hero h1 {
   font-size: clamp(32px, 3.3vw, 48px); line-height: 1.04; letter-spacing: -0.025em;
   font-weight: 650; font-stretch: 84%; max-width: 24ch; text-wrap: balance;
 }
-.lede { font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 56ch; }
-.lede strong { color: var(--ink); font-weight: 600; }
+.lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 48ch; }
+.hero-points { display: grid; gap: 18px; padding-top: 6px; }
+.hero-points li { padding-top: 10px; border-top: 1.5px solid var(--ink); }
+.hero-points b { display: block; font-size: 16px; font-weight: 650; }
+.hero-points span { display: block; margin-top: 4px; font-size: 14px; line-height: 1.45; color: var(--ink-2); max-width: 48ch; }
+.hero-foot { grid-column: 1 / -1; font-size: 13px; color: var(--ink-3); }
 
 .band { background: var(--well); transition: background-color 1.2s ease; padding: 40px 0 44px; }
 .band-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; align-items: start; }
@@ -109,6 +113,7 @@
 }
 .sheet h2 { font-size: clamp(26px, 2.4vw, 34px); line-height: 1.1; letter-spacing: -0.02em; font-weight: 650; font-stretch: 86%; }
 .sheet-sub { margin-top: 6px; color: var(--ink-2); max-width: 68ch; text-wrap: pretty; }
+.sheet-note { margin-top: 12px; padding-left: 12px; border-left: 2px solid var(--rule); font-size: 13px; line-height: 1.5; color: var(--ink-3); max-width: 68ch; }
 
 .scenario { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; min-width: 0; max-width: 100%; }
 .scenario label { color: var(--ink-2); }
@@ -218,7 +223,8 @@
 .margin-notes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 32px; margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--rule); }
 .margin-notes h4, .colophon h4 { font-size: 13px; font-weight: 650; margin-bottom: 6px; }
 .sv #legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
-.notes { font-size: 13px; color: var(--ink-2); max-width: 90ch; }
+.notes { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); max-width: 90ch; }
+.notes b { font-weight: 600; color: var(--ink); }
 
 /* ---------- brief ---------- */
 
@@ -233,7 +239,7 @@
 .grade { text-align: center; font-size: 12px; font-weight: 650; padding: 2px 0; border-radius: var(--r-frame); border: 1.5px solid var(--ink); }
 .grade-strong { background: var(--ink); color: var(--paper); }
 .grade-weak { border-style: dashed; color: var(--ink-2); }
-.offline { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+.offline { font-size: 13px; color: var(--ink-3); margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--rule); }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 10px; }
 .actions .toggle { margin-top: 0; }
 .status-text { font-size: 13px; color: var(--ink-3); margin-top: 8px; }
@@ -245,10 +251,17 @@
 .sv #brief-sorties button { background: var(--surface); border: 1px solid var(--rule); border-left-width: 4px; padding: 7px 12px; font-size: 14px; font-weight: 600; color: var(--ink); border-radius: var(--r-control); }
 .sv #brief-sorties button:hover { border-color: var(--ink-3); }
 .credit { font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+.find-result { margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--ink); max-width: 300px; }
+.find-count { margin-top: 2px; font-size: 13px; color: var(--ink-2); }
+.find-credit { margin-top: 4px; font-size: 11px; line-height: 1.4; color: var(--ink-3); max-width: 300px; }
 
 /* ---------- photo check ---------- */
 
-.triage-summary { font-size: 15px; margin-bottom: 14px; max-width: 110ch; }
+.triage-summary { display: flex; flex-wrap: wrap; gap: 12px 32px; margin-bottom: 18px; }
+.triage-summary div { padding-top: 8px; border-top: 1.5px solid var(--ink); min-width: 110px; }
+.triage-summary dt { font-size: 24px; font-weight: 600; font-stretch: 80%; line-height: 1; }
+.triage-summary dd { margin-top: 4px; font-size: 13px; color: var(--ink-2); }
+.triage-summary .alarm dt { color: var(--red-ink); }
 .triage-grid { display: grid; grid-template-columns: minmax(0, 900px) minmax(280px, 380px); gap: 32px; align-items: start; }
 .plate { margin: 0; }
 .sv #triage-photo img { border-radius: 0; outline: 1px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 1.5px var(--ink); }
@@ -328,7 +341,7 @@
 }
 
 /* Sheet 4: a place of your own */
-.place-note { max-width: 80ch; font-size: 14px; color: var(--ink-2); margin: 0 0 16px; }
+
 .place-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .place-map { height: 640px; border: 1px solid var(--ink); border-radius: var(--r-frame); background: var(--well); }
 .place-form { display: flex; flex-direction: column; gap: 6px; }
@@ -339,6 +352,11 @@
 .sv .place-form input, .sv .place-form textarea, .sv .place-form select { font: inherit; font-size: 15px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-control); color: var(--ink); }
 .place-form button { margin-top: 12px; align-self: flex-start; }
 .place-hint { font-size: 12px; color: var(--ink-3); }
+.place-how { margin-top: 18px; padding: 12px 16px 14px; background: var(--well); border-top: 3px solid var(--ink); border-radius: 0 0 var(--r-frame) var(--r-frame); }
+.place-how h3 { font-size: 14px; font-weight: 650; }
+.place-how ul { margin-top: 6px; display: grid; gap: 6px; }
+.place-how li { position: relative; padding-left: 14px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.place-how li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; background: var(--red); }
 .place-status { font-size: 14px; color: var(--ink-2); min-height: 1.4em; }
 @media (max-width: 900px) {
   .place-grid { grid-template-columns: minmax(0, 1fr); }

@@ -342,14 +342,15 @@ function buildLaneDom() {
     lane.noteEl = el.querySelector("[data-note]");
     lane.photoEl = el.querySelector("[data-photo]");
   });
-  $("imagery").innerHTML = state.run.imagery
-    ? "Each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size (under trees, canopy also hides her at an assumed rate). Every planner draws from the same photos, so they share the same luck. Alarms: spots a reviewer checks."
-    : "Detections are sampled from the measured table (no photo pool on this server).";
-  if (state.run.place?.aerial === false) {
-    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap. ${escapeHtml(state.run.place.credit)}.`;
-  } else if (state.run.place) {
-    $("imagery").innerHTML += ` <br>A real place: ${escapeHtml(state.run.place.title)}. She walks over terrain and paths from OpenStreetMap (untick the aerial photo to see them). Aerial imagery © swisstopo · ${escapeHtml(state.run.place.credit)}.`;
-  }
+  const place = state.run.place;
+  $("imagery").innerHTML = [
+    state.run.imagery
+      ? note("Photos", "each photo of her is judged by SAM 3.1 and Muse Spark on a real drone photo of a person her size; under trees, canopy also hides her at an assumed rate. Both planners draw from the same photos, so they share the same luck.")
+      : note("Photos", "detections are sampled from the measured table (no photo pool on this server)."),
+    note("Alarms", "spots a reviewer checks."),
+    place && note("Place", `${escapeHtml(place.title)}. She walks over terrain and paths from OpenStreetMap${place.aerial === false ? "" : " (untick the aerial photo to see them)"}.`),
+    place && note("Credits", `${place.aerial === false ? "" : "Aerial imagery © swisstopo · "}${escapeHtml(place.credit)}.`),
+  ].filter(Boolean).join("");
   $("legend").innerHTML = [
     ...TERRAIN.map(([name, rgb]) => swatch(`rgb(${rgb})`, name)),
     swatch(`rgb(${TRAIL})`, "Trail"),
@@ -369,7 +370,8 @@ function updateLaneText(lane, t) {
   const hit = found && lane.sightings.find((s) => s.found);
   if (Boolean(hit) !== lane.shownPhoto) {
     lane.shownPhoto = Boolean(hit);
-    lane.photoEl.innerHTML = hit ? `${photoHtml(hit)}<p class="text-xs text-slate-400 mt-1">${sightingText(hit)} · ${lane.photoIndex} photos taken, ${lane.alarmCount} alarms for review</p>` : "";
+    lane.photoEl.innerHTML = hit ? photoHtml(hit, `<p class="find-result">${sightingText(hit)}</p>
+      <p class="find-count">${lane.photoIndex} photos taken · ${lane.alarmCount} alarms for review</p>`) : "";
   }
 }
 
@@ -437,8 +439,12 @@ function sightingText(s) {
   return `SAM 3.1 flagged her (${Math.round(s.sam * 100)}%), but Muse Spark said "${escapeHtml(s.spark || "not a person")}".`;
 }
 
-function photoHtml(s) {
-  // A window of the real 1000 px tile around the person, with the person's labelled box.
+function note(label, text) {
+  return `<li><b>${label}:</b> ${text}</li>`;
+}
+
+function photoHtml(s, caption = "") {
+  // A window of the real 1000 px tile around the person, with the person's labelled box; the credit comes last.
   const W = 300, H = 200;
   const [x1, y1, x2, y2] = s.box;
   const span = Math.max(200, 5 * s.size_px);
@@ -448,8 +454,10 @@ function photoHtml(s) {
   return `<div class="relative mt-1.5 rounded overflow-hidden bg-slate-800" style="width:${W}px;height:${H}px;max-width:100%">
       <div class="absolute inset-0" style="background:url(/api/tiles/${s.tile}.jpg) no-repeat;background-size:${1000 * k}px;background-position:${-left * k}px ${-top * k}px"></div>
       <div class="absolute border-2 ${colour}" style="left:${(x1 - left) * k - 3}px;top:${(y1 - top) * k - 3}px;width:${(x2 - x1) * k + 6}px;height:${(y2 - y1) * k + 6}px"></div>
-    </div>
-    <p class="text-[11px] text-slate-500 mt-0.5">Stand-in photo, not of this place: a real drone photo of a person her size (${escapeHtml(state.run.photo_credit || "")}). Whether the drone spots her here was decided by SAM 3.1 and Muse Spark on this photo.</p>`;
+    </div>${caption}
+    <p class="find-credit" title="${escapeHtml(state.run.photo_credit || "")}">Stand-in: a real drone photo of a person
+      her size, not this place. SAM 3.1 and Muse Spark decided the find on it. Photo: HERIDAL, University of Split,
+      CC BY 3.0.</p>`;
 }
 
 // ---------- playback ----------
