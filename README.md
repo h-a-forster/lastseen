@@ -55,7 +55,10 @@ mission exports as a QGroundControl file instead of going over the radio link, a
 yet. In PX4's simulator the exported missions fly as planned, and a new leg uploaded while the drone is airborne takes
 over without it stopping ([docs/px4-sitl.md](docs/px4-sitl.md)).
 
-**Try it:** run it locally (see [Run it](#run-it)); a hosted demo will be linked here for judging.
+**Try it:** [the hosted demo](https://hishamalpha00--lastseen-web.us-east.modal.run/). In two minutes: [watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40)
+(the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone takes
+2 h 56), then [read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief) and [be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place). Or run
+it locally (see [Run it](#run-it)).
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
