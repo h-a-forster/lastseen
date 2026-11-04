@@ -14,6 +14,7 @@ camera's ground resolution.
 
 import json
 import math
+import os
 import time
 import zlib
 from dataclasses import dataclass
@@ -28,7 +29,7 @@ from app.sar.grid import Grid, Terrain
 from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
 from app.sar.walker import WalkerParams, guided_track, truth_track
 
-PLACES_DIR = Path(__file__).resolve().parents[2] / "data" / "places"
+PLACES_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "places"
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
 CREDIT = "Map data © OpenStreetMap contributors (ODbL)"
 M_PER_DEG = 111_195.0  # metres per degree of latitude on a 6,371 km sphere

@@ -48,7 +48,7 @@ RACE_PLANNERS = {"lawnmower", "spiral", "spiral+spark", "concentric", "sector", 
 # One model job at a time (a race, or a photo check). Both set MODEL_MODE for the process, so they must not overlap.
 _model_lock = threading.Lock()
 _map_lock = threading.Lock()  # one OpenStreetMap download at a time, without holding up model calls
-MAX_STORED_RUNS = 200  # about 1 MB each
+MAX_STORED_RUNS = 2000  # about 0.5 MB each; the hosted spend cap runs out first
 _summaries: dict[str, tuple[float, dict]] = {}  # file name -> (modified time, list entry), so listing doesn't reparse
 # Races the page lists first, in this order (the page opens the first); copying files to a host resets modified times.
 FEATURED_RUNS = ("saint-ursanne-dementia-19-spiral-hedge-spark-1drone", "dementia-5-spiral-hedge-spark-1drone",

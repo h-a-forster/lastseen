@@ -3,11 +3,13 @@
     uvx --from modal==1.6.2 modal deploy deploy/modal_app.py
 
 Needs Modal Secrets `lastseen-meta` (MODEL_API_KEY) and `lastseen-baseten` (BASETEN_API_KEY, for briefs read on open
-weights). Live model calls stay under the spend cap below and the per-visitor hourly limit in `app/main.py`. The cache
-and spend ledger live on a Volume and the cap counts the whole ledger, so it holds across container restarts; one
-container at most.
+weights). Live model calls stay under the spend cap below and the per-visitor hourly limit in `app/main.py`. The cache,
+the spend ledger, the recorded races and the downloaded maps live on a Volume, so a visitor's race and map survive
+container restarts and the cap counts the whole ledger; one container at most.
 """
 
+import filecmp
+import shutil
 from pathlib import Path
 
 import modal
@@ -37,6 +39,19 @@ cache = modal.Volume.from_name("lastseen-cache", create_if_missing=True)
 @modal.concurrent(max_inputs=50)
 @modal.asgi_app()
 def web():
+    _seed_volume()
     from app.main import app as fastapi_app
 
     return fastapi_app
+
+
+def _seed_volume():
+    """Copy the races and maps baked into the image onto the Volume, where the app reads and adds to them; a baked file
+    replaces its copy when it changed, and visitors' own files are left alone."""
+    for name in ("runs", "places"):
+        target = Path("/vol") / name
+        target.mkdir(parents=True, exist_ok=True)
+        for baked in Path("/root/data", name).iterdir():
+            copy = target / baked.name
+            if not copy.exists() or not filecmp.cmp(baked, copy, shallow=False):
+                shutil.copyfile(baked, copy)
