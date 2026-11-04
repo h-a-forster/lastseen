@@ -2,7 +2,7 @@
 // The visitor may be the witness too: mark where she was seen, and type or say what the witness tells the team.
 
 const PLACE_SIDE_M = 3000;
-const SEEN_RADIUS_M = 300;  // the server picks a walk that passed this close to the mark (replay.SEEN_RADIUS_M)
+const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
 const place = { map: null, marker: null, square: null, seen: null, seenMarker: null, marking: false };
 
 function placeSay(text) {
@@ -34,6 +34,7 @@ function showPoint([lat, lon]) {
     clearSeen();
     placeSay("The witness's mark was outside the new search area, so it was cleared.");
   }
+  if (place.seen) describeMark();
   if (!place.map) return;
   const square = squareAround([lat, lon]);
   if (place.square) place.square.setBounds(square);
@@ -56,15 +57,23 @@ function markSeen(point) {
   if (!inSquare(start, point)) return placeSay("The witness's spot has to be inside the red square; click inside it.");
   place.seen = point;
   place.seenMarker?.remove();
-  place.seenMarker = L.layerGroup([
-    L.circle(point, { radius: SEEN_RADIUS_M, color: "#1d4ed8", weight: 2, dashArray: "4 4", fillOpacity: 0.1 }),
-    L.circleMarker(point, { radius: 5, color: "#1d4ed8", fillColor: "#ffffff", fillOpacity: 1 }),
-  ]).addTo(place.map);
+  place.seenMarker = L.circleMarker(point, { radius: 6, color: "#1d4ed8", fillColor: "#ffffff", fillOpacity: 1 })
+    .addTo(place.map);
   setMarking(false);
-  document.getElementById("place-seen").textContent = `${point[0].toFixed(4)}, ${point[1].toFixed(4)}`;
+  describeMark();
   document.getElementById("place-unmark").classList.remove("hidden");
   showHeading(false);
-  placeSay("Marked. Now type or say what the witness tells the search team.");
+  placeSay("Marked: she will walk there. Now type or say what the witness tells the search team.");
+}
+
+function describeMark() {
+  // how far and which way the mark is from where she left (the square's centre, as the server has it)
+  const [[south, west], [north, east]] = squareAround(parsePoint(document.getElementById("place-coords").value));
+  const [lat0, lon0] = [(south + north) / 2, (west + east) / 2];
+  const dy = (place.seen[0] - lat0) * 111195, dx = (place.seen[1] - lon0) * 111195 * Math.cos((lat0 * Math.PI) / 180);
+  const way = COMPASS[Math.round(((Math.atan2(dx, dy) * 180) / Math.PI + 360) / 45) % 8];
+  const km = Math.hypot(dy, dx) / 1000;
+  document.getElementById("place-seen").textContent = km < 0.2 ? "Close to where she left" : `${km.toFixed(1)} km ${way} of where she left`;
 }
 
 function clearSeen() {

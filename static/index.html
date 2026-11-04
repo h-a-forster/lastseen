@@ -247,10 +247,11 @@
               <span id="place-seen" class="place-hint"></span>
             </div>
             <label for="place-witness">What the witness says</label>
-            <textarea id="place-witness" rows="3" maxlength="400" placeholder="A dog walker says he saw an old woman by the bridge about twenty minutes ago."></textarea>
+            <textarea id="place-witness" rows="3" maxlength="400" placeholder="A dog walker saw an old woman about a kilometre north-east of the village, on a path by the woods, twenty minutes ago."></textarea>
             <div data-live class="hidden place-row">
               <button id="place-mic" class="btn btn-quiet" type="button">Speak</button>
             </div>
+            <p class="place-hint">Muse Spark reads only these words, never your mark, so say where she was the way a passer-by would: roughly how far and which way from where she left (shown above once you mark), and what was there, like a road, a river or the edge of a wood. Names you can read on the map help when they belong to a village, river, bridge or chapel.</p>
             <div id="place-heading-row" class="place-field">
               <label for="place-heading">She heads</label>
               <select id="place-heading">
@@ -261,7 +262,7 @@
             </div>
             <label for="place-minute">The witness calls after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="45" />
-            <p class="place-hint">Either way the witness is right, by design. Without your own, LastSeen picks one of its simulated walks that has her that way from the starting point when the witness calls, and writes the report. With your mark and words, it picks a walk that passed within 300&nbsp;m of the mark 5 to 40 minutes before the call; Muse Spark reads only your words, never the mark. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
+            <p class="place-hint">The witness is right, by design, and so is the family's brief. With your mark, she walks from the starting point to it, is there 20 minutes before the call, and wanders on from there. Without one, LastSeen picks a simulated walk that has her the way you chose when the witness calls, and writes the report. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
             <button data-live class="hidden btn btn-ink" type="submit">Run a test search</button>
             <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
             <p id="place-status" class="place-status" role="status"></p>

@@ -21,8 +21,6 @@ import re
 import zlib
 from pathlib import Path
 
-import numpy as np
-
 from app.perception import pool as photo_pool
 from app.perception.heridal import CREDIT
 from app.sar.bench import fleet_for, make_planner
@@ -39,8 +37,7 @@ from app.sar.walker import RECORD_S
 RUNS_DIR = Path(__file__).resolve().parents[2] / "data" / "runs"
 MAX_LANES = 3
 HEADING_TRIES = 60  # walks tried for one that goes the way a visitor chose (terrain makes some directions rare)
-SEEN_RADIUS_M = 300.0  # a visitor's witness spot: she passed within this distance of it...
-SEEN_AGE_S = (300.0, 2400.0)  # ...5-40 minutes before the call
+WITNESS_LEAD_S = 1200.0  # a visitor's own witness saw her this long before calling (less if the call comes sooner)
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
@@ -49,12 +46,16 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     """Every planner flies the same hidden walk. With `sighting_s` (a visitor's test search), a sighting that is right
     arrives at that search time instead of the generated one, if any. `subject` replaces the person's name in the
     reports. `witness` is a visitor's own sighting at `sighting_s`: their words, read as they are, and the map spot
-    (y_m, x_m) where they say she was seen, which the truth then describes (see `seen_near`)."""
-    scenario = build(seed, place, category, size)
-    reports, cues = reports_for(scenario, seed, subject)
+    (y_m, x_m) where they saw her, which her walk passes through WITNESS_LEAD_S before the call (see `seen_at`). In a
+    visitor's test search the brief is right too, so nothing in it contradicts where they had her go."""
+    seen = None if witness is None else (witness[1], seen_at(sighting_s))
+    scenario = build(seed, place, category, size, seen=seen)
+    reports, cues = reports_for(scenario, seed, subject, reliable=sighting_s is not None)
     if sighting_s is not None:
-        sighting, cue = (true_sighting(scenario, seed, sighting_s, subject) if witness is None
-                         else _witness_sighting(scenario, sighting_s, *witness))
+        if witness is None:
+            sighting, cue = true_sighting(scenario, seed, sighting_s, subject)
+        else:
+            sighting, cue = Report(sighting_s, witness[0]), right_sighting(scenario, sighting_s, sighting_s - seen[1])
         reports, cues = [reports[0], sighting], [c for c in cues if c.kind != "sighting"] + [cue]
     fleet = FleetSpec(drones=drones)
     losses = drone_losses(seed, drones) if lose_drone else None
@@ -86,11 +87,9 @@ def race(seed: int, planner_names: list[str], category: str = "dementia", size: 
     }
 
 
-def _witness_sighting(scenario: Scenario, t_s: float, text: str, spot_m: tuple[float, float]) -> tuple[Report, Cue]:
-    seen_s = seen_near(scenario, spot_m, t_s)
-    if seen_s is None:
-        raise ValueError("this walk doesn't pass the witness's spot before the call")
-    return Report(t_s, text), right_sighting(scenario, t_s, t_s - seen_s)
+def seen_at(call_s: float) -> float:
+    """The search time a visitor's own witness saw her, for a call at `call_s`."""
+    return max(0.0, call_s - WITNESS_LEAD_S)
 
 
 def watchable_seed(place: str | None, first: int, sighting_s: float | None = None, tries: int = 5,
@@ -100,23 +99,20 @@ def watchable_seed(place: str | None, first: int, sighting_s: float | None = Non
     before, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
     favours neither. Photos are decided as in the race; no model calls.
     With `heading_deg`, only walks that have her within 22.5 degrees of that bearing from the start point at the
-    sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks. Likewise with
-    `seen_m`, a witness's spot (y_m, x_m): only walks that pass near it shortly before `sighting_s` (see `seen_near`).
-    Falls back to a walk that meets the place, direction and spot tests, then to `first`; ValueError if a chosen
-    direction or spot has no walk at all."""
+    sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks. With `seen_m`,
+    a witness's spot (y_m, x_m), every walk passes through it (see `walker.guided_track`); ValueError if she can't
+    walk there. Falls back to a walk that meets the place and direction tests, then to `first`; ValueError if a
+    chosen direction has no walk at all."""
     if seen_m is not None and sighting_s is None:
         raise ValueError("a witness's spot needs the time of the call")
     photos = photo_pool.shared()
     fallback = None
-    chosen = heading_deg is not None or seen_m is not None
-    for seed in range(first, first + (HEADING_TRIES if chosen else tries)):
-        scenario = build(seed, place, "dementia")
+    for seed in range(first, first + (HEADING_TRIES if heading_deg is not None else tries)):
+        scenario = build(seed, place, "dementia", seen=None if seen_m is None else (seen_m, seen_at(sighting_s)))
         seen_s = sighting_s if sighting_s is not None else _sighting_s(scenario, seed)
         if seen_s is None or scenario.subject_at(seen_s) is None:
             continue
         if heading_deg is not None and abs((bearing_at(scenario, seen_s) - heading_deg + 180) % 360 - 180) > 22.5:
-            continue
-        if seen_m is not None and seen_near(scenario, seen_m, seen_s) is None:
             continue
         fallback = seed if fallback is None else fallback
         if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=seen_s,
@@ -124,22 +120,7 @@ def watchable_seed(place: str | None, first: int, sighting_s: float | None = Non
             return seed
     if fallback is None and heading_deg is not None:
         raise ValueError("none of the simulated walks from here goes that way; try another direction")
-    if fallback is None and seen_m is not None:
-        raise ValueError("none of the simulated walks passes there before the call; mark a spot closer to the start "
-                         "or call later")
     return first if fallback is None else fallback
-
-
-def seen_near(scenario: Scenario, spot_m: tuple[float, float], call_s: float) -> float | None:
-    """The recorded search time, SEEN_AGE_S before `call_s`, when the person was closest to `spot_m` (y_m, x_m), the
-    latest if she stayed there a while, or None if she was never within SEEN_RADIUS_M of it then."""
-    first = max(0, math.ceil((call_s - SEEN_AGE_S[1]) / RECORD_S))
-    last = min(math.floor((call_s - SEEN_AGE_S[0]) / RECORD_S), len(scenario.track) - 1)
-    if last < first:
-        return None
-    distances = np.hypot(*(scenario.track[first:last + 1] - np.asarray(spot_m)).T)
-    closest = len(distances) - 1 - int(distances[::-1].argmin())
-    return (first + closest) * RECORD_S if distances[closest] <= SEEN_RADIUS_M else None
 
 
 def bearing_at(scenario: Scenario, t_s: float) -> float:

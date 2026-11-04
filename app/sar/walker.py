@@ -12,6 +12,7 @@ app.sar.walker_check` prints the comparison (distance, dispersion angle, distanc
 
 from __future__ import annotations
 
+import heapq
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -27,6 +28,7 @@ DT_S = 20.0
 RECORD_S = 60.0
 BARRIER = 0.1  # passability below this blocks walking (open water)
 OUTSIDE_PASSABILITY = 0.6  # terrain beyond the mapped area is unknown; assume average going
+SET_OFF_M = 300.0  # how far along her way a neighbour's "she set off towards..." describes
 _STEPS = np.array([(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
 _STEP_ANGLE = np.arctan2(_STEPS[:, 0], _STEPS[:, 1])  # heading convention: dy = sin, dx = cos
 
@@ -60,13 +62,15 @@ class Walk:
 
 
 def walk(search_map: SearchMap, category: str, rng: np.random.Generator, n: int, duration_s: float,
-         params: WalkerParams | None = None) -> Walk:
-    """Walk `n` subjects from the IPP for `duration_s` seconds."""
+         params: WalkerParams | None = None, start_m: tuple[float, float] | None = None,
+         heading: float | None = None) -> Walk:
+    """Walk `n` subjects for `duration_s` seconds, from the IPP in random directions unless `start_m` and `heading`
+    say otherwise."""
     p = params or PARAMS[category]
     grid, passability, trails = search_map.grid, search_map.passability, search_map.trails
     stuck_terrain = np.isin(search_map.terrain, (Terrain.SCRUB, Terrain.FOREST))
-    pos = np.tile(np.array(grid.centre_m(*search_map.ipp)), (n, 1))
-    start_heading = rng.uniform(0, 2 * np.pi, n)
+    pos = np.tile(np.array(start_m or grid.centre_m(*search_map.ipp)), (n, 1))
+    start_heading = rng.uniform(0, 2 * np.pi, n) if heading is None else np.full(n, heading)
     heading = start_heading.copy()
     speed = p.speed_mps * rng.lognormal(0, 0.25, n)
     moving_left_s = p.moving_h * 3600 * rng.lognormal(0, p.moving_sd, n)
@@ -109,6 +113,67 @@ def truth_track(search_map: SearchMap, category: str, rng: np.random.Generator, 
     delay_s = rng.uniform(*p.report_delay_h) * 3600
     w = walk(search_map, category, rng, 1, delay_s + hours * 3600, p)
     return w.positions[int(delay_s // RECORD_S):, 0], float(w.start_heading[0])
+
+
+def guided_track(search_map: SearchMap, category: str, rng: np.random.Generator, hours: float,
+                 spot_m: tuple[float, float], seen_s: float, params: WalkerParams | None = None
+                 ) -> tuple[np.ndarray, float]:
+    """Like `truth_track`, for a subject a witness saw at `spot_m` at search time `seen_s` (a whole number of
+    RECORD_S): she walks the easiest way there from the IPP at her own pace, waits there if she would arrive early,
+    has been gone longer than usual if she couldn't arrive sooner, and from the spot carries on by the category's rules.
+    The heading is the way she went for her first SET_OFF_M, which is what a neighbour would have seen."""
+    p = params or PARAMS[category]
+    path = easiest_path(search_map, spot_m)
+    steps = np.diff(path, axis=0)
+    rows, cols, _ = _cells(search_map.grid, path[:-1])
+    speed = p.speed_mps * rng.lognormal(0, 0.25)
+    walked_s = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T) / (speed * search_map.passability[rows, cols]))])
+    delay_s = max(rng.uniform(*p.report_delay_h) * 3600, walked_s[-1] - seen_s)
+    clock = np.arange(0.0, seen_s, RECORD_S) + delay_s  # her walking time at each record before she is seen
+    before = np.stack([np.interp(clock, walked_s, path[:, 0]), np.interp(clock, walked_s, path[:, 1])], axis=1)
+    last = steps[-1] if len(steps) else np.zeros(2)
+    after = walk(search_map, category, rng, 1, hours * 3600 - seen_s, p, start_m=tuple(spot_m),
+                 heading=math.atan2(*last)).positions[:, 0]
+    along = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T))])
+    set_off = path[min(int(np.searchsorted(along, SET_OFF_M)), len(path) - 1)] - path[0]
+    return np.concatenate([before, after]), math.atan2(*set_off)
+
+
+def easiest_path(search_map: SearchMap, spot_m: tuple[float, float]) -> np.ndarray:
+    """Points (y, x) in metres from the IPP's centre to `spot_m`, through cell centres along the walk that costs least
+    (distance over passability), never into water (only out of it, when the start point is on water). ValueError if
+    water cuts the spot off."""
+    grid, passability = search_map.grid, search_map.passability
+    goal = grid.cell_of(*spot_m)
+    if passability[goal] < BARRIER:
+        raise ValueError("the witness's spot is on water; mark it on land")
+    cost = np.full(grid.shape, math.inf)
+    came_from: dict[tuple[int, int], tuple[int, int]] = {}
+    cost[search_map.ipp] = 0.0
+    frontier = [(0.0, search_map.ipp)]
+    while frontier:
+        d, (r, c) = heapq.heappop(frontier)
+        if (r, c) == goal:
+            break
+        if d > cost[r, c]:
+            continue
+        wading = passability[r, c] < BARRIER  # only near a start point on water: she wades out, never back in
+        for dr, dc in _STEPS:
+            nr, nc = r + dr, c + dc
+            if not (0 <= nr < grid.rows and 0 <= nc < grid.cols):
+                continue
+            if not wading and min(passability[nr, nc], passability[r + dr, c], passability[r, c + dc]) < BARRIER:
+                continue  # no stepping into water or cutting the corner of a water cell
+            step = d + math.hypot(dr, dc) * grid.cell_m / passability[r, c]
+            if step < cost[nr, nc]:
+                cost[nr, nc], came_from[(nr, nc)] = step, (r, c)
+                heapq.heappush(frontier, (step, (nr, nc)))
+    if math.isinf(cost[goal]):
+        raise ValueError("water cuts the witness's spot off from the starting point; mark a spot she could walk to")
+    cells = [goal]
+    while cells[-1] != search_map.ipp:
+        cells.append(came_from[cells[-1]])
+    return np.array([grid.centre_m(*cell) for cell in reversed(cells)] + [tuple(spot_m)])
 
 
 def _cells(grid: Grid, pos: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

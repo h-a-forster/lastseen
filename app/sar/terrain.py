@@ -26,7 +26,7 @@ from PIL import Image, ImageDraw
 
 from app.sar.grid import Grid, Terrain
 from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
-from app.sar.walker import WalkerParams, truth_track
+from app.sar.walker import WalkerParams, guided_track, truth_track
 
 PLACES_DIR = Path(__file__).resolve().parents[2] / "data" / "places"
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
@@ -203,16 +203,21 @@ def search_map(name: str, category: str = "dementia") -> SearchMap:
     return SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category, _landmarks(osm, place))
 
 
-def scenario(seed: int, name: str, category: str = "dementia", truth: WalkerParams | None = None) -> Scenario:
-    """A hidden walk on the real map; the seed picks the walk, the map is always the same place."""
-    search = search_map(name, category)
-    track, heading = truth_track(search, category, np.random.default_rng(seed), TRACK_HOURS, truth)
+def scenario(seed: int, name: str, category: str = "dementia", truth: WalkerParams | None = None,
+             seen: tuple[tuple[float, float], float] | None = None) -> Scenario:
+    """A hidden walk on the real map; the seed picks the walk, the map is always the same place. `seen` as in
+    `scenario.synthetic`."""
+    search, rng = search_map(name, category), np.random.default_rng(seed)
+    track, heading = (truth_track(search, category, rng, TRACK_HOURS, truth) if seen is None
+                      else guided_track(search, category, rng, TRACK_HOURS, *seen, truth))
     return Scenario(f"{name}-{seed}", search, track, heading)
 
 
-def build(seed: int, place: str | None, category: str, size: int = 120, truth: WalkerParams | None = None) -> Scenario:
+def build(seed: int, place: str | None, category: str, size: int = 120, truth: WalkerParams | None = None,
+          seen: tuple[tuple[float, float], float] | None = None) -> Scenario:
     """The scenario for a seed: on the named real place, or on a synthetic map of `size` cells when `place` is None."""
-    return scenario(seed, place, category, truth) if place else synthetic(seed, size, category=category, truth=truth)
+    return (scenario(seed, place, category, truth, seen) if place
+            else synthetic(seed, size, category=category, truth=truth, seen=seen))
 
 
 def _landmarks(osm: dict, place: Place) -> tuple[tuple[str, float, float], ...]:
