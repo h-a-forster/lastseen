@@ -78,17 +78,9 @@ decide what is true.
 
 ```mermaid
 flowchart LR
-  A["Family or witness<br/>types or speaks"] --> B["Muse Voice Transcribe"]
-  B --> C["Muse Spark: weighted<br/>places on the map"]
-  A --> C
-  C --> D{"Code checks every<br/>quote, number, weight"}
-  D -- kept --> E["Probability map"]
-  D -- dropped --> X["Shown as discarded"]
-  E --> F["Planner code<br/>picks the route"]
-  F --> G["Drone flies it<br/>on autopilot"]
-  G --> H["Each photo: SAM 3.1 proposes,<br/>Muse Spark checks a close-up"]
-  H --> I["Volunteer accepts<br/>or rejects each alarm"]
-  I --> J["Ground team<br/>confirms the find"]
+  A["Witness<br/>speaks or types"] --> B["Muse Voice<br/>Transcribe"] --> C["Muse Spark<br/>reads it"] --> D{"Code<br/>checks"}
+  D -- kept --> E["Planner code<br/>picks the route"] --> F["Drone flies<br/>on autopilot"] --> G["SAM 3.1 and<br/>Muse Spark<br/>check photos"] --> H["Volunteer<br/>reviews alarms"] --> I["Ground team<br/>confirms"]
+  D -- dropped --> X["Shown as<br/>discarded"]
 ```
 
 What code checks, and the test that holds it to that (`tests/test_agent.py`, `tests/test_perception.py`):
