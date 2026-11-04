@@ -124,6 +124,7 @@ def describe(search_map: SearchMap) -> str:
     grid, terrain = search_map.grid, search_map.terrain
     share = {t.name.lower(): float((terrain == t).mean()) for t in Terrain if (terrain == t).any()}
     side_km = grid.rows * grid.cell_m / 1000
+    # Fixed wording, kept byte for byte: every cached reading's request contains it.
     return (f"Missing person category: {search_map.category}. Search area: {side_km:g} km square around the house. "
             f"Ground cover: {', '.join(f'{k} {v:.0%}' for k, v in share.items())}. There are several footpaths, streams and ponds."
             + _landmarks(search_map))
@@ -132,7 +133,7 @@ def describe(search_map: SearchMap) -> str:
 def _landmarks(search_map: SearchMap) -> str:
     """Named places on a real map, as bearings and distances from the house, so Spark can place what witnesses name."""
     if not search_map.landmarks:
-        return ""  # synthetic maps: the description stays exactly as before
+        return ""  # synthetic maps have no named places
     y0, x0 = search_map.grid.centre_m(*search_map.ipp)
     places = [f"{name}: {math.degrees(math.atan2(x - x0, y0 - y)) % 360:.0f}°, {math.hypot(y - y0, x - x0) / 1000:.1f} km"
               for name, y, x in search_map.landmarks]

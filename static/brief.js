@@ -28,7 +28,7 @@ async function showBrief(result, seconds = null) {
       <div class="text-xs text-slate-500 italic">${h.evidence.map((q) => `“${escapeText(q)}”`).join(" · ")}</div>
     </li>`).join("") +
     `<li class="text-xs text-slate-400">None of these (keep the statistics): ${Math.round(result.rest_weight * 100)}%` +
-    (result.dropped.length ? ` · ${result.dropped.length} hypothesis dropped by the checks: ${escapeText(result.dropped.join("; "))}` : "") + "</li>";
+    (result.dropped.length ? ` · ${result.dropped.length} explanation${result.dropped.length === 1 ? "" : "s"} dropped by the checks: ${escapeText(result.dropped.join("; "))}` : "") + "</li>";
   B("brief-witnesses").innerHTML = (result.witnesses || []).map((w) => `<li>
       <span class="grade grade-${w.reliability}">${escapeText(w.reliability)}</span>
       <div><strong>${escapeText(w.who)}</strong>: ${escapeText(w.claim)}

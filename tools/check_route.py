@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyulog==1.3.0"]
+# ///
 """From a PX4 ULog and a QGroundControl .plan: how close the vehicle came to each waypoint, and in which order.
 A flown mission passes every waypoint within a few metres, in sequence."""
 

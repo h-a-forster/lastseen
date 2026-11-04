@@ -1,7 +1,7 @@
 """The page's help box: a visitor's question gets one or more of our written FAQ answers, never new text.
 
-A question close enough to a written one is answered at once, with no model call. Otherwise Muse Spark picks which
-written answers fit, or none if the question is off topic; it can only return entry ids, so whatever a visitor types,
+A question close enough to a written one is answered at once, with no model call. Otherwise Muse Spark (Muse Spark Open on the
+hosted page) picks which written answers fit, or none if the question is off topic; it can only return entry ids, so whatever a visitor types,
 the page only ever shows answers we wrote.
 """
 

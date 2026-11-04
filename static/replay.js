@@ -34,7 +34,11 @@ const AERIAL_ZOOM = 15; // about 3 m per pixel here: sharper than the 5 m the ma
 
 async function api(path, options) {
   const response = await fetch(path, options);
-  if (!response.ok) throw new Error(errorText((await response.json().catch(() => ({}))).detail) || response.statusText);
+  if (!response.ok) {
+    const err = new Error(errorText((await response.json().catch(() => ({}))).detail) || response.statusText);
+    err.status = response.status;
+    throw err;
+  }
   return response.json();
 }
 
@@ -50,7 +54,7 @@ function errorText(detail) {
 
 async function loadRunList(selectId) {
   const runs = await api("/api/runs");
-  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] : "Made-up terrain"} · case ${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}</option>`).join("");
+  $("run").innerHTML = runs.map((r) => `<option value="${r.id}">${r.place ? r.place.split(",")[0] : "Synthetic map"} · case ${r.seed}, ${r.drones} drone${r.drones === 1 ? "" : "s"}</option>`).join("");
   if (!runs.length) return showStatus("No recorded races yet: record one with a seed.");
   if (selectId?.startsWith("at-")) addVisitorRace(selectId);
   $("run").value = [...$("run").options].some((o) => o.value === selectId) ? selectId : runs[0].id;
@@ -452,7 +456,7 @@ function hypothesesHtml(note) {
     </div>`;
   return `<p class="text-xs uppercase tracking-wide text-amber-300">Muse Spark: competing explanations</p>
     ${note.hypotheses.map((h) => bar(h.name, h.weight, h.reason)).join("")}
-    ${bar("None of these (keep the statistical map)", note.rest_weight, "")}
+    ${bar("None of these (keep the statistics)", note.rest_weight, "")}
     ${note.dropped.length ? `<p class="text-xs text-slate-500 mt-1.5">Discarded: ${note.dropped.map(escapeHtml).join("; ")}</p>` : ""}`;
 }
 
@@ -587,3 +591,14 @@ loadRunList(link.get("race")).then(() => {
   play();
 }).catch((err) => showStatus(`Could not load races: ${err.message}`));
 showLiveControls();
+
+// A link to a section (/#place) is followed before the races, examples and photos above it are drawn, and each of them
+// pushes the section down the page. Keep it in view while the page grows, until the visitor scrolls or clicks.
+const linked = !link.has("race") && location.hash && document.getElementById(location.hash.slice(1));
+if (linked) {
+  const pin = new ResizeObserver(() => linked.scrollIntoView({ behavior: "instant" }));
+  const release = () => pin.disconnect();
+  pin.observe(document.body);
+  ["wheel", "touchmove", "keydown", "mousedown"].forEach((type) => addEventListener(type, release, { once: true, passive: true }));
+  setTimeout(release, 15000);
+}

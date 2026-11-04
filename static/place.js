@@ -158,15 +158,21 @@ document.getElementById("place-form").onsubmit = async (e) => {
   const button = e.submitter;
   button.disabled = true;
   const started = Date.now();
-  const tick = () => placeSay(`Downloading the map from OpenStreetMap, reading the reports with Muse Spark and flying both searches... ${Math.round((Date.now() - started) / 1000)} s`);
+  let retrying = "";
+  const tick = () => placeSay(`${retrying}Downloading the map from OpenStreetMap, reading the reports with Muse Spark and flying both searches... ${Math.round((Date.now() - started) / 1000)} s`);
   tick();
   const timer = setInterval(tick, 1000);
+  const request = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat: point[0], lon: point[1], ...witness,
+                           report_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 30)) }),
+  };
   try {
-    const { id } = await api("/api/place-race", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat: point[0], lon: point[1], ...witness,
-                             report_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 30)) }),
+    const { id } = await api("/api/place-race", request).catch((err) => {
+      if (err.status !== 503 || !/OpenStreetMap/.test(err.message)) throw err;
+      retrying = "OpenStreetMap's servers were busy, so trying once more. ";  // they often are for a minute
+      return api("/api/place-race", request);
     });
     clearInterval(timer);
     placeSay(`Done in ${Math.round((Date.now() - started) / 1000)} s: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.`);

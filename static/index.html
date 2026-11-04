@@ -14,9 +14,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,300..800;1,62..125,300..800&display=swap" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    // Classes the scripts add after load. Safari doesn't style classes that appear after the CDN's first pass, so
+    // they are generated up front.
+    tailwind.config = { safelist: `
+      absolute bg-amber-400 bg-slate-800 bg-slate-900/60 border border-2 border-dashed border-green-400 border-l-2
+      border-rose-400 border-slate-400/80 border-slate-700 border-slate-800 flex font-medium font-mono gap-1 gap-2
+      h-1 h-1.5 h-3 h-auto hover:bg-slate-700 inline-block inline-flex inset-0 italic items-baseline items-center
+      items-start justify-between mb-2 min-h-[2.5em] mt-0.5 mt-1 mt-1.5 mt-2 overflow-hidden p-2 pl-3 px-1 px-2 py-1
+      rounded rounded-lg rounded-sm shrink-0 text-amber-300 text-green-300 text-green-400 text-rose-300
+      text-rose-400 text-sky-300 text-slate-300 text-slate-400 text-slate-500 text-sm text-xs tracking-wide
+      uppercase w-3 w-full
+    `.split(/\s+/).filter(Boolean) };
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=10" />
+  <link rel="stylesheet" href="/style.css?v=11" />
 </head>
 <body class="sv" data-tint="sage">
   <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
@@ -47,7 +60,7 @@
           <p class="lede"><strong>LastSeen</strong> flies a search drone for a missing person and decides where it looks. Today, what witnesses say reaches the search map by hand, or not at all. One volunteer launches it, swaps batteries and stays in command.</p>
         </div>
         <ul class="hero-points">
-          <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg><b>Muse Spark reads every report</b><span>Each witness's words become weighted, checked scenarios on the real map, in seconds.</span></li>
+          <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg><b>Muse Spark reads every report</b><span>Each witness's words become weighted, checked scenarios on the real map, in about 20 seconds.</span></li>
           <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7h7V6"/><path d="M12 13c3 0 5-2 7-6"/><circle cx="19.5" cy="5.5" r="1.6"/></svg><b>The drone re-plans mid-flight</b><span>It breaks off its search pattern to follow a sighting, and flies the search itself.</span></li>
           <li><svg class="point-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><circle cx="12" cy="10" r="2"/><path d="M8.5 16.5c1-2.5 6-2.5 7 0"/></svg><b>SAM&nbsp;3.1 and Muse Spark check every photo</b><span>For a person a few dozen pixels wide: a reviewer sees about 280 close-ups instead of 1,250 photos.</span></li>
         </ul>
@@ -63,7 +76,7 @@
             <span class="sheet-no" aria-hidden="true">1</span>
             <div>
               <h2 id="race-title">Watch a search</h2>
-              <p class="sheet-sub">A simulated missing person walks off from where she was last seen, and two drones search for her side by side: the standard expanding square, and the team planner that follows Muse Spark's reading of the witness reports. Neither knows where she is. Watch the team planner's drone break off when a witness calls in.</p>
+              <p class="sheet-sub">A simulated missing person walks off from where she was last seen, and the same search is flown twice, side by side: by the standard expanding square, and by the team planner that follows Muse Spark's reading of the witness reports. Neither knows where she is. Watch the team planner's drone break off when a witness calls in.</p>
             </div>
           </div>
         </div>
@@ -172,7 +185,7 @@
               <div class="mini-row" style="--v:46%"><span>Volunteer</span><i></i><b>46%</b></div>
               <div class="mini-row" style="--v:40%"><span>Rules</span><i></i><b>40%</b></div>
             </div>
-            <dd>found within 2 hours when witnesses name places ("by the bridge on the Route de Montmelon") instead of giving distances. Rules can't read that; Muse Spark can. The volunteer knows every place on the map. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/named-places.txt">Results</a></dd>
+            <dd>found within 2 hours when witnesses name places ("by the bridge on the Route de Montmelon") instead of giving distances. Rules written for the simulator's own sentences can't read that; Muse Spark can. The volunteer knows every place on the map. <a href="https://github.com/h-a-forster/lastseen/blob/main/docs/results/named-places.txt">Results</a></dd>
           </div>
           <div class="fact">
             <dt>+7 points</dt>
@@ -283,8 +296,8 @@
             <span class="sheet-no" aria-hidden="true">4</span>
             <div>
               <h2 id="place-title">Try it on any place</h2>
-              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose and says where they saw her, in the simulator's words or your own; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
-              <p class="sheet-note">A new place takes about a minute: its map comes from OpenStreetMap's free servers, which can be busy, so try again shortly if they are. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
+              <p class="sheet-sub">Run a test search of your own. Click anywhere on the map and LastSeen builds a 3&nbsp;km search area around that point. A simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose, in the simulator's words or your own; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
+              <p class="sheet-note">A new place takes about a minute: its map comes from OpenStreetMap's free servers, which can be busy; LastSeen then tries once more. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
             </div>
           </div>
         </div>
@@ -370,13 +383,13 @@
 
   <div id="status" class="hidden toast" role="status"></div>
 
-  <script src="/replay.js?v=9"></script>
-  <script src="/triage.js?v=6"></script>
-  <script src="/brief.js?v=4"></script>
+  <script src="/replay.js?v=10"></script>
+  <script src="/triage.js?v=7"></script>
+  <script src="/brief.js?v=5"></script>
   <script src="/sheet.js?v=2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="/place.js?v=4"></script>
-  <script src="/faq.js?v=11"></script>
+  <script src="/place.js?v=5"></script>
+  <script src="/faq.js?v=12"></script>
   <script src="/backdrop.js?v=1"></script>
 </body>
 </html>

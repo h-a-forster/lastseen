@@ -181,6 +181,7 @@
 
 .race-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; }
 .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 0 28px; }
+@media (max-width: 619px) { .lanes > article + article { margin-top: 32px; } } /* one column: space between the two lanes */
 
 /* each lane spans five shared rows (title, subtitle, map, note, photo), so the maps line up whatever the titles wrap to */
 .sv #lanes article { display: grid; grid-template-rows: subgrid; grid-row: span 5; background: none; border: 0; padding: 0; border-radius: 0; }
@@ -358,8 +359,10 @@
   .brief-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
 @media (max-width: 640px) {
-  .masthead-row { gap: 16px; }
-  .sheet-nav { display: none; }
+  /* the section links move to a second, sideways-scrolling row under the brand */
+  .masthead-row { gap: 0 16px; flex-wrap: wrap; height: auto; padding-top: 12px; }
+  .sheet-nav { order: 3; width: 100%; gap: 20px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding: 8px 0 10px; font-size: 13px; }
+  .sheet, .lanes > * { scroll-margin-top: 96px; }
   .hero { padding: 32px 0 28px; }
   .lede { font-size: 16px; }
   .facts { grid-template-columns: 1fr; gap: 16px; }
