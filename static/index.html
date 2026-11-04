@@ -7,7 +7,7 @@
   <meta name="description" content="LastSeen flies a search drone for a missing person. Muse Spark turns every witness report into weighted, checked scenarios in seconds; the drone re-plans and flies the search itself; SAM 3.1 and Muse Spark check every photo. Simulated end to end on a real valley." />
   <meta property="og:title" content="LastSeen: drone search and rescue on Meta's models" />
   <meta property="og:description" content="Muse Spark turns witness reports into a search map, the drone breaks off mid-flight to follow a sighting, and SAM 3.1 and Muse Spark check every photo. Simulated end to end on a real valley." />
-  <meta property="og:image" content="/race.jpg" />
+  <meta property="og:image" content="https://raw.githubusercontent.com/h-a-forster/lastseen/main/static/race.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' fill='none' stroke='%23DA291C' stroke-width='2.4'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,7 +16,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <!-- ?v=2: copies cached before the server sent no-cache never expire, so a new URL makes old visitors fetch them -->
-  <link rel="stylesheet" href="/style.css?v=9" />
+  <link rel="stylesheet" href="/style.css?v=10" />
 </head>
 <body class="sv" data-tint="sage">
   <div class="backdrop" aria-hidden="true"><i data-tint="sage"></i><i data-tint="slate"></i><i data-tint="sand"></i><i data-tint="clay"></i><i data-tint="moss"></i></div>
@@ -141,7 +141,7 @@
             <div class="mini" role="img" aria-label="Found in a single photo: 79%">
               <div class="mini-row ours" style="--v:79%"><span>One photo</span><i></i><b>79%</b></div>
             </div>
-            <dd>of people about 44&nbsp;px wide (a drone at 100&nbsp;m) found by SAM&nbsp;3.1 in a single photo, measured on 227 people in real drone photos. 3 of its 4 "false alarms" on empty ground were people the labellers had missed.</dd>
+            <dd>of people about 44&nbsp;px wide (a drone at 100&nbsp;m) found by SAM&nbsp;3.1 and Muse Spark in a single photo, measured on 227 people in real drone photos. 3 of its 4 "false alarms" on empty ground were people the labellers had missed.</dd>
           </div>
           <div class="fact">
             <dt>~280</dt>
@@ -369,13 +369,13 @@
 
   <div id="status" class="hidden toast" role="status"></div>
 
-  <script src="/replay.js?v=6"></script>
+  <script src="/replay.js?v=7"></script>
   <script src="/triage.js?v=5"></script>
   <script src="/brief.js?v=3"></script>
   <script src="/sheet.js?v=2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="/place.js?v=3"></script>
-  <script src="/faq.js?v=8"></script>
+  <script src="/faq.js?v=9"></script>
   <script src="/backdrop.js?v=1"></script>
 </body>
 </html>

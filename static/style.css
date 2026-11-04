@@ -121,6 +121,7 @@
 /* ---------- sheets (sections) ---------- */
 
 .sheet { padding: 28px 0 64px; }
+.sheet, .lanes > * { scroll-margin-top: 64px; } /* clear the sticky masthead */
 .band + .sheet { padding-top: 56px; }
 .sheet-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 48px; margin-bottom: 20px; }
 .sheet-title { display: flex; gap: 16px; align-items: flex-start; flex: 1 1 520px; max-width: 760px; }
