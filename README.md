@@ -14,7 +14,8 @@ dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photo
 batteries and stays in command.
 
 **In simulation, on 200 searches fixed in advance, half the missing people were found by 1 h 52 instead of 3 h 17**
-with the standard expanding square ([how we measured](docs/evaluation.md)). It hasn't flown a real drone yet.
+with the standard expanding square ([how we measured](docs/evaluation.md)). It hasn't flown a real drone yet; PX4, the autopilot many real drones run, has flown its missions in simulation,
+including a change of route sent mid-flight ([docs/px4-sitl.md](docs/px4-sitl.md)).
 
 It is built for searches where minutes matter most: an older person with dementia who has walked away from home,
 with one volunteer and one drone. Six in ten people living with dementia wander at least once
@@ -50,8 +51,9 @@ can send photos during flight, and on others a small onboard computer with a 4G 
 after landing, a find waits for the battery swap, up to 25 minutes.
 
 The simulator runs this loop end to end. What isn't built is LastSeen's connection to a real drone: each battery's
-mission exports as a QGroundControl file (it loads, but hasn't been flown) instead of going over the radio link, and
-nothing receives photos from a drone yet.
+mission exports as a QGroundControl file instead of going over the radio link, and nothing receives photos from a drone
+yet. In PX4's simulator the exported missions fly as planned, and a new leg uploaded while the drone is airborne takes
+over without it stopping ([docs/px4-sitl.md](docs/px4-sitl.md)).
 
 **Try it:** run it locally (see [Run it](#run-it)); a hosted demo will be linked here for judging.
 
@@ -92,8 +94,7 @@ drone photo of a person her size](static/race.jpg)
   and Muse Spark turns it into weighted hypotheses on a real map, using the named places on it ("the chapel up on the
   hill"). Spark also grades each witness the way a search manager would (do they know her, did they see it
   themselves, does anyone back it up?); the grades are shown, not used to change weights. LastSeen plans the drone's first
-  battery, downloadable as a QGroundControl mission (it loads and displays in QGroundControl; it hasn't been flown on
-  a real drone).
+  battery, downloadable as a QGroundControl mission (flown by PX4 in its simulator; not yet on a real drone).
 - **Watch a search.** Replays of the same search flown by different planners, on synthetic maps or a real valley
   (Saint-Ursanne, Switzerland), with the person hidden until the end. Every photo that had the person in it was
   decided by a real SAM 3.1 + Spark answer on a real drone photo of a person that size (in forest, canopy also hides
@@ -148,8 +149,8 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
   [docs/evaluation.md](docs/evaluation.md#known-limits).
 - Mission heights are 100 m above the take-off point, and the simulator doesn't model terrain height; over hills a
   real mission needs terrain-following heights (QGroundControl can adjust them).
-- LastSeen isn't connected to a real drone yet: missions export as QGroundControl files for PX4 autopilots (they load
-  but haven't been flown), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
+- LastSeen isn't connected to a real drone yet: missions export as QGroundControl files for PX4 autopilots (flown in
+  PX4's simulator, not on a drone), and nothing receives photos in flight. Where a drone can't send photos in flight, a find waits for the
   battery swap, up to 25 minutes later.
 - Next: connecting to a real drone's radio link, a test flight over open ground, and a trial with a volunteer search team on a training exercise.
 
