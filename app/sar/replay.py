@@ -93,10 +93,11 @@ def seen_at(call_s: float) -> float:
 
 
 def watchable_seed(place: str | None, first: int, sighting_s: float | None = None, tries: int = 5,
-                   heading_deg: float | None = None, seen_m: tuple[float, float] | None = None) -> int:
+                   heading_deg: float | None = None, seen_m: tuple[float, float] | None = None,
+                   hours: float = 4.0) -> int:
     """For a visitor's place: the first of `tries` walks from seed `first` with a sighting (at `sighting_s`, or the
     generated one) while she is still in the mapped area, which the expanding square hasn't found her
-    before, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
+    before and which keeps her in the mapped area to the race's end at `hours`, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
     favours neither. Photos are decided as in the race; no model calls.
     With `heading_deg`, only walks that have her within 22.5 degrees of that bearing from the start point at the
     sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks. With `seen_m`,
@@ -115,8 +116,9 @@ def watchable_seed(place: str | None, first: int, sighting_s: float | None = Non
         if heading_deg is not None and abs((bearing_at(scenario, seen_s) - heading_deg + 180) % 360 - 180) > 22.5:
             continue
         fallback = seed if fallback is None else fallback
-        if Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=seen_s,
-               photos=photos).run().found_s is None:
+        stays = scenario.subject_at(hours * 3600) is not None
+        if stays and Sim(scenario, ExpandingSquare(), FleetSpec(drones=1), seed=seed, max_s=seen_s,
+                         photos=photos).run().found_s is None:
             return seed
     if fallback is None and heading_deg is not None:
         raise ValueError("none of the simulated walks from here goes that way; try another direction")

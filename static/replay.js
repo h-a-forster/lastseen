@@ -221,7 +221,21 @@ function resultLine() {
   const finds = state.lanes.map((lane) => [state.run.lanes[lane.name].result.found_s, label(lane.name)])
     .sort(([a], [b]) => (a ?? Infinity) - (b ?? Infinity));
   const notFound = `not found in ${clock(state.run.hours * 3600)}`;
-  return finds.map(([s, name], i) => (s == null ? `${name} ${notFound}` : i ? `${clock(s)} ${name}` : `Found at ${clock(s)} with ${name}`)).join(" · ");
+  const line = finds.map(([s, name], i) => (s == null ? `${name} ${notFound}` : i ? `${clock(s)} ${name}` : `Found at ${clock(s)} with ${name}`)).join(" · ");
+  const left = finds[0][0] == null ? leftAreaAt() : null;
+  if (left == null) return line;
+  return `${line}. ${left ? `She walked out of the search area at ${clock(left)}` : "She was outside the search area from the start"}, and drones search only inside it.`;
+}
+
+function leftAreaAt() {
+  // When she walked out of the mapped area for good, if she ends the race outside it (0: she never was inside).
+  const { every_s, track } = state.run.truth;
+  const { rows, cols, cell_m } = state.run.map;
+  const inside = ([y, x]) => y >= 0 && x >= 0 && y < rows * cell_m && x < cols * cell_m;
+  let i = Math.min(track.length - 1, Math.floor((state.run.hours * 3600) / every_s));
+  if (inside(track[i])) return null;
+  while (i > 0 && !inside(track[i - 1])) i--;
+  return i * every_s;
 }
 
 function updateSearched(lane, t) {

@@ -60,7 +60,7 @@ def test_a_visitors_place_race_is_paid_tells_a_busy_map_server_apart_and_stays_o
     assert args == (7, ["spiral", "hedge+spark"]) and kwargs["sighting_s"] == 1800.0
     assert picked[0] == (1800.0, 135.0, None) and kwargs["subject"] == "the test subject" and kwargs["witness"] is None
     text, (y_m, x_m) = witnessed["witness"]
-    assert text == words["witness_text"].strip() and picked[1] == (2700.0, None, (y_m, x_m))
+    assert text == words["witness_text"].strip() and picked[1] == (1800.0, None, (y_m, x_m))  # called 30 min in unless set
     assert abs(y_m - (1500 - 0.005 * 111_195)) < 1 and abs(x_m - 1500 - 0.005 * 111_195 * math.cos(math.radians(47.365))) < 1
     assert client.get(f"/api/runs/{run_id}").status_code == 200
     assert client.get("/api/runs").json() == []  # a visitor's race isn't listed for everyone

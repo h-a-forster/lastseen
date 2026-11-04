@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw
 
 from app.sar.grid import Grid, Terrain
 from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
-from app.sar.walker import WalkerParams, guided_track, truth_track
+from app.sar.walker import SNAP_M, WalkerParams, guided_track, truth_track
 
 PLACES_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "places"
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
@@ -199,7 +199,8 @@ def search_map(name: str, category: str = "dementia") -> SearchMap:
     terrain = _majority(np.asarray(paint), side)
     trails = _trails(osm, to_px, side, place)
     grid = Grid(side, side, place.cell_m)
-    ipp = grid.cell_of(place.side_m / 2, place.side_m / 2)
+    centre = grid.cell_of(place.side_m / 2, place.side_m / 2)
+    ipp = grid.nearest(terrain != Terrain.WATER, centre, SNAP_M) or centre  # a point on a river means its bank
     no_fly = np.zeros(grid.shape, bool)  # no airfield or heliport in either preset; drone rules allow the whole area
     return SearchMap(grid, terrain, trails, no_fly, ipp, ipp, category, _landmarks(osm, place))
 
