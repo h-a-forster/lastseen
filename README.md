@@ -1,6 +1,6 @@
 # LastSeen
 
-> Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 27 Oct - 4 Nov 2026
+> Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 26 Oct - 4 Nov 2026
 
 LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
 "more art than science"
