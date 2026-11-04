@@ -5,12 +5,14 @@ import io
 import json
 import math
 import os
+import re
 
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from app import main
 from app.main import app
+from app.perception import pool as photo_pool
 
 client = TestClient(app)
 
@@ -96,6 +98,17 @@ def test_an_edit_that_keeps_the_size_and_date_is_still_served(tmp_path):
     page.write_text("a = 2;")
     os.utime(page, (0, 0))
     assert files.get("/page.js", headers={"If-None-Match": etag}).text == "a = 2;"
+
+
+def test_a_clone_without_the_dataset_serves_the_featured_races_their_photos_and_the_examples(monkeypatch):
+    monkeypatch.setattr(photo_pool, "shared", lambda: None)  # no downloaded dataset or photo pool, as in a fresh clone
+    for run_id in main.FEATURED_RUNS:
+        run = client.get(f"/api/runs/{run_id}")
+        assert run.status_code == 200
+        for tile in set(re.findall(r'"tile":\s*"([0-9a-f]{16})"', run.text)):
+            assert client.get(f"/api/tiles/{tile}.jpg").status_code == 200, (run_id, tile)
+    for example in ("/api/brief/example", "/api/triage/example", "/api/triage/example.jpg"):
+        assert client.get(example).status_code == 200, example
 
 
 def test_health_tells_the_page_whether_live_model_calls_are_on(monkeypatch):

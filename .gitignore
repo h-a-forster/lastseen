@@ -7,15 +7,28 @@ node_modules/
 .DS_Store
 # Cached model answers and the spend ledger (raw API responses stay local)
 data/cache/
-# Recorded races for the replay page (regenerate with app.sar.replay)
-data/runs/
+# Recorded races for the replay page (regenerate with app.sar.replay); the featured ones are committed for a clone
+data/runs/*
+!data/runs/saint-ursanne-dementia-19-spiral-hedge-spark-1drone.json
+!data/runs/dementia-5-spiral-hedge-spark-1drone.json
+!data/runs/dementia-197-spiral-hedge-spark-1drone.json
 # Downloaded datasets (fetched by script; never committed) and perception results
 data/datasets/
 data/perception/
-data/tiles/
+data/tiles/*
+!data/tiles/1dadc46801d83061.jpg
+!data/tiles/5513cf8ee075d594.jpg
+!data/tiles/5d2f37a5505d0707.jpg
+!data/tiles/74a75c6c47ed3543.jpg
+!data/tiles/a951ea151741e765.jpg
+!data/tiles/acfd0a6fecbe15c5.jpg
+!data/tiles/f66a16d059028120.jpg
 # OpenStreetMap downloads for real places (ODbL; fetched on first use by app.sar.terrain)
 data/places/
-# Photo-check example (python -m app.perception.triage --example), built from the dataset
-data/triage/
-# Example brief read by Spark (python -m app.agent.brief --example)
-data/briefs/
+# Photo-check example (python -m app.perception.triage --example), built from the dataset; committed for a clone
+data/triage/*
+!data/triage/example.json
+!data/triage/example.jpg
+# Example brief read by Spark (python -m app.agent.brief --example); committed for a clone
+data/briefs/*
+!data/briefs/example.json

@@ -84,13 +84,13 @@ def shared() -> PhotoPool | None:
 
 def tile_jpeg(tid: str) -> Path | None:
     """The tile's image, rendered from the local dataset on first use and kept in TILES_DIR. None if unknown, or if
-    neither a rendered copy nor the dataset is here."""
-    pool = shared()
-    if pool is None or tid not in pool.keys:
-        return None
+    neither a rendered copy nor the dataset is here. The featured races' tiles are committed, so a clone shows them."""
     path = TILES_DIR / f"{tid}.jpg"
     if path.exists():
         return path
+    pool = shared()
+    if pool is None or tid not in pool.keys:
+        return None
     from app.perception.gate import Tile, render
     from app.perception.heridal import photos
     from app.perception.verify import _jpeg
