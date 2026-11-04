@@ -24,6 +24,23 @@ records 95% of those found within 24 hours are alive, against 60% after 48 hours
 call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia.pdf)). Every search-time claim is
 tested on a simulator built for it.
 
+### For judges: 3 minutes
+1. [Watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40):
+   the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone
+   takes 2 h 56.
+2. [Read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief): type or say what the family said, and watch it become weighted places
+   on a real map in seconds.
+3. [Be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place): mark where she was seen, say the call in your own words, and
+   watch the drone follow it (about a minute).
+4. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
+
+The races are recorded simulator runs on real maps and real drone photos; reading a brief, checking your own photo and
+the witness call are live calls to Meta's models. Or run it yourself: [Run it](#run-it).
+
+![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
+to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
+drone photo of a person her size](static/race.jpg)
+
 ## What search experts told us
 We wrote to people who study and fly drone searches. Four answered our questions, and their answers shaped LastSeen:
 - **Witnesses or statistics?** "These two sources of information are not mutually exclusive; rather, they complement
@@ -55,14 +72,33 @@ mission exports as a QGroundControl file instead of going over the radio link, a
 yet. In PX4's simulator the exported missions fly as planned, and a new leg uploaded while the drone is airborne takes
 over without it stopping ([docs/px4-sitl.md](docs/px4-sitl.md)).
 
-**Try it:** [the hosted demo](https://hishamalpha00--lastseen-web.us-east.modal.run/). In two minutes: [watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40)
-(the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone takes
-2 h 56), then [read a brief with Muse Spark](https://hishamalpha00--lastseen-web.us-east.modal.run/#brief) and [be the witness on a place you know](https://hishamalpha00--lastseen-web.us-east.modal.run/#place). Or run
-it locally (see [Run it](#run-it)).
+## Who decides what
+Muse Spark decides what the words mean; code decides every number that follows; the volunteer and the ground team
+decide what is true.
 
-![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
-to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
-drone photo of a person her size](static/race.jpg)
+```mermaid
+flowchart LR
+  A["Witness<br/>speaks or types"] --> B["Muse Voice<br/>Transcribe"] --> C["Muse Spark<br/>reads it"] --> D{"Code<br/>checks"}
+  D -- kept --> E["Planner code<br/>picks the route"] --> F["Drone flies<br/>on autopilot"] --> G["SAM 3.1 and<br/>Muse Spark<br/>check photos"] --> H["Volunteer<br/>reviews alarms"] --> I["Ground team<br/>confirms"]
+  D -- dropped --> X["Shown as<br/>discarded"]
+```
+
+What code checks, and the test that holds it to that (`tests/test_agent.py`, `tests/test_perception.py`):
+- Every place Muse Spark proposes must quote words that really appear in the reports or the map, or it is dropped:
+  no invented evidence (`test_invented_evidence_is_dropped_and_rest_keeps_a_minimum_share`,
+  `test_evidence_must_quote_the_reports_or_the_map_not_our_time_stamps`).
+- Distances, spreads and weights are clamped to sensible ranges, at most 5 places are kept, and at least 15% of the
+  weight always stays on "none of these", because witnesses are often wrong (`test_out_of_range_numbers_are_clamped`).
+- A place that covers nothing inside the search area is dropped, and the dropped ones are shown, not hidden.
+- If Spark fails or answers off the schema, the search carries on from the statistics
+  (`test_advisor_carries_on_when_spark_fails`, `test_advisor_carries_on_when_spark_answers_off_schema`).
+- Witness grades must quote the brief and use our labels; they are shown, not used to change weights
+  (`test_witness_grades_must_quote_the_brief_and_use_our_labels`).
+- The ground team's handover may only repeat facts from the race; any other number or direction rejects it
+  (`test_handover_facts_come_from_the_race_and_the_message_may_only_repeat_them`).
+- A find needs an alarm on the person, not just near them
+  (`test_a_find_needs_the_alarm_on_the_person_and_cut_off_people_are_not_false_alarms`). The route is planned by
+  code, never by the model.
 
 ## In numbers
 - **79%** of people about 44 px wide (a drone at 100 m) are found in a single photo by SAM 3.1 + Muse Spark, measured
@@ -74,6 +110,9 @@ drone photo of a person her size](static/race.jpg)
   team reports 5 to 45 seconds to look through one full photo
   ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)), so 1,250 photos are about 2 to 16 hours of looking; a
   close-up is one spot to accept or reject (not timed yet).
+- **Under a cent** for Muse Spark to read a brief or a new report. Checking every photo of 4 hours of flying costs
+  about $90 at today's prices (about 7 cents a photo), and turns those 2 to 16 hours of looking into about 280
+  close-ups.
 - **Half found by 1 h 52 instead of 3 h 17**, an hour and 25 minutes sooner than the expanding square alone, and
   **51% found within 2 hours instead of 44.5%** (+6.5 points, 95% interval +3 to +10.5). Measured on 200 held-out
   scenarios, fixed in advance and run once (one drone, photo mode). Muse Spark reads the witness reports, and when
