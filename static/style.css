@@ -189,6 +189,8 @@
 .sv #lanes [data-note] { padding: 0 0 0 22px; margin-top: 4px; font-size: 13px; }
 .sv #lanes [data-photo] { padding: 0 0 0 22px; }
 .sv #lanes [data-status] { font-size: 13px; white-space: nowrap; }
+.sv #lanes .lane-badge { padding: 2px 8px; border: 1.5px solid var(--ink); border-radius: 3px; font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; }
+.sv #lanes .lane-badge.found { border-color: var(--red); background: var(--red); color: #fff; }
 
 /* the map sheet frame: margins for coordinates, a double neatline round the map */
 .frame { position: relative; padding: 22px 0 46px 22px; }
@@ -286,6 +288,9 @@
 .sv #triage-photo span { font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 0 3px #000; }
 .list-title:first-child { margin-top: 0; }
 .sv .closeups { display: grid; gap: 12px; font-size: 14px; }
+.num-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 4px; border-radius: 3px; background: var(--ink-3); color: var(--surface); font-size: 11px; font-weight: 650; line-height: 1; }
+.num-badge.alarm { background: var(--red); color: #fff; }
+.num-badge.on-photo { position: absolute; top: -21px; left: -2px; margin: 0; }
 .sv .closeups > li > div:first-child { border-radius: 2px; box-shadow: 0 0 0 1px var(--ink); }
 .file-btn { cursor: pointer; }
 
@@ -329,10 +334,16 @@
 .ask-answer { background: var(--well); border-left: 3px solid var(--red); padding: 12px 16px; margin-bottom: 10px; border-radius: 0 var(--r-frame) var(--r-frame) 0; }
 .ask-answer strong { display: block; margin-bottom: 4px; }
 .ask-suggest { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; cursor: pointer; font: inherit; }
-.faq-list { margin-top: 18px; border-top: 1px solid var(--rule); }
+.faq-list { margin-top: 18px; }
+.faq-group { margin: 28px 0 4px; padding-bottom: 6px; border-bottom: 1.5px solid var(--ink); font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.faq-group:first-child { margin-top: 0; }
 .faq-list details { border-bottom: 1px solid var(--rule); }
-.faq-list summary { cursor: pointer; padding: 12px 0; font-weight: 600; list-style-position: inside; }
-.faq-list details p { padding: 0 0 14px; color: var(--ink-2); max-width: 72ch; }
+.faq-list summary { display: flex; gap: 12px; align-items: baseline; cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::before { content: "+"; flex: none; width: 14px; font-size: 18px; line-height: 1; font-weight: 500; color: var(--red); text-align: center; }
+.faq-list details[open] summary::before { content: "\2212"; }
+.faq-list summary:hover { color: var(--red-ink); }
+.faq-list details p { padding: 0 0 14px 26px; color: var(--ink-2); max-width: 72ch; }
 .faq-list details.flash summary { color: var(--red-ink); }
 
 /* ---------- small screens ---------- */
