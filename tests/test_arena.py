@@ -303,16 +303,20 @@ def test_a_place_inside_tiles_downloaded_ahead_is_cut_from_them_without_waiting_
     monkeypatch.setattr(terrain, "OSM_TILES_DIR", tmp_path / "tiles")
     monkeypatch.setattr(terrain, "PLACES_DIR", tmp_path / "places")
     asked = []
-    monkeypatch.setattr(terrain, "_overpass", lambda query, *a, **k: asked.append(query) or {"elements": []})
+    monkeypatch.setattr(terrain, "_ask_overpass", lambda url, query, timeout_s: asked.append((url, query)) or {"elements": []})
     road = {"type": "way", "id": 7, "bounds": {"minlat": 47.29, "maxlat": 47.31, "minlon": 7.14, "maxlon": 7.16}}
     far = {"type": "way", "id": 8, "bounds": {"minlat": 47.25, "maxlat": 47.26, "minlon": 7.14, "maxlon": 7.16}}
     chapel = {"type": "node", "id": 3, "lat": 47.31, "lon": 7.15}
     terrain.download_tiles(47.2, 7.1, 47.4, 7.2)  # two tiles, one above the other
-    assert len(asked) == 2 and "[bbox:47.2,7.1,47.3,7.2]" in asked[0]  # no float drift in the tile edges
+    assert len(asked) == 2 and "[bbox:47.2,7.1,47.3,7.2]" in asked[0][1]  # no float drift in the tile edges
+    assert asked[0][0] != asked[1][0]  # one public server per tile, taking turns
     for row, elements in ((472, [road, far]), (473, [road, chapel])):  # the road crosses from one tile into the other
         terrain._tile_path(row, 71).write_text(json.dumps({"elements": elements}))
     square = {"south": 47.287, "west": 7.13, "north": 47.313, "east": 7.17}
     assert terrain._from_tiles(square) == {"elements": [chapel, road]}  # once each, in Overpass's order, without `far`
+    area = terrain.downloaded_area()
+    assert area["tiles"] == [[47.2, 7.1, 47.3, 7.2], [47.3, 7.1, 47.4, 7.2]]
+    assert len(area["outline"]) == 6 and [[47.3, 7.1], [47.3, 7.2]] not in area["outline"]  # not the edge they share
     assert terrain._from_tiles({**square, "east": 7.21}) is None  # reaches a tile that wasn't downloaded
 
 

@@ -399,6 +399,7 @@
 .sv .place-form input, .sv .place-form textarea, .sv .place-form select { font: inherit; font-size: 15px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-control); color: var(--ink); }
 .place-form button { margin-top: 12px; align-self: flex-start; }
 .place-hint { font-size: 12px; color: var(--ink-3); }
+.place-key { max-width: 240px; padding: 4px 8px; font-size: 12px; line-height: 1.35; color: var(--ink); background: rgb(255 255 255 / 0.85); border-radius: var(--r-control); }
 .place-how { margin-top: 18px; padding: 12px 16px 14px; background: var(--well); border-top: 3px solid var(--ink); border-radius: 0 0 var(--r-frame) var(--r-frame); }
 .place-how h3 { font-size: 14px; font-weight: 650; }
 .place-how ul { margin-top: 6px; display: grid; gap: 6px; }

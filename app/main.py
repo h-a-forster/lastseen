@@ -226,6 +226,12 @@ async def place_race(req: PlaceRace, request: Request):
     return {"id": (await _live(_place_race, name, seed, req.report_minute * 60.0, witness)).stem}
 
 
+@app.get("/api/place-area")
+def place_area():
+    """Where a visitor's place loads fastest: the OpenStreetMap tiles downloaded ahead, and the outline of their area."""
+    return terrain.downloaded_area()
+
+
 def _download_place(lat: float, lon: float) -> str:
     with _map_lock:
         return terrain.visitor_place(lat, lon)
