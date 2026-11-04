@@ -34,10 +34,10 @@ tested on a simulator built for it.
    watch the drone follow it (about a minute).
 4. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
 
-The races are recorded simulator runs on real maps and real drone photos; reading a brief, checking your own photo and
-the witness call are live calls to Meta's models. The hosted page runs one model job at a time, up to 60 an hour per
-visitor; if it says it is busy, try again in a few seconds. The races never wait on a model. Or run it yourself:
-[Run it](#run-it).
+The races are recorded simulator runs, on a real Swiss valley or on synthetic maps, with real drone photos; reading a
+brief, checking your own photo and the witness call are live calls to Meta's models. The hosted page runs one model job
+at a time, up to 60 an hour per visitor; if it says it is busy, try again in a few seconds. The races never wait on a
+model. Or run it yourself: [Run it](#run-it).
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
