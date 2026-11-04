@@ -35,7 +35,9 @@ tested on a simulator built for it.
 4. [Read the plan written before the test](docs/evaluation.md), then the result in [In numbers](#in-numbers).
 
 The races are recorded simulator runs on real maps and real drone photos; reading a brief, checking your own photo and
-the witness call are live calls to Meta's models. Or run it yourself: [Run it](#run-it).
+the witness call are live calls to Meta's models. The hosted page runs one model job at a time, up to 60 an hour per
+visitor; if it says it is busy, try again in a few seconds. The races never wait on a model. Or run it yourself:
+[Run it](#run-it).
 
 ![One drone searching the Saint-Ursanne valley: the expanding square (left) against the team planner, which broke off
 to follow Muse Spark's reading of a dog walker's sighting and found her at 1 h 48; the find was decided on a real
@@ -129,6 +131,17 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
   and only one is right, LastSeen still beats the square by 7 points (+1.6 to +12.6). Both are development checks
   with pass marks written before the run ([docs/evaluation.md](docs/evaluation.md#named-places-and-witnesses-who-disagree-development-checks-3-nov)).
 
+## Why it is built this way
+| What we found | What LastSeen does |
+|---|---|
+| SAM 3.1 alone raised about one false alarm per 10 tiles; Spark's close-up check cut that by 37% and lost 7 of 662 people | Muse Spark checks every SAM proposal on a close-up before a person sees it |
+| A mountain-rescue team takes 5 to 45 seconds to look through one full photo ([Gotovac et al., 2020](https://doi.org/10.3390/rs12203295)) | Only alarms reach the volunteer, as close-ups: about 280 instead of 1,250 photos |
+| Most sightings have nothing to do with the missing person (Robert J. Koester, above) | The drone keeps its square until a sighting, and 15% of the weight always stays on "none of these"; when a sighting was wrong, it did as well as the square |
+| Drone-search planners assume the map doesn't change, and today a new report means recalling the drone (above) | The route is re-planned after every report, mid-flight; PX4 takes the new leg without stopping |
+| Rules written for the simulator's sentences fell to the square's 40% when witnesses named places instead | Muse Spark reads the words against the named places on the map: 55% |
+| Baseten doesn't enforce the JSON schema for Muse Spark Open, and some answers ran past the token limit | Code checks every field on either backend, and a cut-off answer is asked again with twice the budget: all 301 readings came back usable |
+| The planners had to be compared on 200 searches in a plan fixed in advance | The route is code, never the model, and every model answer is cached, so any run replays exactly, for $0 |
+
 ## What it does
 - **Is anyone in this photo?** SAM 3.1 proposes possible people in each 1000 px tile of a drone photo, and Muse Spark
   checks each proposal on a close-up. A reviewer checks a few alarms instead of every photo.
@@ -146,6 +159,14 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
   arriving 5 minutes before the call; Muse Voice Transcribe writes the call down, Muse Spark reads only the words
   (never the mark), and the team planner's drone breaks off for where Spark points.
 
+## Screenshots
+Captured from the page with recorded answers, so no model was called.
+
+| | |
+|---|---|
+| ![The find at 1 h 48: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover](docs/screenshots/find.jpg)<br>**The find**: SAM 3.1 flagged her on a real drone photo, Muse Spark confirmed it and wrote the ground team's handover from facts code checked | ![A brief read by Muse Spark: witness grades, weighted places quoting the brief, and the first battery's route](docs/screenshots/brief.jpg)<br>**Start a search**: Muse Spark grades each witness and turns the brief into weighted places, each quoting the words it rests on; the first battery's route downloads for QGroundControl |
+| ![Photo check: 12 tiles, 5 SAM 3.1 proposals, close-ups with Muse Spark's verdicts](docs/screenshots/triage.jpg)<br>**Is anyone in this photo?** SAM 3.1 proposes, Muse Spark checks each close-up, and the reviewer sees only the alarms | ![Measured results: detection, close-ups, search times and the tests run with pass marks fixed in advance](docs/screenshots/facts.jpg)<br>**Measured, not assumed**: the headline numbers, each linked to how it was measured |
+
 ## Meta models
 | Model | Job |
 |---|---|
@@ -153,6 +174,9 @@ What code checks, and the test that holds it to that (`tests/test_agent.py`, `te
 | Muse Spark | Checks each SAM proposal on a close-up; reads briefs and witness reports into hypotheses, as strict JSON whose quotes and numbers code then checks |
 | Muse Voice Transcribe | Turns a spoken brief or a witness's call into text |
 | Muse Spark Open | Spark's jobs on open weights, served by Baseten (`SPARK_BACKEND=open`) |
+
+Each model's calling code, prompts, measured result and cost, and why we don't use Muse Wonder or Muse Image:
+[docs/meta-models.md](docs/meta-models.md).
 
 Why these: SAM 3.1 finds people from the single word "person", with no training on our photos, so we measured it
 instead of training anything (660 labelled people). Muse Spark answers as strict JSON against a schema, so every
@@ -187,7 +211,7 @@ isn't tied to one hosted API; we tested them through Baseten, not on our own har
 - **The final comparison is fixed in advance** ([docs/evaluation.md](docs/evaluation.md)): 200 unseen scenarios,
   one primary endpoint, and wording rules for the result whatever it shows.
 - **Every parameter has a source and a sensitivity run** ([docs/parameters.md](docs/parameters.md)).
-- **72 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
+- **73 tests run in CI without a single model call**, with the GitHub Actions pinned to commit SHAs. Every model
   answer is cached under a hash of its request, so a bench, a replay or the demo reruns for $0 and offline.
 
 ## Before anyone relies on it
