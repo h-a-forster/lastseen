@@ -2,6 +2,9 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 26 Oct - 4 Nov 2026
 
+**[Try it live](https://hishamalpha00--lastseen-web.us-east.modal.run)** · **[3-minute video](https://youtu.be/1BX0xcUv3nQ)** · [How it was evaluated](docs/evaluation.md) ·
+[![tests](https://github.com/h-a-forster/lastseen/actions/workflows/tests.yml/badge.svg)](https://github.com/h-a-forster/lastseen/actions/workflows/tests.yml)
+
 [![Watch the 3-minute demo video](docs/img/video-thumb.jpg)](https://youtu.be/1BX0xcUv3nQ)
 
 LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
@@ -18,6 +21,11 @@ batteries and stays in command.
 **In simulation, on 200 searches fixed in advance, half the missing people were found by 1 h 52 instead of 3 h 17**
 with the standard expanding square ([how we measured](docs/evaluation.md)). It hasn't flown a real drone yet; PX4, the autopilot many real drones run, has flown its missions in simulation,
 including a change of route sent mid-flight ([docs/px4-sitl.md](docs/px4-sitl.md)).
+
+![Share of the 200 held-out searches found over the first 4 hours: LastSeen finds half by 1 h 52, the expanding square
+by 3 h 17, and a volunteer who restarts the square where the witness said by 2 h 13](docs/img/found-over-time.png)
+
+<sub>Drawn from the committed results by `uv run tools/plot_results.py`.</sub>
 
 It is built for searches where minutes matter most: an older person with dementia who has walked away from home,
 with one volunteer and one drone. Six in ten people living with dementia wander at least once
@@ -82,11 +90,25 @@ Muse Spark decides what the words mean; code decides every number that follows; 
 decide what is true.
 
 ```mermaid
-flowchart LR
-  A["Witness<br/>speaks or types"] --> B["Muse Voice<br/>Transcribe"] --> C["Muse Spark<br/>reads it"] --> D{"Code<br/>checks"}
-  D -- kept --> E["Planner code<br/>picks the route"] --> F["Drone flies<br/>on autopilot"] --> G["SAM 3.1 and<br/>Muse Spark<br/>check photos"] --> H["Volunteer<br/>reviews alarms"] --> I["Ground team<br/>confirms"]
-  D -- dropped --> X["Shown as<br/>discarded"]
+flowchart TB
+  subgraph read ["1 · Reading the reports"]
+    direction LR
+    A(["Witness or family<br/>speaks or types"]):::person --> B["Muse Voice Transcribe<br/>writes it down"]:::meta --> C["Muse Spark<br/>reads it into<br/>weighted places"]:::meta --> D["Code checks every<br/>quote, number<br/>and place"]:::code
+    D -. dropped .-> X["Shown as<br/>discarded"]:::muted
+  end
+  subgraph search ["2 · Searching"]
+    direction LR
+    E["Planner code<br/>picks the route"]:::code --> F["Drone flies it<br/>on autopilot"]:::code --> G["SAM 3.1 +<br/>Muse Spark<br/>check every photo"]:::meta --> H(["Volunteer<br/>reviews alarms"]):::person --> I(["Ground team<br/>confirms the find"]):::person
+  end
+  read -- "what the checks kept" --> search
+  classDef meta fill:#da291c,stroke:#b51f14,color:#ffffff,stroke-width:1px
+  classDef code fill:#18241e,stroke:#72857a,color:#ffffff
+  classDef person fill:#dbe0d7,stroke:#56635a,color:#18241e
+  classDef muted fill:#f4f5f1,stroke:#a2ada0,color:#56635a,stroke-dasharray:4 3
+  style read fill:none,stroke:#a2ada0,stroke-dasharray:3 3
+  style search fill:none,stroke:#a2ada0,stroke-dasharray:3 3
 ```
+<sub>Red: Meta's models · dark: code · rounded: people.</sub>
 
 What code checks, and the test that holds it to that (`tests/test_agent.py`, `tests/test_perception.py`):
 - Every place Muse Spark proposes must quote words that really appear in the reports or the map, or it is dropped:
@@ -300,7 +322,8 @@ Zhe, an accepted participant, wrote parts of the map planner (`app/planner/__ini
 week, then withdrew from the hackathon for personal reasons. Following the organisers' guidance, that code has been
 rewritten from a description of what it does, and the project no longer contains any of his code. The rewritten
 planner finds the person at the same time as before in every held-out scenario, so the results above are unchanged.
-His original commits (`2f97915`, `cb5da38`, `67281a6`) remain in the git history.
+His original commits (`2f97915`, `cb5da38`, `67281a6`) remain in the git history. He has given his permission for
+the project to continue without him and to be submitted to the hackathon.
 
 ## License
 MIT
