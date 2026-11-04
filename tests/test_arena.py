@@ -293,17 +293,18 @@ def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_
 
     from app.sar.cues import _sighting_detail
     spot = (300.0, 2700.0)  # near the corner of walk 3's map, far off the way it walks by itself
-    words = "A cyclist saw an old woman by the barn about twenty minutes ago."
+    words = "A cyclist saw an old woman by the barn a few minutes ago."
     own = replay.race(3, ["spiral"], hours=0.6, drones=1, sighting_s=1800.0, subject="the test subject",
                       witness=(words, spot))
     assert own["reports"][1] == {"t_s": 1800.0, "text": words}  # the visitor's words, as they are
-    walked = terrain.build(3, None, "dementia", seen=(spot, 600.0))
-    assert np.allclose(walked.track[10], spot)  # she is at the visitor's mark 20 minutes before the call
+    walked = terrain.build(3, None, "dementia", seen=(spot, 1500.0))
+    assert np.allclose(walked.track[25], spot)  # she reaches the visitor's mark as the witness sees her, 5 minutes
+    assert np.hypot(*(walked.track[20] - spot)) > 50  # before the call, and isn't already waiting there
     cue, = (c for c in own["truth"]["cues"] if c["kind"] == "sighting")
-    assert cue["true"] and cue["detail"] == _sighting_detail(walked, *spot, 1200.0)
+    assert cue["true"] and cue["detail"] == _sighting_detail(walked, *spot, 300.0)
     heading, = (c for c in own["truth"]["cues"] if c["kind"] == "heading")
     assert heading["true"]
-    assert own["truth"]["track"][10] == [round(v, 1) for v in spot]
+    assert own["truth"]["track"][25] == [round(v, 1) for v in spot]
 
 
 
@@ -325,12 +326,15 @@ def test_a_visitors_race_has_a_sighting_the_square_has_not_found_her_before(monk
         assert abs((replay.bearing_at(walk, 2700.0) - bearing + 180) % 360 - 180) <= 22.5
     spot = (300.0, 2700.0)  # a visitor's witness spot, near the corner: no walk goes there by itself
     chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=spot)
-    walk = terrain.build(chosen, None, "dementia", seen=(spot, 1800.0))
-    assert np.allclose(walk.track[30], spot) and walk.subject_at(3000.0) is not None
+    walk = terrain.build(chosen, None, "dementia", seen=(spot, 2700.0))
+    assert np.allclose(walk.track[45], spot) and walk.subject_at(3000.0) is not None
+    edge = (1500.0, 150.0)  # 150 m from the west edge: she is still in the area when the race ends
+    chosen = replay.watchable_seed(None, 25, sighting_s=3000.0, seen_m=edge)
+    assert terrain.build(chosen, None, "dementia", seen=(edge, 2700.0)).subject_at(4 * 3600.0) is not None
     pond = (5 * 25.0 + 12, 55 * 25.0 + 12)  # walk 1's map has a lake at its top edge: this spot is 50 m from its bank
     chosen = replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=pond)
-    walk = terrain.build(chosen, None, "dementia", seen=(pond, 1800.0))
-    assert walk.map.passability[walk.map.grid.cell_of(*walk.track[30])] >= 0.1 and np.hypot(*(walk.track[30] - pond)) <= 75
+    walk = terrain.build(chosen, None, "dementia", seen=(pond, 2700.0))
+    assert walk.map.passability[walk.map.grid.cell_of(*walk.track[45])] >= 0.1 and np.hypot(*(walk.track[45] - pond)) <= 75
     with pytest.raises(ValueError, match="on water"):  # 326 m from the bank
         replay.watchable_seed(None, 1, sighting_s=3000.0, seen_m=(2 * 25.0 + 12, 68 * 25.0 + 12))
 
