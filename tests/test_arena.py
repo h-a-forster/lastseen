@@ -2,7 +2,9 @@
 
 import json
 import math
+import time
 
+import httpx
 import numpy as np
 import pytest
 
@@ -233,8 +235,6 @@ def test_real_map_joins_split_boundaries_keeps_holes_and_puts_north_at_row_zero(
 
 def test_a_visitors_place_is_refused_on_coasts_water_or_sparse_maps_and_when_osm_is_busy(tmp_path, monkeypatch):
     """No network: the download is faked. A refused place isn't kept, and a busy server is told apart from a bad place."""
-    import httpx
-
     def fake_osm(*extra, buildings=40):
         def answer(query, attempts, timeout_s, wait_s):
             b = {k: float(v) for k, v in zip(("south", "west", "north", "east"), query.split("[bbox:")[1].split("]")[0].split(","))}
@@ -275,6 +275,28 @@ def test_a_visitors_place_is_refused_on_coasts_water_or_sparse_maps_and_when_osm
     assert not terrain.PLACES[name].aerial  # no swisstopo photo outside Switzerland
     monkeypatch.delitem(terrain.PLACES, name)
     terrain.search_map.cache_clear()
+
+
+def test_a_new_map_comes_from_whichever_map_server_answers_first(monkeypatch):
+    def post(url, data, timeout, headers):
+        request = httpx.Request("POST", url)
+        if url == terrain.OVERPASS_URLS[0]:
+            return httpx.Response(502, request=request)
+        if url == terrain.OVERPASS_URLS[1]:  # gave up part-way: an incomplete map
+            return httpx.Response(200, json={"elements": [], "remark": "runtime error: timeout"}, request=request)
+        if url == terrain.OVERPASS_URLS[2]:
+            time.sleep(5)  # busy
+            return httpx.Response(200, json={"elements": ["slow"]}, request=request)
+        time.sleep(0.2)
+        return httpx.Response(200, json={"elements": ["fast"]}, request=request)
+
+    monkeypatch.setattr(terrain.httpx, "post", post)
+    started = time.perf_counter()
+    assert terrain._overpass("q", attempts=1, timeout_s=10) == {"elements": ["fast"]}
+    assert time.perf_counter() - started < 2  # not held up by the busy server
+    monkeypatch.setattr(terrain, "OVERPASS_URLS", terrain.OVERPASS_URLS[:2])
+    with pytest.raises((httpx.HTTPError, ValueError)):  # an error and an incomplete map: no map at all
+        terrain._overpass("q", attempts=1, timeout_s=10)
 
 
 def test_a_test_search_has_a_right_sighting_when_the_visitor_chose_and_gets_its_own_race():

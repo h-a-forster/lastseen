@@ -17,6 +17,7 @@ import math
 import os
 import time
 import zlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -30,7 +31,9 @@ from app.sar.scenario import TRACK_HOURS, Scenario, SearchMap, synthetic
 from app.sar.walker import SNAP_M, WalkerParams, guided_track, truth_track
 
 PLACES_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "places"
-OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter"]
+# Public Overpass instances (wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances), asked all at once
+OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+                 "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 CREDIT = "Map data © OpenStreetMap contributors (ODbL)"
 M_PER_DEG = 111_195.0  # metres per degree of latitude on a 6,371 km sphere
 PAINT_M = 5.0
@@ -99,7 +102,7 @@ def visitor_place(lat: float, lon: float) -> str:
     PLACES[name] = PLACES.get(name) or square
     try:
         try:
-            osm = fetch(name, attempts=2, timeout_s=90, wait_s=2)  # the main server takes about 45 s for 3 km when busy
+            osm = fetch(name, attempts=1, timeout_s=90)  # a busy server can take minutes; the page asks once more
         except (httpx.HTTPError, ValueError) as e:  # ValueError: an answer that isn't JSON, or a timed-out query
             raise MapDataUnavailable("OpenStreetMap's servers are busy; try again in a minute") from e
         _check_searchable(name, osm)
@@ -160,26 +163,43 @@ def fetch(name: str, attempts: int = 4, timeout_s: float = 120, wait_s: float = 
              'nwr[amenity=place_of_worship];nwr[historic];nwr[tourism~"^(viewpoint|attraction)$"];'
              'node[natural~"^(peak|cave_entrance)$"];node[place~"^(town|village|hamlet)$"];way[natural=coastline];);out geom;')
     osm = _overpass(query, attempts, timeout_s, wait_s)
-    if "runtime error" in osm.get("remark", ""):  # Overpass gave up part-way: an incomplete map must not be cached
-        raise ValueError(osm["remark"])
     PLACES_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(osm), encoding="utf-8")
     return osm
 
 
-def _overpass(query: str, attempts: int, timeout_s: float, wait_s: float) -> dict:
-    """Public Overpass servers often answer 429/502/504 when busy: retry with backoff, alternating two instances."""
+def _overpass(query: str, attempts: int, timeout_s: float, wait_s: float = 10) -> dict:
+    """Public Overpass servers are often busy: one answers 502 at once while another takes minutes or times out. Each
+    attempt asks every server at once and takes the first complete answer; attempts are retried with backoff."""
     for attempt in range(attempts):
         try:
-            response = httpx.post(OVERPASS_URLS[attempt % len(OVERPASS_URLS)], data={"data": query}, timeout=timeout_s,
-                                  headers={"User-Agent": "lastseen-scenario-builder/0.1"})
-            response.raise_for_status()
-            return response.json()
+            return _first_answer(query, timeout_s)
         except (httpx.HTTPError, ValueError):
             if attempt == attempts - 1:
                 raise
             time.sleep(wait_s * (attempt + 1))
     raise AssertionError("unreachable")
+
+
+def _first_answer(query: str, timeout_s: float) -> dict:
+    pool = ThreadPoolExecutor(len(OVERPASS_URLS))
+    asked = [pool.submit(_ask_overpass, url, query, timeout_s) for url in OVERPASS_URLS]
+    try:
+        for answer in as_completed(asked):
+            if answer.exception() is None:
+                return answer.result()
+        raise asked[0].exception()  # every server failed
+    finally:
+        pool.shutdown(wait=False)  # the slower servers' answers are dropped when they come
+
+
+def _ask_overpass(url: str, query: str, timeout_s: float) -> dict:
+    response = httpx.post(url, data={"data": query}, timeout=timeout_s, headers={"User-Agent": "lastseen-scenario-builder/0.1"})
+    response.raise_for_status()
+    osm = response.json()
+    if "runtime error" in osm.get("remark", ""):  # the server gave up part-way: an incomplete map must not win
+        raise ValueError(osm["remark"])
+    return osm
 
 
 @lru_cache(maxsize=4)
