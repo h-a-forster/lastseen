@@ -42,8 +42,16 @@
   <main id="top">
     <section class="hero" data-tint="sage" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
-        <h1 id="hero-title">From what witnesses say to where the drone searches, in seconds.</h1>
-        <p class="lede">LastSeen flies a search drone for a missing person and decides where it looks. Today, what witnesses say reaches the search map by hand, or not at all. LastSeen closes that gap: <strong>Muse Spark</strong> turns every report into weighted, checked scenarios in seconds, and the drone re-plans from them and flies the search itself, breaking off mid-flight to follow a sighting. <strong>SAM&nbsp;3.1</strong> and Muse Spark check every photo for a person a few dozen pixels wide, so a reviewer sees about 280 close-ups instead of 1,250 photos. One volunteer launches it, swaps batteries and stays in command. Tested in simulation on 200 searches fixed in advance, with detection measured on real drone photos; the search below runs over a real Swiss valley.</p>
+        <div class="hero-main">
+          <h1 id="hero-title">From what witnesses say to where the drone searches, in seconds.</h1>
+          <p class="lede">LastSeen flies a search drone for a missing person and decides where it looks. Today, what witnesses say reaches the search map by hand, or not at all. One volunteer launches it, swaps batteries and stays in command.</p>
+        </div>
+        <ul class="hero-points">
+          <li><b>Muse Spark reads every report</b><span>Each witness's words become weighted, checked scenarios on the real map, in seconds.</span></li>
+          <li><b>The drone re-plans mid-flight</b><span>It breaks off its search pattern to follow a sighting, and flies the search itself.</span></li>
+          <li><b>SAM&nbsp;3.1 and Muse Spark check every photo</b><span>For a person a few dozen pixels wide: a reviewer sees about 280 close-ups instead of 1,250 photos.</span></li>
+        </ul>
+        <p class="hero-foot">Tested in simulation on 200 searches fixed in advance, with detection measured on real drone photos. The search below runs over a real Swiss valley.</p>
       </div>
     </section>
 
@@ -115,7 +123,7 @@
           </div>
           <div>
             <h4>Notes</h4>
-            <p id="imagery" class="notes"></p>
+            <ul id="imagery" class="notes"></ul>
           </div>
         </div>
       </div>
@@ -208,7 +216,7 @@
           </div>
         </div>
 
-        <p id="triage-summary" class="triage-summary"></p>
+        <dl id="triage-summary" class="triage-summary"></dl>
         <div class="triage-grid">
           <figure class="plate">
             <div id="triage-photo" class="relative"></div>
@@ -231,10 +239,10 @@
             <div>
               <h2 id="place-title">Try it on any place</h2>
               <p class="sheet-sub">Run a test search of your own. Click anywhere on the map: LastSeen builds a 3&nbsp;km search area around that point, a simulated test subject walks off from it the way you choose, and both planners race to find her with one drone. A witness phones in when you choose and says where they saw her, in the simulator's words or your own; watch Muse Spark read the report and the team planner's drone break off. The race plays in section 1.</p>
+              <p class="sheet-note">A new place takes about a minute: its map comes from OpenStreetMap's free servers, which can be busy, so try again shortly if they are. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
             </div>
           </div>
         </div>
-        <p class="place-note">Takes about a minute. The map data comes from OpenStreetMap's free servers, which limit how often they can be asked: if they're busy, try again shortly. Coasts and places with little map detail are refused, and aerial photos exist only for Switzerland.</p>
         <div class="place-grid">
           <div id="place-map" class="place-map" aria-label="Map: click to pick the starting point of a test search"></div>
           <form id="place-form" class="place-form">
@@ -251,7 +259,7 @@
             <div data-live class="hidden place-row">
               <button id="place-mic" class="btn btn-quiet" type="button">Speak</button>
             </div>
-            <p class="place-hint">Muse Spark reads only these words, never your mark, so say where she was the way a passer-by would: roughly how far and which way from where she left (shown above once you mark), and what was there, like a road, a river or the edge of a wood. Names you can read on the map help when they belong to a village, river, bridge or chapel.</p>
+            <p class="place-hint">Muse Spark reads only these words, never your mark. Say it as a passer-by would: roughly how far and which way from where she left (shown above once you mark), and what was there, like a road, a river or a village, bridge or chapel named on the map.</p>
             <div id="place-heading-row" class="place-field">
               <label for="place-heading">She heads</label>
               <select id="place-heading">
@@ -262,10 +270,18 @@
             </div>
             <label for="place-minute">The witness calls after (minutes)</label>
             <input id="place-minute" type="number" min="10" max="180" value="30" />
-            <p class="place-hint">Every test search starts with a family brief that LastSeen writes from her simulated walk: which way a neighbour saw her set off, and whether she walks a lot. The brief is right, and so is the witness. With your mark, she walks from the starting point to it, reaches it just as the witness sees her, 5 minutes before the call, and wanders on from there for as long as she still has the strength, on a walk picked to keep her in the search area where possible. Without one, LastSeen picks a walk that has her the way you chose when the witness calls, and writes the witness's report too. Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</p>
             <button data-live class="hidden btn btn-ink" type="submit">Run a test search</button>
             <p data-live-off class="hidden offline">Live model calls are off on this server, so this needs the hosted demo.</p>
             <p id="place-status" class="place-status" role="status"></p>
+            <aside class="place-how" aria-labelledby="place-how-title">
+              <h3 id="place-how-title">How the test works</h3>
+              <ul>
+                <li>LastSeen writes the family's brief from her simulated walk: which way a neighbour saw her set off, and whether she walks a lot. The brief and the witness are both right.</li>
+                <li>With your mark, she walks there from the starting point, arriving as the witness sees her, 5 minutes before the call, then wanders on while she still has the strength.</li>
+                <li>Without a mark, LastSeen picks a walk that heads her your way and writes the witness's words too.</li>
+                <li>Afterwards, tick "Reveal where the person really was" in section 1 to see her real path.</li>
+              </ul>
+            </aside>
           </form>
         </div>
       </div>
