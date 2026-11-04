@@ -330,7 +330,7 @@
 /* Sheet 4: a place of your own */
 .place-note { max-width: 80ch; font-size: 14px; color: var(--ink-2); margin: 0 0 16px; }
 .place-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
-.place-map { height: 420px; border: 1px solid var(--ink); border-radius: var(--r-frame); background: var(--well); }
+.place-map { height: 640px; border: 1px solid var(--ink); border-radius: var(--r-frame); background: var(--well); }
 .place-form { display: flex; flex-direction: column; gap: 6px; }
 .place-form label, .place-label { font-size: 13px; font-weight: 600; margin-top: 8px; }
 .place-field { display: flex; flex-direction: column; gap: 6px; }

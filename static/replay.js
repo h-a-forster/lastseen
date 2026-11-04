@@ -224,7 +224,7 @@ function resultLine() {
   const line = finds.map(([s, name], i) => (s == null ? `${name} ${notFound}` : i ? `${clock(s)} ${name}` : `Found at ${clock(s)} with ${name}`)).join(" · ");
   const left = finds[0][0] == null ? leftAreaAt() : null;
   if (left == null) return line;
-  return `${line}. ${left ? `She walked out of the search area at ${clock(left)}` : "She was outside the search area from the start"}, and drones search only inside it.`;
+  return `${line}. ${left ? `She walked out of the search area at ${clock(left)}` : "She was outside the search area from the start"}. The drones didn't know, and kept searching inside it.`;
 }
 
 function leftAreaAt() {

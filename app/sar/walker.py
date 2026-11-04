@@ -30,6 +30,7 @@ BARRIER = 0.1  # passability below this blocks walking (open water)
 OUTSIDE_PASSABILITY = 0.6  # terrain beyond the mapped area is unknown; assume average going
 SET_OFF_M = 300.0  # how far along her way a neighbour's "she set off towards..." describes
 SNAP_M = 150.0  # a point a visitor puts on a river or pond means the bank, if one is this close
+GUIDED_PACE = (0.6, 1.65)  # slowest and quickest pace of a guided walk, as a share of the category's speed (+-2 sd)
 _STEPS = np.array([(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
 _STEP_ANGLE = np.arctan2(_STEPS[:, 0], _STEPS[:, 1])  # heading convention: dy = sin, dx = cos
 
@@ -64,9 +65,9 @@ class Walk:
 
 def walk(search_map: SearchMap, category: str, rng: np.random.Generator, n: int, duration_s: float,
          params: WalkerParams | None = None, start_m: tuple[float, float] | None = None,
-         heading: float | None = None) -> Walk:
+         heading: float | None = None, moving_s: float | None = None) -> Walk:
     """Walk `n` subjects for `duration_s` seconds, from the IPP in random directions unless `start_m` and `heading`
-    say otherwise."""
+    say otherwise; `moving_s` replaces the drawn time each keeps moving."""
     p = params or PARAMS[category]
     grid, passability, trails = search_map.grid, search_map.passability, search_map.trails
     stuck_terrain = np.isin(search_map.terrain, (Terrain.SCRUB, Terrain.FOREST))
@@ -75,6 +76,8 @@ def walk(search_map: SearchMap, category: str, rng: np.random.Generator, n: int,
     heading = start_heading.copy()
     speed = p.speed_mps * rng.lognormal(0, 0.25, n)
     moving_left_s = p.moving_h * 3600 * rng.lognormal(0, p.moving_sd, n)
+    if moving_s is not None:
+        moving_left_s[:] = moving_s
     modes = list(p.mix)
     probs = np.array([p.mix[m] for m in modes]) / sum(p.mix.values())
     drift = math.radians(p.turn_sd_deg) * math.sqrt(DT_S / 60)
@@ -120,21 +123,27 @@ def guided_track(search_map: SearchMap, category: str, rng: np.random.Generator,
                  spot_m: tuple[float, float], seen_s: float, params: WalkerParams | None = None
                  ) -> tuple[np.ndarray, float]:
     """Like `truth_track`, for a subject a witness saw at `spot_m` at search time `seen_s` (a whole number of
-    RECORD_S): she walks the easiest way there from the IPP at her own pace, waits there if she would arrive early,
-    has been gone longer than usual if she couldn't arrive sooner, and from the spot carries on by the category's rules.
-    The heading is the way she went for her first SET_OFF_M, which is what a neighbour would have seen."""
+    RECORD_S). She walks the easiest way there from the IPP and arrives as the witness sees her: her pace is set by how
+    long she has been gone (the usual report delay plus `seen_s`), within GUIDED_PACE. A spot too far for her quickest
+    pace means she has been gone longer; one too near for her slowest means she was missed sooner, and only if even that
+    isn't enough does she sit there until she is seen. From the spot she carries on by the category's rules for whatever
+    is left of her moving time (none, if getting there used it up). The heading is the way she went for her first
+    SET_OFF_M, which is what a neighbour would have seen."""
     p = params or PARAMS[category]
     path = easiest_path(search_map, spot_m)
     steps = np.diff(path, axis=0)
     rows, cols, _ = _cells(search_map.grid, path[:-1])
-    speed = p.speed_mps * rng.lognormal(0, 0.25)
-    walked_s = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T) / (speed * search_map.passability[rows, cols]))])
-    delay_s = max(rng.uniform(*p.report_delay_h) * 3600, walked_s[-1] - seen_s)
+    effort_m = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T) / search_map.passability[rows, cols])])
+    gone_s = rng.uniform(*p.report_delay_h) * 3600 + seen_s
+    speed = p.speed_mps * np.clip(effort_m[-1] / gone_s / p.speed_mps, *GUIDED_PACE)
+    walked_s = effort_m / speed
+    delay_s = max(0.0, walked_s[-1] - seen_s)
+    moving_s = p.moving_h * 3600 * rng.lognormal(0, p.moving_sd)  # in all, as in `walk`
     clock = np.arange(0.0, seen_s, RECORD_S) + delay_s  # her walking time at each record before she is seen
     before = np.stack([np.interp(clock, walked_s, path[:, 0]), np.interp(clock, walked_s, path[:, 1])], axis=1)
     last = steps[-1] if len(steps) else np.zeros(2)
     after = walk(search_map, category, rng, 1, hours * 3600 - seen_s, p, start_m=tuple(path[-1]),
-                 heading=math.atan2(*last)).positions[:, 0]
+                 heading=math.atan2(*last), moving_s=max(0.0, moving_s - walked_s[-1])).positions[:, 0]
     along = np.concatenate([[0.0], np.cumsum(np.hypot(*steps.T))])
     set_off = path[min(int(np.searchsorted(along, SET_OFF_M)), len(path) - 1)] - path[0]
     return np.concatenate([before, after]), math.atan2(*set_off)

@@ -36,8 +36,8 @@ from app.sar.walker import RECORD_S
 
 RUNS_DIR = Path(os.getenv("DATA_DIR") or Path(__file__).resolve().parents[2] / "data") / "runs"
 MAX_LANES = 3
-HEADING_TRIES = 60  # walks tried for one that goes the way a visitor chose (terrain makes some directions rare)
-WITNESS_LEAD_S = 1200.0  # a visitor's own witness saw her this long before calling (less if the call comes sooner)
+CHOSEN_TRIES = 60  # walks tried for one that goes the way a visitor chose, or stays in the area after their mark
+WITNESS_LEAD_S = 300.0  # a visitor's own witness sees her and phones in this much later
 
 
 def race(seed: int, planner_names: list[str], category: str = "dementia", size: int = 120, hours: float = 4.0,
@@ -100,7 +100,7 @@ def watchable_seed(place: str | None, first: int, sighting_s: float | None = Non
     before and which keeps her in the mapped area to the race's end at `hours`, so the race shows the planners split. Up to the sighting both planners fly the same square, so the pick
     favours neither. Photos are decided as in the race; no model calls.
     With `heading_deg`, only walks that have her within 22.5 degrees of that bearing from the start point at the
-    sighting count, from up to HEADING_TRIES: the walker is unchanged, this only picks among its walks. With `seen_m`,
+    sighting count, from up to CHOSEN_TRIES: the walker is unchanged, this only picks among its walks. With `seen_m`,
     a witness's spot (y_m, x_m), every walk passes through it (see `walker.guided_track`); ValueError if she can't
     walk there. Falls back to a walk that meets the place and direction tests, then to `first`; ValueError if a
     chosen direction has no walk at all."""
@@ -108,7 +108,7 @@ def watchable_seed(place: str | None, first: int, sighting_s: float | None = Non
         raise ValueError("a witness's spot needs the time of the call")
     photos = photo_pool.shared()
     fallback = None
-    for seed in range(first, first + (HEADING_TRIES if heading_deg is not None else tries)):
+    for seed in range(first, first + (CHOSEN_TRIES if heading_deg is not None or seen_m is not None else tries)):
         scenario = build(seed, place, "dementia", seen=None if seen_m is None else (seen_m, seen_at(sighting_s)))
         seen_s = sighting_s if sighting_s is not None else _sighting_s(scenario, seed)
         if seen_s is None or scenario.subject_at(seen_s) is None:
