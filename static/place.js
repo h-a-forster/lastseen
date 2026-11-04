@@ -159,7 +159,7 @@ document.getElementById("place-form").onsubmit = async (e) => {
   button.disabled = true;
   const started = Date.now();
   let retrying = "";
-  const tick = () => placeSay(`${retrying}Downloading the map from OpenStreetMap, reading the reports with Muse Spark and flying both searches... ${Math.round((Date.now() - started) / 1000)} s`);
+  const tick = () => placeSay(`${retrying}Downloading the map from OpenStreetMap (up to a minute for a new place), then Muse Spark reads the reports and both searches fly... ${Math.round((Date.now() - started) / 1000)} s`);
   tick();
   const timer = setInterval(tick, 1000);
   const request = {
