@@ -99,6 +99,9 @@ async function toggleRecording(mic) {
   const audio = window.AudioContext ? new AudioContext() : null;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const live = streamLive(mic, audio, stream);
+    // Show "recording" once the stream takes audio, so no first word is lost; one that can't start is handled at stop.
+    await within(live.catch(() => {}), 2000);
     const chunks = [];
     mic.recorder = new MediaRecorder(stream);
     mic.recorder.ondataavailable = (e) => chunks.push(e.data);
@@ -123,8 +126,6 @@ async function toggleRecording(mic) {
     mic.box.value = "";
     mic.box.placeholder = "Listening...";
     mic.say(mic.listening);
-    const live = streamLive(mic, audio, stream);
-    live.catch(() => {});  // a stream that can't start is handled when the recording stops
   } catch (err) {
     audio?.close();
     mic.say(`Couldn't use the microphone (${err.message}); type ${mic.what} instead.`);
