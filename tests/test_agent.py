@@ -1,6 +1,8 @@
 """Checks on Spark's answers, without calling the model: invented evidence is dropped, numbers are clamped,
 weights keep a share for "none of these", and shapes point the right way on the map."""
 
+import time
+
 import numpy as np
 import pytest
 
@@ -287,3 +289,21 @@ def test_handover_facts_come_from_the_race_and_the_message_may_only_repeat_them(
         with pytest.raises(ModelCallError):
             handover.check(bad, found)
 
+
+
+def test_a_brief_waits_for_the_slower_reading_not_both(monkeypatch):
+    from app.agent import brief
+
+    class Graded(Exception):
+        pass
+
+    def slow_grade(text):
+        time.sleep(0.5)
+        raise Graded
+
+    monkeypatch.setattr(brief, "interpret", lambda *args: time.sleep(0.5))
+    monkeypatch.setattr(brief, "grade", slow_grade)
+    started = time.perf_counter()
+    with pytest.raises(Graded):
+        brief.read_brief(brief.EXAMPLE_PLACE, "She walked east along the river.")
+    assert time.perf_counter() - started < 0.8

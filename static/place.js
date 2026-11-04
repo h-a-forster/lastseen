@@ -143,7 +143,7 @@ document.getElementById("place-unmark").onclick = () => {
 
 const placeMic = {
   button: document.getElementById("place-mic"), box: document.getElementById("place-witness"), say: placeSay,
-  what: "what the witness says", idle: "Speak", done: "Transcribed. Check the words, then run the test search.",
+  what: "what the witness says", idle: "Speak", done: "Check the words, then run the test search.",
   listening: "Recording... say what the witness saw, where, and how long ago.",
 };
 document.getElementById("place-mic").onclick = () => toggleRecording(placeMic);
@@ -169,7 +169,7 @@ document.getElementById("place-form").onsubmit = async (e) => {
                              report_minute: Math.min(180, Math.max(10, Number(document.getElementById("place-minute").value) || 30)) }),
     });
     clearInterval(timer);
-    placeSay("Done: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.");
+    placeSay(`Done in ${Math.round((Date.now() - started) / 1000)} s: the test search is playing in section 1. Tick \"Reveal where the person really was\" there to see her real path.`);
     await openPlaceRace(id);
   } catch (err) {
     clearInterval(timer);

@@ -19,12 +19,13 @@ async function ask(event) {
   const question = F("ask-text").value.trim();
   if (!question) return;
   F("ask-result").innerHTML = `<p class="ask-note">Finding the answer...</p>`;
+  const started = performance.now();
   try {
     const response = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || response.statusText);
-    const how = body.matched_by === "model" ? "Muse Spark Open picked these written answers" : "Matched to a written answer";
+    const how = body.matched_by === "model" ? `Muse Spark Open picked these written answers in ${secondsSince(started)} s` : "Matched to a written answer";
     F("ask-result").innerHTML = body.answers.length
       ? `<p class="ask-note">${how}.</p>${body.answers.map(answerHtml).join("")}`
       : `<p class="ask-note">We don't have a written answer for that. Closest questions: ${body.suggestions.map((e) =>
