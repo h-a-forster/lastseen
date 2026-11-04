@@ -2,7 +2,7 @@
 
 > Meta Global AI Developer Hackathon 2026 · Push the Frontier · built 26 Oct - 4 Nov 2026
 
-[![Watch the 3-minute demo video](docs/img/video-thumb.jpg)](YOUTUBE_LINK)
+[![Watch the 3-minute demo video](docs/img/video-thumb.jpg)](https://youtu.be/1BX0xcUv3nQ)
 
 LastSeen flies a search drone for a missing person and decides where it looks. Planning a drone search is still
 "more art than science"
@@ -27,7 +27,7 @@ call out ([Koester, *Lost Person Behavior*](https://www.dbs-sar.com/LPB/Dementia
 tested on a simulator built for it.
 
 ## For judges
-1. [Watch the demo video](YOUTUBE_LINK) (3 minutes): from a spoken brief to the find, with the results.
+1. [Watch the demo video](https://youtu.be/1BX0xcUv3nQ) (3 minutes): from a spoken brief to the find, with the results.
 2. [Watch the dog walker's call come in](https://hishamalpha00--lastseen-web.us-east.modal.run/?race=saint-ursanne-dementia-19-spiral-hedge-spark-1drone&t=40):
    the drone on the right leaves its square 44 minutes into the search and finds her at 1 h 48; the square alone
    takes 2 h 56.
