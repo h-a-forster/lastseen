@@ -596,7 +596,7 @@ showLiveControls();
 // pushes the section down the page. Keep it in view while the page grows, until the visitor scrolls or clicks.
 const linked = !link.has("race") && location.hash && document.getElementById(location.hash.slice(1));
 if (linked) {
-  const pin = new ResizeObserver(() => linked.scrollIntoView({ behavior: "instant" }));
+  const pin = new ResizeObserver(() => requestAnimationFrame(() => linked.scrollIntoView({ behavior: "instant" })));
   const release = () => pin.disconnect();
   pin.observe(document.body);
   ["wheel", "touchmove", "keydown", "mousedown"].forEach((type) => addEventListener(type, release, { once: true, passive: true }));
