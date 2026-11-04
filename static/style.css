@@ -154,6 +154,19 @@
 .btn-ink:hover { background: color-mix(in srgb, var(--ink) 85%, var(--paper)); }
 .btn-quiet { background: var(--surface); border: 1px solid var(--rule); color: var(--ink); }
 .btn-quiet:hover { border-color: var(--ink-3); }
+.btn:disabled { cursor: progress; opacity: .8; }
+
+/* voice: the Speak button while it records (bars follow the voice) and while Muse Voice Transcribe writes */
+.btn.mic-on { border-color: var(--red); color: var(--red-ink); background: color-mix(in srgb, var(--red) 8%, var(--surface)); }
+.mic-bars { display: inline-flex; align-items: center; gap: 2px; height: 16px; }
+.mic-bars i { width: 3px; height: 100%; border-radius: 1px; background: var(--red); transform: scaleY(.2); }
+.mic-time { font-weight: 500; min-width: 2.6em; text-align: left; }
+.mic-spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--rule); border-top-color: var(--ink); }
+.sv textarea.mic-listening { border-color: var(--red); }
+@media (prefers-reduced-motion: no-preference) {
+  .mic-spin { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+}
 
 .other-races { margin-top: 14px; }
 
