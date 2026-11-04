@@ -85,6 +85,7 @@
   font-weight: 650; font-stretch: 84%; max-width: 24ch; text-wrap: balance;
 }
 .lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 48ch; }
+.lede strong { color: var(--ink); font-weight: 650; }
 .hero-points { display: grid; gap: 18px; padding-top: 6px; }
 .hero-points li { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; padding-top: 12px; border-top: 1.5px solid var(--ink); }
 .hero-points li > * { grid-column: 2; }
