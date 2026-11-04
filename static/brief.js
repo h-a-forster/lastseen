@@ -93,25 +93,62 @@ async function readBrief() {
 
 async function toggleRecording(mic) {
   if (mic.recorder) return mic.recorder.stop();
+  // made inside the click: Safari keeps an AudioContext made later suspended. Without one, the bars stay still.
+  const audio = window.AudioContext ? new AudioContext() : null;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const chunks = [];
     mic.recorder = new MediaRecorder(stream);
     mic.recorder.ondataavailable = (e) => chunks.push(e.data);
+    const meter = showListening(mic, audio, stream);
     mic.recorder.onstop = async () => {
+      meter.stop();
       stream.getTracks().forEach((t) => t.stop());
       mic.recorder = null;
-      mic.button.textContent = mic.idle;
       await transcribe(mic, new Blob(chunks));
     };
     mic.recorder.start();
     mic.typed = mic.box.value;  // the box shows only what was said; put this back if transcription fails
+    mic.placeholder = mic.box.placeholder;
     mic.box.value = "";
-    mic.button.textContent = "Stop recording";
+    mic.box.placeholder = "Listening...";
     mic.say(mic.listening);
   } catch (err) {
+    audio?.close();
     mic.say(`Couldn't use the microphone (${err.message}); type ${mic.what} instead.`);
   }
+}
+
+function showListening(mic, audio, stream) {
+  // The button turns into a stop button with the elapsed time and five bars that follow the voice, so a visitor
+  // can see the microphone is hearing them.
+  const analyser = audio && Object.assign(audio.createAnalyser(), { fftSize: 256, smoothingTimeConstant: 0.6 });
+  audio?.createMediaStreamSource(stream).connect(analyser);
+  const levels = new Uint8Array(analyser?.frequencyBinCount || 0);
+  mic.button.classList.add("mic-on");
+  mic.box.classList.add("mic-listening");
+  mic.button.innerHTML = `<span class="mic-bars" aria-hidden="true">${"<i></i>".repeat(5)}</span>Stop recording <span class="mic-time">0:00</span>`;
+  const bars = mic.button.querySelectorAll(".mic-bars i"), clock = mic.button.querySelector(".mic-time");
+  const started = performance.now();
+  let frame;
+  const draw = () => {
+    if (analyser) {
+      analyser.getByteFrequencyData(levels);  // bins of ~180 Hz: the bars cover the speech band, ~200 Hz to 3.7 kHz
+      bars.forEach((bar, i) => (bar.style.transform = `scaleY(${0.2 + 0.8 * Math.max(...levels.subarray(1 + 4 * i, 5 + 4 * i)) / 255})`));
+    }
+    const s = Math.floor((performance.now() - started) / 1000);
+    clock.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    frame = requestAnimationFrame(draw);
+  };
+  draw();
+  return {
+    stop() {
+      cancelAnimationFrame(frame);
+      audio?.close();
+      mic.button.classList.remove("mic-on");
+      mic.box.classList.remove("mic-listening");
+    },
+  };
 }
 
 async function typeIn(box, text) {
@@ -124,6 +161,9 @@ async function typeIn(box, text) {
 }
 
 async function transcribe(mic, recording) {
+  mic.button.disabled = true;
+  mic.button.innerHTML = `<span class="mic-spin" aria-hidden="true"></span>Transcribing...`;
+  mic.box.placeholder = "Muse Voice Transcribe is writing down what you said...";
   mic.say(`Muse Voice Transcribe is writing down ${mic.what}...`);
   const started = performance.now();
   try {
@@ -137,6 +177,10 @@ async function transcribe(mic, recording) {
   } catch (err) {
     mic.box.value ||= mic.typed;
     mic.say(`Could not transcribe: ${err.message}`);
+  } finally {
+    mic.button.disabled = false;
+    mic.button.textContent = mic.idle;
+    mic.box.placeholder = mic.placeholder;
   }
 }
 
